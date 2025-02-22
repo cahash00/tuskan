@@ -4,3 +4,9 @@
 [submodule "includes/matar"]
 	path = includes/matar
 	url = https://github.com/lanl/MATAR.git
+[submodule "includes/yaml-cpp"]
+	path = includes/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "includes/argparse"]
+	path = includes/argparse
+	url = https://github.com/p-ranav/argparse.git
