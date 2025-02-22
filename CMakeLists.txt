@@ -21,8 +21,9 @@ set(CMAKE_INSTALL_PREFIX
 )
 
 # ... Set paths and directories
-# Kokkos
+# source files
 set(src ${CMAKE_SOURCE_DIR}/src)
+# Kokkos
 set(Kokkos_DIR ${CMAKE_SOURCE_DIR}/includes/matar/install/kokkos/lib/cmake/kokkos)
 # MATAR headers
 set(matar_headers "${CMAKE_SOURCE_DIR}/includes/matar/install/matar/include")
@@ -30,6 +31,10 @@ set(pprint_headers "${CMAKE_SOURCE_DIR}/includes/pprint/include")
 
 # ... ensure MPI is used
 find_package(MPI REQUIRED)
+find_package(VTK COMPONENTS CommonCore
+  CommonDataModel
+  IOXML
+  REQUIRED)
 find_package(Kokkos REQUIRED PATHS 
              ${CMAKE_SOURCE_DIR}/includes/matar/install/kokkos)
 
@@ -38,7 +43,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -debug -traceback")
 
-file(GLOB cxx_sources "${src}/*.cpp") 
+file(GLOB sources "${src}/*.cpp") 
+file(GLOB output "${src}/output/*.cpp")
+
+list(APPEND cxx_sources ${sources}
+                        ${output}
+)
 
 # ... compile and create the executable
 add_executable(tuskan ${cxx_sources})
@@ -46,14 +56,22 @@ add_executable(tuskan ${cxx_sources})
 # ... set compiler flag so that the correct MATAR headers are used
 target_compile_definitions(tuskan PUBLIC HAVE_KOKKOS)
 
+# ... include custom headers
+target_include_directories(tuskan PUBLIC "${CMAKE_SOURCE_DIR}/includes")
 # ... include MATAR headers
 target_include_directories(tuskan PUBLIC ${matar_headers})
 # ... include pprint headers
 target_include_directories(tuskan PUBLIC ${pprint_headers})
 
 # ... link the libraries
-target_link_libraries(tuskan PRIVATE Kokkos::kokkos
-   ${MPI_CXX_LIBRARIES}
+target_link_libraries(tuskan PRIVATE Kokkos::kokkos 
+                                     ${VTK_LIBRARIES}
+                                     ${MPI_CXX_LIBRARIES}
+)
+# vtk_module_autoinit is needed
+vtk_module_autoinit(
+  TARGETS tuskan
+  MODULES ${VTK_LIBRARIES}
 )
 
 # ... Install so that you can use anywhere
