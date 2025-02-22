@@ -7,8 +7,12 @@
  */
 
 #include <output.h>
+#include <inputYAML.h>
 #include <matar.h>
 #include <Kokkos_Core.hpp>
+#include <yaml-cpp/yaml.h>
+#include <argparse/argparse.hpp>
+#include <pprint.hpp>
 
 using namespace std;
 using namespace mtr;
@@ -48,8 +52,30 @@ void mesher2D(const double& lx, const double& ly,
 }
 
 int main(int argc, char* argv[]){
+  // Fire up the printer
+  pprint::PrettyPrinter printer;
+
+  /**
+   * command line arguments
+   * uses argparse to parse out command line inputs.
+   */
+  argparse::ArgumentParser program("TUSKAN","0.0.0");
+  program.add_argument("-i","--input")
+    .required()
+    .help("Input deck for the calculation.");
+  try {
+    program.parse_args(argc,argv);
+  } catch (const exception& err) {
+    cerr << err.what() << endl;
+    cerr << program << endl;
+    return 1;
+  }
+  // assign the input file that was given
+  auto inFile = program.get<string>("-i");
+
   // automatically initialize and finalize Kokkos with the main program
   Kokkos::ScopeGuard kokkos_guard(argc, argv); 
+  YAML::Node config;
   
   // generate the domain
   double dx,dy;
@@ -58,6 +84,8 @@ int main(int argc, char* argv[]){
   int nx = 10;
   int ny = 10;
 
+  // call input file parser
+  config = parse_user(inFile);
   // initialize the Kokkos matrices
   FMatrixKokkos<double> xc(nx,ny),yc(nx,ny),xn(nx+1,ny+1),yn(nx+1,ny+1);
 

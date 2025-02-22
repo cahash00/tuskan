@@ -27,16 +27,22 @@ set(src ${CMAKE_SOURCE_DIR}/src)
 set(Kokkos_DIR ${CMAKE_SOURCE_DIR}/includes/matar/install/kokkos/lib/cmake/kokkos)
 # MATAR headers
 set(matar_headers "${CMAKE_SOURCE_DIR}/includes/matar/install/matar/include")
+# pprint headers
 set(pprint_headers "${CMAKE_SOURCE_DIR}/includes/pprint/include")
+# argparse header
+set(argparse_headers "${CMAKE_SOURCE_DIR}/includes/argparse/include")
 
 # ... ensure MPI is used
 find_package(MPI REQUIRED)
 find_package(VTK COMPONENTS CommonCore
-  CommonDataModel
-  IOXML
-  REQUIRED)
+                            CommonDataModel
+                            IOXML
+                 REQUIRED
+)
 find_package(Kokkos REQUIRED PATHS 
              ${CMAKE_SOURCE_DIR}/includes/matar/install/kokkos)
+find_package(yaml-cpp REQUIRED PATHS
+             ${CMAKE_SOURCE_DIR}/includes/yaml-cpp/install)
 
 # ... Set compiler settings
 set(CMAKE_CXX_STANDARD 17)
@@ -44,7 +50,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -debug -traceback")
 
 file(GLOB sources "${src}/*.cpp") 
-file(GLOB output "${src}/output/*.cpp")
+file(GLOB output "${src}/IO/*.cpp")
 
 list(APPEND cxx_sources ${sources}
                         ${output}
@@ -62,9 +68,12 @@ target_include_directories(tuskan PUBLIC "${CMAKE_SOURCE_DIR}/includes")
 target_include_directories(tuskan PUBLIC ${matar_headers})
 # ... include pprint headers
 target_include_directories(tuskan PUBLIC ${pprint_headers})
+# ... include argparse header
+target_include_directories(tuskan PUBLIC ${argparse_headers})
 
 # ... link the libraries
 target_link_libraries(tuskan PRIVATE Kokkos::kokkos 
+                                     yaml-cpp::yaml-cpp
                                      ${VTK_LIBRARIES}
                                      ${MPI_CXX_LIBRARIES}
 )
