@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+
+# testing and build directories
+build
+testing
+
+*.swp
