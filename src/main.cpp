@@ -6,6 +6,7 @@
  * @details first part of the final project - HW4
  */
 
+#include <output.h>
 #include <matar.h>
 #include <Kokkos_Core.hpp>
 
@@ -63,12 +64,8 @@ int main(int argc, char* argv[]){
   // Call the mesher
   mesher2D(lx,ly,nx,ny,xc,yc,xn,yn,dx,dy);
 
-  // print stuff
-  for (int j = 1; j <= ny; j++) {
-    for (int i = 1; i <= nx; i++) {
-      cout << "("<< xc(i,j)<<","<<yc(i,j)<<")" << " ";
-    }
-    cout << endl;
-  }
+  // output grid file
+  vtk_output_2D(nx,ny,xn,yn);
+
   return 0;
 }
