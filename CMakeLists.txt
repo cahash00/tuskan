@@ -42,7 +42,7 @@ find_package(VTK COMPONENTS CommonCore
 find_package(Kokkos REQUIRED PATHS 
              ${CMAKE_SOURCE_DIR}/includes/matar/install/kokkos)
 find_package(yaml-cpp REQUIRED PATHS
-             ${CMAKE_SOURCE_DIR}/includes/yaml-cpp/install)
+             ${CMAKE_SOURCE_DIR}/includes/yaml-cpp/build/install)
 
 # ... Set compiler settings
 set(CMAKE_CXX_STANDARD 17)
