@@ -51,9 +51,11 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -debug -traceback")
 
 file(GLOB sources "${src}/*.cpp") 
 file(GLOB output "${src}/IO/*.cpp")
+file(GLOB meshing "${src}/mesh/*.cpp")
 
 list(APPEND cxx_sources ${sources}
                         ${output}
+                        ${meshing}
 )
 
 # ... compile and create the executable

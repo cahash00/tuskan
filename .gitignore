@@ -34,5 +34,8 @@
 # testing and build directories
 build
 testing
+matar/*
+yaml-cpp/build
+yaml-cpp/install
 
 *.swp
