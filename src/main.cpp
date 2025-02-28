@@ -22,21 +22,12 @@ int main(int argc, char* argv[]){
   // Fire up the printer
   pprint::PrettyPrinter printer;
 
+  argparse::ArgumentParser program = getUserInput(argc,argv);
+
   /**
-   * command line arguments
-   * uses argparse to parse out command line inputs.
+   *                           MAIN PROGRAM START
    */
-  argparse::ArgumentParser program("TUSKAN","0.0.0");
-  program.add_argument("-i","--input")
-    .required()
-    .help("Input deck for the calculation.");
-  try {
-    program.parse_args(argc,argv);
-  } catch (const exception& err) {
-    cerr << err.what() << endl;
-    cerr << program << endl;
-    return 1;
-  }
+
   // assign the input file that was given
   auto inFile = program.get<string>("-i");
 
@@ -54,7 +45,7 @@ int main(int argc, char* argv[]){
   // call input file parser
   config = parse_user(inFile);
   // initialize the Kokkos matrices
-  FMatrixKokkos<double> xc(nx,ny),yc(nx,ny),xn(nx+1,ny+1),yn(nx+1,ny+1);
+  FMatrix<double> xc(nx,ny),yc(nx,ny),xn(nx+1,ny+1),yn(nx+1,ny+1);
 
   // Call the mesher
   mesher2D(lx,ly,nx,ny,xc,yc,xn,yn,dx,dy);
