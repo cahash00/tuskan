@@ -22,9 +22,6 @@ YAML::Node parse_user(const std::string& inFile){
   if (!config) {
     throw std::runtime_error("Failed to load the YAML file: "+inFile);
   }
-
-  // print some stuff for testing
-  printer.print(config["iterations"]);
   return config;
 }
 

@@ -3,10 +3,14 @@
 #
 case name: hw4
 domain:
-  type: rectilinear
-  dimension: 2D
-  xlength: 0.04
-  ylength: 0.02
+  lengths:
+    x: 2.0
+    y: 1.0
+    z: 0.01
+  dimensions:
+    x: 100
+    y: 100
+    z: 1
 iterations: 1000
 output:
   type: vtk

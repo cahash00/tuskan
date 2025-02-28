@@ -33,22 +33,28 @@ int main(int argc, char* argv[]){
 
   // automatically initialize and finalize Kokkos with the main program
   Kokkos::ScopeGuard kokkos_guard(argc, argv); 
-  YAML::Node config;
+  
+  // call input file parser
+  YAML::Node config = parse_user(inFile);
   
   // generate the domain
-  double dx,dy;
-  double lx = 2.0;
-  double ly = 1.0;
-  int nx = 10;
-  int ny = 10;
+  double dx,dy,dz;
+  double lx = config["domain"]["lengths"]["x"];
+  double ly = config["domain"]["lengths"]["y"];
+  double lz = config["domain"]["lengths"]["z"];
+  int nx = config["domain"]["dimensions"]["x"];
+  int ny = config["domain"]["dimensions"]["y"];
+  int nz = config["domain"]["dimensions"]["z"];
 
-  // call input file parser
-  config = parse_user(inFile);
+  // need to call getDomainIndices() here
+
+  // get the TOTAL number of cells here so we can allocate properly
+
   // initialize the Kokkos matrices
   FMatrix<double> xc(nx,ny),yc(nx,ny),xn(nx+1,ny+1),yn(nx+1,ny+1);
-
-  // Call the mesher
-  mesher2D(lx,ly,nx,ny,xc,yc,xn,yn,dx,dy);
+  
+  // call mesh generator
+  mesher3D(lx,ly,lz,nx,ny,nz,xc,yc,zc,xn,ynzn,dx,dy,dz);
 
   // output grid file
   vtk_output_2D(nx,ny,xn,yn);
