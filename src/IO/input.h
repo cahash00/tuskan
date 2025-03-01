@@ -8,6 +8,7 @@ using namespace std;
 
 YAML::Node parse_user(const string& inFile);
 
-argparse::ArgumentParser getUserInput(int argc, char* argv)
+void getUserInput(int argc, char* argv[],
+                  argparse::ArgumentParser& program);
 
 #endif // INPUT_H

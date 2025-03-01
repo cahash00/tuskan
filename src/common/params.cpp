@@ -1,13 +1,11 @@
 
 #include <params.h>
-#include <inputYAML.h>
-#include <yaml-cpp/yaml.cpp>
-#include <vector>
-#include <params.h>
 
-const int nghosts = 2;
+using namespace std;
 
-void geDomainIndices(int nx,int ny,int nz,
+extern const int nghosts = 2;
+
+void getDomainIndices(int nx,int ny,int nz,
                      int istr,int iend,
                      int jstr,int jend,
                      int kstr,int kend) {

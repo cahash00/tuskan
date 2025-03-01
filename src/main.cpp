@@ -8,12 +8,13 @@
 
 #include <mesh.h>
 #include <output.h>               // output library
-#include <input.h>            // input deck reader
+#include <input.h>                // input deck reader
 #include <matar.h>                // MATAR headers
 #include <Kokkos_Core.hpp>        // Kokkos for initialization
 #include <yaml-cpp/yaml.h>        // yaml-parser 
 #include <argparse/argparse.hpp>  // argparse
 #include <pprint.hpp>             // pretty printer 
+#include <params.h>
 
 using namespace std;
 using namespace mtr;
@@ -22,11 +23,12 @@ int main(int argc, char* argv[]){
   // Fire up the printer
   pprint::PrettyPrinter printer;
 
-  argparse::ArgumentParser program = getUserInput(argc,argv);
+  argparse::ArgumentParser program("TUSKAN","0.0.0");
+  getUserInput(argc,argv,program);
 
-  /**
-   *                           MAIN PROGRAM START
-   */
+  /***************************************************************************
+   *                           MAIN PROGRAM START                            *
+   **************************************************************************/
 
   // assign the input file that was given
   auto inFile = program.get<string>("-i");
@@ -46,19 +48,30 @@ int main(int argc, char* argv[]){
   int ny = config["domain"]["dimensions"]["y"].as<double>();
   int nz = config["domain"]["dimensions"]["z"].as<double>();
 
-  // need to call getDomainIndices() here
+  int istr,iend,jstr,jend,kstr,kend;
+  getDomainIndices(nx,ny,nz,istr,iend,jstr,jend,kstr,kend);
 
   // get the TOTAL number of cells here so we can allocate properly
+  vector<int> ndims(3,0);
+  ndims[0] = nx+nghosts*2;
+  ndims[1] = ny+nghosts*2;
+  ndims[2] = nz+nghosts*2;
+  printer.print("dimensions");
+  printer.print(nx,ny,nz);
 
   // initialize the Kokkos matrices
-  FMatrix<double> xc(nx,ny,nz),yc(nx,ny,nz),zc(nx,ny,nz),
-                  xn(nx+1,ny+1,nz+1),yn(nx+1,ny+1,nz+1),zn(nx+1,ny+1,nz+1);
+  FMatrix<double> xc(ndims[0],ndims[1],ndims[2]),
+                  yc(ndims[0],ndims[1],ndims[2]),
+                  zc(ndims[0],ndims[1],ndims[2]),
+                  xn(ndims[0]+1,ndims[1]+1,ndims[2]+1),
+                  yn(ndims[0]+1,ndims[1]+1,ndims[2]+1),
+                  zn(ndims[0]+1,ndims[1]+1,ndims[2]+1);
   
   // call mesh generator
   mesher3D(lx,ly,lz,nx,ny,nz,xc,yc,zc,xn,yn,zn,dx,dy,dz);
 
   // output grid file
-  vtk_output_2D(nx,ny,xn,yn);
+  vtk_output_3D(nx,ny,nz,xn,yn,zn);
 
   return 0;
 }

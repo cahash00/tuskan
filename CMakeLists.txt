@@ -60,13 +60,16 @@ add_executable(tuskan ${cxx_sources})
 target_compile_definitions(tuskan PUBLIC HAVE_KOKKOS)
 
 # ... include custom headers
-target_include_directories(tuskan PUBLIC "${CMAKE_SOURCE_DIR}/includes")
+target_include_directories(tuskan PRIVATE "${src}/mesh")
+target_include_directories(tuskan PRIVATE "${src}/common")
+target_include_directories(tuskan PRIVATE "${src}/IO")
+target_include_directories(tuskan PRIVATE "${src}/utils")
 # ... include MATAR headers
-target_include_directories(tuskan PUBLIC ${matar_headers})
+target_include_directories(tuskan PRIVATE ${matar_headers})
 # ... include pprint headers
-target_include_directories(tuskan PUBLIC ${pprint_headers})
+target_include_directories(tuskan PRIVATE ${pprint_headers})
 # ... include argparse header
-target_include_directories(tuskan PUBLIC ${argparse_headers})
+target_include_directories(tuskan PRIVATE ${argparse_headers})
 
 # ... link the libraries
 target_link_libraries(tuskan PRIVATE Kokkos::kokkos 

@@ -15,7 +15,7 @@ using namespace mtr;
  * 2D Meshing Routine *
  **********************/
 void mesher2D(const double& lx, const double& ly, 
-              const int& nx, const int& ny,
+              int& nx,int& ny,
               FMatrix<double>& xc, FMatrix<double>& yc,
               FMatrix<double>& xn, FMatrix<double>& yn,
               double& dx, double& dy){
@@ -46,7 +46,7 @@ void mesher2D(const double& lx, const double& ly,
  * 3D Meshing Routine *
  **********************/
 void mesher3D(const double& lx,const double& ly,const double& lz, 
-              const int& nx,const int& ny,const int& nz,
+              int& nx,int& ny,int& nz,
               FMatrix<double>& xc,FMatrix<double>& yc,FMatrix<double>& zc,
               FMatrix<double>& xn,FMatrix<double>& yn,FMatrix<double>& zn,
               double& dx,double& dy,double& dz){
@@ -70,7 +70,7 @@ void mesher3D(const double& lx,const double& ly,const double& lz,
   });
 
   // calculate the cell nodal points
-  DO3D(k,1,nz+1j,1,ny+1,i,1,nx+1,{
+  DO3D(k,1,nz+1,j,1,ny+1,i,1,nx+1,{
     xn(i,j,k) = (i-(1+nghosts)) * dx;
     yn(i,j,k) = (j-(1+nghosts)) * dy;
     zn(i,j,k) = (k-(1+nghosts)) * dz;

@@ -21,8 +21,8 @@ using namespace mtr;
  * @param[in] yn matrix of y nodal values
  */
 void vtk_output_2D(const int& nx, const int& ny,
-                   const FMatrixKokkos<double>& xn,
-                   const FMatrixKokkos<double>& yn) {
+                   const FMatrix<double>& xn,
+                   const FMatrix<double>& yn) {
   // power on the printer
   pprint::PrettyPrinter printer;
   FILE *out;
@@ -59,9 +59,9 @@ void vtk_output_2D(const int& nx, const int& ny,
  * @param[in] zn matrix of z nodal values
  */
 void vtk_output_3D(const int& nx, const int& ny,const int& nz,
-                   const FMatrixKokkos<double>& xn,
-                   const FMatrixKokkos<double>& yn,
-                   const FMatrixKokkos<double>& zn) {
+                   const FMatrix<double>& xn,
+                   const FMatrix<double>& yn,
+                   const FMatrix<double>& zn) {
   // power on the printer
   pprint::PrettyPrinter printer;
   FILE *out;

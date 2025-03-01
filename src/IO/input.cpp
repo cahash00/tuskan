@@ -31,11 +31,12 @@ YAML::Node parse_user(const string& inFile){
 /**
  * Arugment parser
  */
-argparse::ArgumentParser getUserInput(int argc, char* argv) {
-  argparse::ArgumentParser program("TUSKAN","0.0.0");
+void getUserInput(int argc, char* argv[], argparse::ArgumentParser& program) {
+  // add arguments to the program
   program.add_argument("-i","--input")
-    .required()
-    .help("Input deck for the calculation.");
+         .required()
+         .help("Input deck for the calculation.");
+  // try to parse the arguments - error out if it fails
   try {
     program.parse_args(argc,argv);
   } catch (const exception& err) {
@@ -43,5 +44,4 @@ argparse::ArgumentParser getUserInput(int argc, char* argv) {
     cerr << program << endl;
     throw runtime_error("ERROR: Could not process CLI inputs.");
   }
-  return program;
 }
