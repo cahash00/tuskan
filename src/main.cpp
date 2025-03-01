@@ -8,7 +8,7 @@
 
 #include <mesh.h>
 #include <output.h>               // output library
-#include <inputYAML.h>            // input deck reader
+#include <input.h>            // input deck reader
 #include <matar.h>                // MATAR headers
 #include <Kokkos_Core.hpp>        // Kokkos for initialization
 #include <yaml-cpp/yaml.h>        // yaml-parser 
@@ -39,22 +39,23 @@ int main(int argc, char* argv[]){
   
   // generate the domain
   double dx,dy,dz;
-  double lx = config["domain"]["lengths"]["x"];
-  double ly = config["domain"]["lengths"]["y"];
-  double lz = config["domain"]["lengths"]["z"];
-  int nx = config["domain"]["dimensions"]["x"];
-  int ny = config["domain"]["dimensions"]["y"];
-  int nz = config["domain"]["dimensions"]["z"];
+  double lx = config["domain"]["lengths"]["x"].as<double>();
+  double ly = config["domain"]["lengths"]["y"].as<double>();
+  double lz = config["domain"]["lengths"]["z"].as<double>();
+  int nx = config["domain"]["dimensions"]["x"].as<double>();
+  int ny = config["domain"]["dimensions"]["y"].as<double>();
+  int nz = config["domain"]["dimensions"]["z"].as<double>();
 
   // need to call getDomainIndices() here
 
   // get the TOTAL number of cells here so we can allocate properly
 
   // initialize the Kokkos matrices
-  FMatrix<double> xc(nx,ny),yc(nx,ny),xn(nx+1,ny+1),yn(nx+1,ny+1);
+  FMatrix<double> xc(nx,ny,nz),yc(nx,ny,nz),zc(nx,ny,nz),
+                  xn(nx+1,ny+1,nz+1),yn(nx+1,ny+1,nz+1),zn(nx+1,ny+1,nz+1);
   
   // call mesh generator
-  mesher3D(lx,ly,lz,nx,ny,nz,xc,yc,zc,xn,ynzn,dx,dy,dz);
+  mesher3D(lx,ly,lz,nx,ny,nz,xc,yc,zc,xn,yn,zn,dx,dy,dz);
 
   // output grid file
   vtk_output_2D(nx,ny,xn,yn);

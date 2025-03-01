@@ -9,10 +9,6 @@
 
 #include <output.h>
 #include <matar.h>
-#include <vtkNew.h>
-#include <vtkPoints.h>
-#include <vtkStructuredGrid.h>
-#include <vtkXMLStructuredGridWriter.h>
 #include <pprint.hpp>
 
 using namespace mtr;

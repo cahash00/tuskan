@@ -34,11 +34,6 @@ set(argparse_headers "${CMAKE_SOURCE_DIR}/includes/argparse/include")
 
 # ... ensure MPI is used
 find_package(MPI REQUIRED)
-find_package(VTK COMPONENTS CommonCore
-                            CommonDataModel
-                            IOXML
-                 REQUIRED
-)
 find_package(Kokkos REQUIRED PATHS 
              ${CMAKE_SOURCE_DIR}/includes/matar/install/kokkos)
 find_package(yaml-cpp REQUIRED PATHS
@@ -50,13 +45,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -debug -traceback")
 
 file(GLOB sources "${src}/*.cpp") 
-file(GLOB output "${src}/IO/*.cpp")
-file(GLOB meshing "${src}/mesh/*.cpp")
 
-list(APPEND cxx_sources ${sources}
-                        ${output}
-                        ${meshing}
-)
+list(APPEND cxx_sources ${sources})
+
+# ... add the custom libraries
+add_subdirectory(${src}/mesh)
+add_subdirectory(${src}/common)
+add_subdirectory(${src}/IO)
 
 # ... compile and create the executable
 add_executable(tuskan ${cxx_sources})
@@ -78,11 +73,9 @@ target_link_libraries(tuskan PRIVATE Kokkos::kokkos
                                      yaml-cpp::yaml-cpp
                                      ${VTK_LIBRARIES}
                                      ${MPI_CXX_LIBRARIES}
-)
-# vtk_module_autoinit is needed
-vtk_module_autoinit(
-  TARGETS tuskan
-  MODULES ${VTK_LIBRARIES}
+                                     meshLib
+                                     IOLib
+                                     paramsLib
 )
 
 # ... Install so that you can use anywhere

@@ -6,12 +6,15 @@
  * @date 2025-02-22
  */
 
-#include <inputYAML.h>
-#include "yaml-cpp/yaml.h"
+#include <input.h>
+#include <yaml-cpp/yaml.h>
 #include <pprint.hpp>
 #include <argparse/argparse.hpp>
 
-YAML::Node parse_user(const std::string& inFile){
+
+using namespace std;
+
+YAML::Node parse_user(const string& inFile){
   // power up the printer
   pprint::PrettyPrinter printer;
 
@@ -20,7 +23,7 @@ YAML::Node parse_user(const std::string& inFile){
 
   //check if it loaded properly
   if (!config) {
-    throw std::runtime_error("Failed to load the YAML file: "+inFile);
+    throw runtime_error("Failed to load the YAML file: "+inFile);
   }
   return config;
 }
@@ -41,3 +44,4 @@ argparse::ArgumentParser getUserInput(int argc, char* argv) {
     throw runtime_error("ERROR: Could not process CLI inputs.");
   }
   return program;
+}
