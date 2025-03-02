@@ -47,9 +47,10 @@ void vtk_output_2D(const int& ii,const FMatrix<double>& q,
   fprintf(out,"DATASET STRUCTURED_GRID\n");
   fprintf(out,"DIMENSIONS %d %d %d\n",nx+1,ny+1,1);
   fprintf(out,"POINTS %d float\n",(nx+1)*(ny+1));
+  printer.print(jstr,jend,istr,iend);
   DO_LOOP(j,jstr,jend,{
     DO_LOOP(i,istr,iend,{
-      fprintf(out,"%f %f %f\n",xn(i,j,kstr),yn(i,j,kstr),0.0);
+      fprintf(out,"%f %f %f\n",xn(i,j),yn(i,j),0.0);
     });
   });
   fprintf(out,"POINT_DATA %d\n",(nx+1)*(ny+1));
@@ -57,7 +58,7 @@ void vtk_output_2D(const int& ii,const FMatrix<double>& q,
   fprintf(out,"LOOKUP_TABLE default\n");
   DO_LOOP(j,jstr,jend,{
     DO_LOOP(i,istr,iend,{
-      fprintf(out,"%f\n",q(1,i,j,kstr));
+      fprintf(out,"%f\n",q(1,i,j));
     });
   });
   fclose(out);
@@ -72,46 +73,46 @@ void vtk_output_2D(const int& ii,const FMatrix<double>& q,
  * @param[in] yn matrix of y nodal values
  * @param[in] zn matrix of z nodal values
  */
-void vtk_output_3D(const int ii, const FMatrix<double>& q,
-                   const FMatrix<double>& xn,
-                   const FMatrix<double>& yn,
-                   const FMatrix<double>& zn) {
-  // power on the printer
-  pprint::PrettyPrinter printer;
-  FILE *out;
-  std::ostringstream foutss;
-  foutss << config["output"]["directory"] << "/flow." << std::setw(4) 
-         << std::setfill('0') << ii << ".vts";
-  string fout = foutss.str();
+// void vtk_output_3D(const int ii, const FMatrix<double>& q,
+//                    const FMatrix<double>& xn,
+//                    const FMatrix<double>& yn,
+//                    const FMatrix<double>& zn) {
+//   // power on the printer
+//   pprint::PrettyPrinter printer;
+//   FILE *out;
+//   std::ostringstream foutss;
+//   foutss << config["output"]["directory"] << "/flow." << std::setw(4) 
+//          << std::setfill('0') << ii << ".vts";
+//   string fout = foutss.str();
 
-  // get sizing
-  int nx = config["domain"]["dimensions"]["x"].as<int>();
-  int ny = config["domain"]["dimensions"]["y"].as<int>();
-  int nz = config["domain"]["dimensions"]["z"].as<int>();
+//   // get sizing
+//   int nx = config["domain"]["dimensions"]["x"].as<int>();
+//   int ny = config["domain"]["dimensions"]["y"].as<int>();
+//   int nz = config["domain"]["dimensions"]["z"].as<int>();
 
-  out = fopen(fout.c_str(),"w");
-  fprintf(out,"# vtk DataFile Version 3.0\n");
-  fprintf(out,"TUSKAN 3D Flow Solution File.\n");
-  fprintf(out,"ASCII\n");
-  fprintf(out,"DATASET STRUCTURED_GRID\n");
-  fprintf(out,"DIMENSIONS %d %d %d\n",nx+1,ny+1,nz+1);
-  fprintf(out,"POINTS %d float\n",(nx+1)*(ny+1)*(nz+1));
-  DO_LOOP(k,kstr,kend,{
-    DO_LOOP(j,jstr,jend,{
-      DO_LOOP(i,istr,iend,{
-        fprintf(out,"%f %f %f\n",xn(i,j,k),yn(i,j,k),zn(i,j,k));
-      });
-    });
-  });
-  fprintf(out,"POINT_DATA %d\n",(nx+1)*(ny+1)*(nz+1));
-  fprintf(out,"SCALARS u float 1\n");
-  fprintf(out,"LOOKUP_TABLE default\n");
-  DO_LOOP(k,kstr,kend,{
-    DO_LOOP(j,jstr,jend,{
-      DO_LOOP(i,istr,iend,{
-        fprintf(out,"%f\n",q(1,i,j,k));
-      });
-    });
-  });
-  fclose(out);
-}
+//   out = fopen(fout.c_str(),"w");
+//   fprintf(out,"# vtk DataFile Version 3.0\n");
+//   fprintf(out,"TUSKAN 3D Flow Solution File.\n");
+//   fprintf(out,"ASCII\n");
+//   fprintf(out,"DATASET STRUCTURED_GRID\n");
+//   fprintf(out,"DIMENSIONS %d %d %d\n",nx+1,ny+1,nz+1);
+//   fprintf(out,"POINTS %d float\n",(nx+1)*(ny+1)*(nz+1));
+//   DO_LOOP(k,kstr,kend,{
+//     DO_LOOP(j,jstr,jend,{
+//       DO_LOOP(i,istr,iend,{
+//         fprintf(out,"%f %f %f\n",xn(i,j,k),yn(i,j,k),zn(i,j,k));
+//       });
+//     });
+//   });
+//   fprintf(out,"POINT_DATA %d\n",(nx+1)*(ny+1)*(nz+1));
+//   fprintf(out,"SCALARS u float 1\n");
+//   fprintf(out,"LOOKUP_TABLE default\n");
+//   DO_LOOP(k,kstr,kend,{
+//     DO_LOOP(j,jstr,jend,{
+//       DO_LOOP(i,istr,iend,{
+//         fprintf(out,"%f\n",q(1,i,j,k));
+//       });
+//     });
+//   });
+//   fclose(out);
+// }

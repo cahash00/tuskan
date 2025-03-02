@@ -48,10 +48,10 @@ void mesher2D(const double& lx, const double& ly,
  * @param[inout] dy cell width in the y-direction
  * @param[inout] dz cell width in the y-direction
  */
-void mesher3D(const double& lx,const double& ly,const double& lz, 
-              int& nx,int& ny,int& nz,
-              FMatrix<double>& xc,FMatrix<double>& yc,FMatrix<double>& zc,
-              FMatrix<double>& xn,FMatrix<double>& yn,FMatrix<double>& zn,
-              double& dx,double& dy,double& dz);
+// void mesher3D(const double& lx,const double& ly,const double& lz, 
+//               int& nx,int& ny,int& nz,
+//               FMatrix<double>& xc,FMatrix<double>& yc,FMatrix<double>& zc,
+//               FMatrix<double>& xn,FMatrix<double>& yn,FMatrix<double>& zn,
+//               double& dx,double& dy,double& dz);
 
 #endif // MESH_H

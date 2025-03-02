@@ -90,32 +90,27 @@ int main(int argc, char* argv[]){
   parse_user(inFile);
   
   // generate the domain
-  double dx,dy,dz;
+  double dx,dy;
   double lx = config["domain"]["lengths"]["x"].as<double>();
   double ly = config["domain"]["lengths"]["y"].as<double>();
-  double lz = config["domain"]["lengths"]["z"].as<double>();
   int nx = config["domain"]["dimensions"]["x"].as<int>();
   int ny = config["domain"]["dimensions"]["y"].as<int>();
-  int nz = config["domain"]["dimensions"]["z"].as<int>();
   int iter = config["solver"]["iterations"].as<int>();
   double cfl = config["solver"]["CFL"].as<double>();
   double toler = config["solver"]["tolerance"].as<double>();
 
-  getDomainIndices(nx,ny,nz);
+  getDomainIndices(nx,ny);
 
   // get the TOTAL number of cells here so we can allocate properly
-  vector<int> ndims(3,0);
+  vector<int> ndims(2,0);
   ndims[0] = nx+nghosts*2;
   ndims[1] = ny+nghosts*2;
-  ndims[2] = nz+nghosts*2;
 
   // initialize the Kokkos matrices for the domain
-  FMatrix<double> xc(ndims[0],ndims[1],ndims[2]),
-                  yc(ndims[0],ndims[1],ndims[2]),
-                  zc(ndims[0],ndims[1],ndims[2]),
-                  xn(ndims[0]+1,ndims[1]+1,ndims[2]+1),
-                  yn(ndims[0]+1,ndims[1]+1,ndims[2]+1),
-                  zn(ndims[0]+1,ndims[1]+1,ndims[2]+1);
+  FMatrix<double> xc(ndims[0],ndims[1]),
+                  yc(ndims[0],ndims[1]),
+                  xn(ndims[0]+1,ndims[1]+1),
+                  yn(ndims[0]+1,ndims[1]+1);
 
   // initialize flow solution variables - staggered mesh method
   // q(1)  rho
@@ -124,22 +119,17 @@ int main(int argc, char* argv[]){
   // q(4)  w
   // q(5)  temperature
   // q(6)  pressure
-  FMatrix<double> q(6,ndims[0]+1,ndims[1]+1,ndims[2]+1);
-  FMatrix<double> q2(6,ndims[0]+1,ndims[1]+1,ndims[2]+1);
-  FMatrix<double> uexact(1,ndims[0]+1,ndims[1]+1,ndims[2]+1);
-  int ii,jj,kk;
+  FMatrix<double> q(6,ndims[0]+1,ndims[1]+1);
+  FMatrix<double> q2(6,ndims[0]+1,ndims[1]+1);
+  FMatrix<double> uexact(1,ndims[0]+1,ndims[1]+1);
+  int ii,jjk;
 
   
   // call mesh generator
   Timer timeMe;
   timeMe.start();
-  if (nz==1) {
-    spdlog::info("Generating 2D mesh");
-    mesher3D(lx,ly,lz,nx,ny,nz,xc,yc,zc,xn,yn,zn,dx,dy,dz);
-  } else {
-    spdlog::info("Generating 3D mesh");
-    mesher3D(lx,ly,lz,nx,ny,nz,xc,yc,zc,xn,yn,zn,dx,dy,dz);
-  }
+  spdlog::info("Generating 2D mesh");
+  mesher2D(lx,ly,nx,ny,xc,yc,xn,yn,dx,dy);
   printer.print(xn(5,5,3));
   timeMe.stop();
   spdlog::info("  Done ({} seconds)",timeMe.time());
@@ -155,15 +145,15 @@ int main(int argc, char* argv[]){
   double rdy = 1.0/dy; // reciprocal of dx
   double dt = 0.01;
 
-  DO_ALL(k,kstr-nghosts,kend+nghosts,
-         j,jstr-nghosts,jend+nghosts,
-         i,istr-nghosts,iend+nghosts,{
-    q(1,i,j,k) = 10.0*ly; // average u
-    q(2,i,j,k) = 0.0; // zero y-velocity
-    q(3,i,j,k) = 0.0; // zero z-velocity
-    uexact(1,i,j,k) = -60.0/ly/ly*(yn(i,j,k)*yn(i,j,k)-ly*yn(i,j,k)); 
+  DO_LOOP(j,jstr-nghosts,jend+nghosts,{
+    DO_LOOP(i,istr-nghosts,iend+nghosts,{
+      q(1,i,j) = 10.0*ly; // average u
+      q(2,i,j) = 0.0; // zero y-velocity
+      q(3,i,j) = 0.0; // zero z-velocity
+      uexact(1,i,j) = -60.0/ly/ly*(yn(i,j)*yn(i,j)-ly*yn(i,j)); 
+    });
   });
-  vtk_output_3D(777,uexact,xn,yn,zn);
+  vtk_output_2D(777,uexact,xn,yn);
   q2 = 0.0;
   q2 = 0.0;
   q2 = 0.0;
@@ -178,56 +168,45 @@ int main(int argc, char* argv[]){
   spdlog::info("Starting Main Solver");
   for (int ii = 0; ii < iter; ii++) {
     // enforce boundary conditions
-    DO_ALL(k,kstr-nghosts,kend+nghosts,
-           j,jstr-nghosts,jend+nghosts,{
-      q(1,istr-1,j,k) = q(1,iend,j,k);
-      q(1,iend+1,j,k) = q(1,istr,j,k);
+    DO_LOOP(j,jstr-nghosts,jend+nghosts,{
+      q(1,istr-1,j) = q(1,iend,j);
+      q(1,iend+1,j) = q(1,istr,j);
     });
-    DO_ALL(i,istr-nghosts,iend+nghosts,
-           k,kstr-nghosts,kend+nghosts,{
-      q(1,i,jstr-1,k) = -q(1,i,jstr,k);
-      q(1,i,jend+1,k) = -q(1,i,jend,k);
-
+    DO_LOOP(i,istr-nghosts,iend+nghosts,{
+      q(1,i,jstr-1) = -q(1,i,jstr);
+      q(1,i,jend+1) = -q(1,i,jend);
     });
 
     // enforce boundary conditions
-    DO_LOOP(k,kstr,kend,{
-      DO_LOOP(j,jstr,jend,{
-        DO_LOOP(i,istr,iend,{
-          // calculate the timestep based on CFL
-          dt = 1.0e-6;
-          // get the pressure gradient term
-          double dpdx = -120.0*nu*rho/(ly*ly);
+    DO_LOOP(j,jstr,jend,{
+      DO_LOOP(i,istr,iend,{
+        // calculate the timestep based on CFL
+        dt = 1.0e-6;
+        // get the pressure gradient term
+        double dpdx = -120.0*nu*rho/(ly*ly);
 
-          // get the advection term
-          double advec = getAdvec(i,j,k,rdx,rdy,q);
-          // get the diffusion term
-          double diffu = getDiffu(i,j,k,rdx,rdy,q);
-          // get u*
-          double ustar = q(1,i,j,k) + dt*(-advec + nu*diffu);
-          
-          // get the u^n+1 values
-          q2(1,i,j,k) = ustar - rrho*dt * dpdx;
-          // printer.print(dpdx,advec,diffu,ustar,q2(1,i,j,k));
-        }); // end of i-loop
-      }); // end of j-loop
-    }); // end of k-loop
+        // get the advection term
+        double advec = getAdvec(i,j,rdx,rdy,q);
+        // get the diffusion term
+        double diffu = getDiffu(i,j,rdx,rdy,q);
+        // get u*
+        double ustar = q(1,i,j) + dt*(-advec + nu*diffu);
+        
+        // get the u^n+1 values
+        q2(1,i,j) = ustar - rrho*dt * dpdx;
+      }); // end of i-loop
+    }); // end of j-loop
 
     // output intermediate flowviz
     if (config["output"]["enabled"].as<bool>()) {
       if ((ii % config["output"]["frequency"].as<int>()) == 0) {
-        if (nz==1) {
-          spdlog::info("Outputting 2D flow solution");
-          vtk_output_2D(ii,q,xn,yn);
-        } else {
-          spdlog::info("Outputting 3D flow solution");
-          vtk_output_3D(ii,q,xn,yn,zn);
-        }
+        spdlog::info("Outputting 2D flow solution");
+        vtk_output_2D(ii,q,xn,yn);
       }
     } 
     // update the q array with the updated solution array
     q = q2;
-    double l2norm = L2NORM(uexact,q,nx*ny*nz);
+    double l2norm = L2NORM(uexact,q,nx*ny);
     spdlog::info("  iter {:04}, res: {}",ii,l2norm);
     if (l2norm<=toler) {
       iter==ii;
@@ -243,14 +222,8 @@ int main(int argc, char* argv[]){
    * output section
    */
   if (config["output"]["enabled"].as<bool>()) {
-    if (nz==1) {
-      spdlog::info("Outputting 2D flow solution");
-      vtk_output_2D(7777,uexact,xn,yn);
-    } else {
-      spdlog::info("Outputting 3D flow solution");
-      vtk_output_3D(7778,q,xn,yn,zn);
-    }
-    spdlog::info("Output has finished.");
+    spdlog::info("Outputting 2D flow solution");
+    vtk_output_2D(7777,uexact,xn,yn);
   } else {
     spdlog::warn("Output was disabled.");
   }

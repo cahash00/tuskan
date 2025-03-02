@@ -3,8 +3,8 @@
 
 using namespace std;
 extern const int nghosts;
-extern int istr,iend,jstr,jend,kstr,kend;
+extern int istr,iend,jstr,jend;
 
-void getDomainIndices(int nx,int ny,int nz);
+void getDomainIndices(int nx,int ny);
   
 #endif // PARAMS_H

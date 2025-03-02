@@ -11,27 +11,27 @@
 using namespace std;
 
 /******************************************************************************/
-double getAdvec(const int& i,const int& j,const int& k,
+double getAdvec(const int& i,const int& j,
                 const double rdx,const double rdy,
                 mtr::FMatrix<double>& q) {
   double advec;  
-  advec = rdx * ( pow((q(1,i+1,j,k) + q(1,i,j,k))*0.5,2) - 
-                  pow((q(1,i,j,k)   + q(1,i-1,j,k))*0.5,2) ) 
-        + rdy * ((q(1,i,j,k) + q(1,i,j+1,k)) * (q(2,i,j,k)    +q(2,i+1,j,k))*0.25 -
-                 (q(1,i,j,k) + q(1,i,j-1,k)) * (q(2,i+1,j-1,k)+q(2,i,j-1,k))*0.25);
+  advec = rdx * ( pow((q(1,i+1,j) + q(1,i,j))*0.5,2) - 
+                  pow((q(1,i,j)   + q(1,i-1,j))*0.5,2) ) 
+        + rdy * ((q(1,i,j) + q(1,i,j+1)) * (q(2,i,j)    +q(2,i+1,j))*0.25 -
+                 (q(1,i,j) + q(1,i,j-1)) * (q(2,i+1,j-1)+q(2,i,j-1))*0.25);
   return advec;
 }
 
 /******************************************************************************/
-double getDiffu(const int& i,const int& j,const int& k,
+double getDiffu(const int& i,const int& j,
                 const double rdx,const double rdy,
                 mtr::FMatrix<double>& q) {
   double diffu;
-  diffu = ( q(1,i+1,j,k) + 
-            q(1,i-1,j,k) + 
-            q(1,i,j+1,k) + 
-            q(1,i,j-1,k) - 
-            4.0*q(1,i,j,k) ) * rdx*rdx;
+  diffu = ( q(1,i+1,j) + 
+            q(1,i-1,j) + 
+            q(1,i,j+1) + 
+            q(1,i,j-1) - 
+            4.0*q(1,i,j) ) * rdx*rdx;
   return diffu;
 }
 
@@ -39,8 +39,8 @@ double getDiffu(const int& i,const int& j,const int& k,
 double L2NORM(mtr::FMatrix<double>& qexact, mtr::FMatrix<double>& q, 
               const int& N) {
   double l2norm = {0.0};
-  DO3D(k,kstr,kend,j,jstr,jend,i,istr,iend,{
-    l2norm = l2norm + pow(qexact(1,i,j,k) - q(1,i,j,k),2);
+  DO2D(j,jstr,jend,i,istr,iend,{
+    l2norm = l2norm + pow(qexact(1,i,j) - q(1,i,j),2);
   });
   l2norm = sqrt(l2norm / N);
   return l2norm;
