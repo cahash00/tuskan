@@ -22,6 +22,7 @@
 #include <spdlog/pattern_formatter.h>
 #include <chrono>
 #include <memory>
+#include <cmath>
 
 using namespace std;
 using namespace mtr;
@@ -138,7 +139,7 @@ int main(int argc, char* argv[]){
   timeMe.start();
   spdlog::info("Initializing the domain");
   double rho = 1.0e3;  // density
-  double rrho = 1.0e3; // reciprocal of density
+  double rrho = 1.0e-3; // reciprocal of density
   double nu = 1e-6;    // kinematic viscosity m^2/s
   double mu = nu*rho;  // dynamic viscosity
   double rdx = 1.0/dx; // reciprocal of dx
@@ -154,9 +155,11 @@ int main(int argc, char* argv[]){
     });
   });
   vtk_output_2D(777,uexact,xn,yn);
-  q2 = 0.0;
-  q2 = 0.0;
-  q2 = 0.0;
+  DO3D(j,jstr-nghosts,jend+nghosts,
+       i,istr-nghosts,iend+nghosts,
+       k,1,3,{
+    q2(k,i,j) = 0.0;
+  });
   timeMe.stop();
   spdlog::info("  Done ({} seconds)",timeMe.time());
   
@@ -167,11 +170,11 @@ int main(int argc, char* argv[]){
   timeMe.start();
   spdlog::info("Starting Main Solver");
   for (int ii = 0; ii < iter; ii++) {
-    // enforce boundary conditions
     DO_LOOP(j,jstr-nghosts,jend+nghosts,{
       q(1,istr-1,j) = q(1,iend,j);
       q(1,iend+1,j) = q(1,istr,j);
     });
+    // wall
     DO_LOOP(i,istr-nghosts,iend+nghosts,{
       q(1,i,jstr-1) = -q(1,i,jstr);
       q(1,i,jend+1) = -q(1,i,jend);
@@ -181,9 +184,9 @@ int main(int argc, char* argv[]){
     DO_LOOP(j,jstr,jend,{
       DO_LOOP(i,istr,iend,{
         // calculate the timestep based on CFL
-        dt = 1.0e-6;
+        dt = cfl*dx/q(1,i,j);
         // get the pressure gradient term
-        double dpdx = -120.0*nu*rho/(ly*ly);
+        double dpdx = -120.0*mu/(ly*ly);
 
         // get the advection term
         double advec = getAdvec(i,j,rdx,rdy,q);
@@ -200,12 +203,14 @@ int main(int argc, char* argv[]){
     // output intermediate flowviz
     if (config["output"]["enabled"].as<bool>()) {
       if ((ii % config["output"]["frequency"].as<int>()) == 0) {
-        spdlog::info("Outputting 2D flow solution");
         vtk_output_2D(ii,q,xn,yn);
       }
     } 
     // update the q array with the updated solution array
-    q = q2;
+    DO2D(j,jstr,jend,
+         i,istr,iend,{
+      q(1,i,j) = q2(1,i,j);
+    });
     double l2norm = L2NORM(uexact,q,nx*ny);
     spdlog::info("  iter {:04}, res: {}",ii,l2norm);
     if (l2norm<=toler) {
@@ -224,6 +229,7 @@ int main(int argc, char* argv[]){
   if (config["output"]["enabled"].as<bool>()) {
     spdlog::info("Outputting 2D flow solution");
     vtk_output_2D(7777,uexact,xn,yn);
+    vtk_output_2D(7778,q,xn,yn);
   } else {
     spdlog::warn("Output was disabled.");
   }

@@ -24,9 +24,6 @@ void mesher2D(const double& lx, const double& ly,
   dx = lx/(double)nx;
   dy = ly/(double)ny;
   
-  // add number of ghost cells to the domain
-  int nghosts = 2; // 2 ghosts to support 2nd-order spatial discretization
-
   // calculate cell center values
   int i,j;
   DO2D(j,jstr-nghosts,jend+nghosts,

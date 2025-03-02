@@ -3,7 +3,7 @@
 
 using namespace std;
 
-const int nghosts = 2;
+const int nghosts = 1;
 int istr,iend,jstr,jend;
 
 void getDomainIndices(int nx,int ny) {
