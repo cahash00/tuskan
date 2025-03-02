@@ -1,0 +1,35 @@
+/**
+ * @file general.cpp
+ * @author Caleb Hash
+ * @date March 01, 2025
+ * @brief General utilities library
+ */
+
+#include <generalUtils.h>
+#include <chrono>
+#include <iostream>
+#include <iomanip>
+
+void Timer::start() {
+  start_time = std::chrono::high_resolution_clock::now();
+  running = true;
+}
+
+void Timer::end() {
+  if (running) {
+    end_time = std::chrono::high_resolution_clock::now();
+    running = false;
+  } else {
+    std::cerr << "Timer was not started!\n";
+  }
+}
+
+void Timer::result(const char* message) const {
+  if (!running) {
+    std::chrono::duration<double> elapsed = end_time - start_time;
+    std::cout << " " << std::scientific << std::setprecision(6) << message 
+              << " " << elapsed.count() << " seconds" << std::endl;
+  } else {
+    std::cerr << "Timer is still running! Call end() before result().\n";
+  }
+}
