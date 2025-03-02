@@ -6,6 +6,6 @@ file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "*.h")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # Add sources to the target
-add_library(meshLib ${SOURCES} ${HEADERS})
-target_include_directories(meshLib PRIVATE ${matar_headers})
-target_include_directories(meshLib PRIVATE ${src}/common)
+add_library(solvers ${SOURCES} ${HEADERS})
+target_include_directories(solvers PRIVATE ${matar_headers})
+target_include_directories(solvers PRIVATE ${src}/common)

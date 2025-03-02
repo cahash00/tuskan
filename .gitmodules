@@ -10,3 +10,6 @@
 [submodule "includes/argparse"]
 	path = includes/argparse
 	url = https://github.com/p-ranav/argparse.git
+[submodule "includes/spdlog"]
+	path = includes/spdlog
+	url = https://github.com/gabime/spdlog.git

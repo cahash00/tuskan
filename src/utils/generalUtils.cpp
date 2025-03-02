@@ -15,7 +15,7 @@ void Timer::start() {
   running = true;
 }
 
-void Timer::end() {
+void Timer::stop() {
   if (running) {
     end_time = std::chrono::high_resolution_clock::now();
     running = false;
@@ -27,9 +27,14 @@ void Timer::end() {
 void Timer::result(const char* message) const {
   if (!running) {
     std::chrono::duration<double> elapsed = end_time - start_time;
-    std::cout << " " << std::scientific << std::setprecision(6) << message 
+    std::cout << std::scientific << std::setprecision(6) << message 
               << " " << elapsed.count() << " seconds" << std::endl;
   } else {
     std::cerr << "Timer is still running! Call end() before result().\n";
   }
+}
+double Timer::time() {
+  std::chrono::duration<double> elapsed = end_time - start_time;
+  double elapsedDouble = elapsed.count();
+  return elapsedDouble;
 }

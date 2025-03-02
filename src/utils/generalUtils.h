@@ -16,7 +16,8 @@ class Timer {
 
   public:
     void start();
-    void end();
+    void stop();
     void result(const char* message) const;
+    double time();
 };
 #endif // GENERAL_UTILS_H

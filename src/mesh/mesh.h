@@ -25,10 +25,10 @@ using namespace mtr;
  * @param[inout] dy cell width in the y-direction
  */
 void mesher2D(const double& lx, const double& ly, 
-    const int& nx, const int& ny,
-    FMatrix<double>& xc, FMatrix<double>& yc,
-    FMatrix<double>& xn, FMatrix<double>& yn,
-    double& dx, double& dy);
+              const int& nx, const int& ny,
+              FMatrix<double>& xc, FMatrix<double>& yc,
+              FMatrix<double>& xn, FMatrix<double>& yn,
+              double& dx, double& dy);
 
 /**
  * @brief 3D cartesian mesh builder
