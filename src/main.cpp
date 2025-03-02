@@ -15,6 +15,7 @@
 #include <argparse/argparse.hpp>  // argparse
 #include <pprint.hpp>             // pretty printer 
 #include <params.h>
+#include <generalUtils.h>
 
 using namespace std;
 using namespace mtr;
@@ -29,6 +30,7 @@ int main(int argc, char* argv[]){
   /***************************************************************************
    *                           MAIN PROGRAM START                            *
    **************************************************************************/
+  // splashScreen();
 
   // assign the input file that was given
   auto inFile = program.get<string>("-i");
@@ -37,16 +39,16 @@ int main(int argc, char* argv[]){
   Kokkos::ScopeGuard kokkos_guard(argc, argv); 
   
   // call input file parser
-  YAML::Node config = parse_user(inFile);
+  parse_user(inFile);
   
   // generate the domain
   double dx,dy,dz;
   double lx = config["domain"]["lengths"]["x"].as<double>();
   double ly = config["domain"]["lengths"]["y"].as<double>();
   double lz = config["domain"]["lengths"]["z"].as<double>();
-  int nx = config["domain"]["dimensions"]["x"].as<double>();
-  int ny = config["domain"]["dimensions"]["y"].as<double>();
-  int nz = config["domain"]["dimensions"]["z"].as<double>();
+  int nx = config["domain"]["dimensions"]["x"].as<int>();
+  int ny = config["domain"]["dimensions"]["y"].as<int>();
+  int nz = config["domain"]["dimensions"]["z"].as<int>();
 
   int istr,iend,jstr,jend,kstr,kend;
   getDomainIndices(nx,ny,nz,istr,iend,jstr,jend,kstr,kend);
@@ -59,19 +61,35 @@ int main(int argc, char* argv[]){
   printer.print("dimensions");
   printer.print(nx,ny,nz);
 
-  // initialize the Kokkos matrices
+  // initialize the Kokkos matrices for the domain
   FMatrix<double> xc(ndims[0],ndims[1],ndims[2]),
                   yc(ndims[0],ndims[1],ndims[2]),
                   zc(ndims[0],ndims[1],ndims[2]),
                   xn(ndims[0]+1,ndims[1]+1,ndims[2]+1),
                   yn(ndims[0]+1,ndims[1]+1,ndims[2]+1),
                   zn(ndims[0]+1,ndims[1]+1,ndims[2]+1);
+
+  // initialize flow solution variables - staggered mesh method
+  FMatrix<double> q(5,ndims[0]+1,ndims[1]+1,ndims[2]+1);
+  int ii,jj,kk;
+
   
   // call mesh generator
+  Timer timeMe;
+  timeMe.start();
   mesher3D(lx,ly,lz,nx,ny,nz,xc,yc,zc,xn,yn,zn,dx,dy,dz);
+  timeMe.end();
+  timeMe.result("Meshing: ");
 
   // output grid file
-  vtk_output_3D(nx,ny,nz,xn,yn,zn);
+  if (config["output"]["enabled"].as<bool>() == true) {
+    vtk_output_3D(1,nx,ny,nz,xn,yn,zn);
+  } else {
+    printer.print("Output was disabled.");
+  }
+
+  // final run summary output here.
+  printer.print("Done!");
 
   return 0;
 }

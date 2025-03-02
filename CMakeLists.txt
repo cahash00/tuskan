@@ -52,6 +52,7 @@ list(APPEND cxx_sources ${sources})
 add_subdirectory(${src}/mesh)
 add_subdirectory(${src}/common)
 add_subdirectory(${src}/IO)
+add_subdirectory(${src}/utils)
 
 # ... compile and create the executable
 add_executable(tuskan ${cxx_sources})
@@ -79,6 +80,7 @@ target_link_libraries(tuskan PRIVATE Kokkos::kokkos
                                      meshLib
                                      IOLib
                                      paramsLib
+                                     generalUtils
 )
 
 # ... Install so that you can use anywhere

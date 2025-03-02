@@ -4,16 +4,17 @@
 case name: hw4
 domain:
   lengths:
-    x: 2.0
-    y: 1.0
-    z: 0.01
+    x: 0.04
+    y: 0.02
+    z: 0.001
   dimensions:
-    x: 100
-    y: 100
+    x: 80
+    y: 80
     z: 1
 iterations: 1000
 output:
-  type: vtk
+  enabled: true
+  directory: output
   variables:
     - pressure
     - velocity

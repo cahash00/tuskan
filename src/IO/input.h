@@ -6,7 +6,9 @@
 
 using namespace std;
 
-YAML::Node parse_user(const string& inFile);
+extern YAML::Node config;
+
+void parse_user(const string& inFile);
 
 void getUserInput(int argc, char* argv[],
                   argparse::ArgumentParser& program);

@@ -14,18 +14,19 @@
 
 using namespace std;
 
-YAML::Node parse_user(const string& inFile){
+YAML::Node config;
+
+void parse_user(const string& inFile){
   // power up the printer
   pprint::PrettyPrinter printer;
 
   // load up the master
-  YAML::Node config = YAML::LoadFile(inFile);
+  config = YAML::LoadFile(inFile);
 
   //check if it loaded properly
   if (!config) {
     throw runtime_error("Failed to load the YAML file: "+inFile);
   }
-  return config;
 }
 
 /**
