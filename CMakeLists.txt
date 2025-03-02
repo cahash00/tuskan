@@ -23,14 +23,18 @@ set(CMAKE_INSTALL_PREFIX
 # ... Set paths and directories
 # source files
 set(src ${CMAKE_SOURCE_DIR}/src)
+# include path
+set(includes ${CMAKE_SOURCE_DIR}/includes)
 # Kokkos
-set(Kokkos_DIR ${CMAKE_SOURCE_DIR}/includes/matar/install/kokkos/lib/cmake/kokkos)
+set(Kokkos_DIR ${includes}/matar/install/kokkos/lib/cmake/kokkos)
 # MATAR headers
-set(matar_headers "${CMAKE_SOURCE_DIR}/includes/matar/install/matar/include")
+set(matar_headers "${includes}/matar/install/matar/include")
 # pprint headers
-set(pprint_headers "${CMAKE_SOURCE_DIR}/includes/pprint/include")
+set(pprint_headers "${includes}/pprint/include")
 # argparse header
-set(argparse_headers "${CMAKE_SOURCE_DIR}/includes/argparse/include")
+set(argparse_headers "${includes}/argparse/include")
+# spdlog headers
+set(spdlog_headers "${includes}/spdlog/include")
 
 # ... ensure MPI is used
 find_package(MPI REQUIRED)
@@ -53,6 +57,7 @@ add_subdirectory(${src}/mesh)
 add_subdirectory(${src}/common)
 add_subdirectory(${src}/IO)
 add_subdirectory(${src}/utils)
+add_subdirectory(${src}/solver)
 
 # ... compile and create the executable
 add_executable(tuskan ${cxx_sources})
@@ -65,12 +70,15 @@ target_include_directories(tuskan PRIVATE "${src}/mesh")
 target_include_directories(tuskan PRIVATE "${src}/common")
 target_include_directories(tuskan PRIVATE "${src}/IO")
 target_include_directories(tuskan PRIVATE "${src}/utils")
+target_include_directories(tuskan PRIVATE "${src}/solver")
 # ... include MATAR headers
 target_include_directories(tuskan PRIVATE ${matar_headers})
 # ... include pprint headers
 target_include_directories(tuskan PRIVATE ${pprint_headers})
 # ... include argparse header
 target_include_directories(tuskan PRIVATE ${argparse_headers})
+# ... include the logging headers
+target_include_directories(tuskan PRIVATE ${spdlog_headers})
 
 # ... link the libraries
 target_link_libraries(tuskan PRIVATE Kokkos::kokkos 
@@ -81,6 +89,7 @@ target_link_libraries(tuskan PRIVATE Kokkos::kokkos
                                      IOLib
                                      paramsLib
                                      generalUtils
+                                     solvers
 )
 
 # ... Install so that you can use anywhere
