@@ -1,5 +1,5 @@
 #
-# ... Master YAML file for inputs
+# ... Master YAML file for TUSKAN inputs
 #
 case name: hw4
 domain:
@@ -8,14 +8,28 @@ domain:
     y: 0.02
     z: 0.001
   dimensions:
-    x: 80
-    y: 80
-    z: 1
-iterations: 1000
+    x: 10
+    y: 10
+    z: 10
+solver:
+  iterations: 100000
+  CFL: 0.20
+dynamic CFL:
+  enabled: false
+  cfli: 0.001
+  cflf: 0.5
+  factor: 0.8
+convergence:
+  residual: 1.0e-6
 output:
-  enabled: true
-  directory: output
-  variables:
-    - pressure
-    - velocity
-    - temperature
+  residuals:
+    enabled: true
+    frequency: 1
+  flowviz:
+    enabled: false
+    frequency: 100
+    directory: output
+    variables:
+      - pressure
+      - velocity
+      - temperature

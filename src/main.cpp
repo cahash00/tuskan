@@ -78,18 +78,18 @@ int main(int argc, char* argv[]){
   int nx    = config["domain"]["dimensions"]["x"].as<int>();
   int ny    = config["domain"]["dimensions"]["y"].as<int>();
   // solver settings
-  int iter      = config["solver"]["iterations"].as<int>();
-  double cfl    = config["solver"]["CFL"].as<double>();
-  bool fvflag   = config["output"]["flowviz"]["enabled"].as<bool>();
-  int fvfreq    = config["output"]["flowviz"]["frequency"].as<int>();
-  bool resflag  = config["output"]["residuals"]["enabled"].as<bool>();
-  int resfreq   = config["output"]["residuals"]["frequency"].as<int>();
+  int iter     = config["solver"]["iterations"].as<int>();
+  double cfl   = config["solver"]["CFL"].as<double>();
+  bool fvflag  = config["output"]["flowviz"]["enabled"].as<bool>();
+  int fvfreq   = config["output"]["flowviz"]["frequency"].as<int>();
+  bool resflag = config["output"]["residuals"]["enabled"].as<bool>();
+  int resfreq  = config["output"]["residuals"]["frequency"].as<int>();
   // convergence criteria
-  double toler = config["convergence"]["residual"].as<double>();
-  double cfli = config["dynamic CFL"]["cfli"].as<double>();
-  double cflf = config["dynamic CFL"]["cflf"].as<double>();
+  double toler   = config["convergence"]["residual"].as<double>();
+  double cfli    = config["dynamic CFL"]["cfli"].as<double>();
+  double cflf    = config["dynamic CFL"]["cflf"].as<double>();
   double cflFact = config["dynamic CFL"]["factor"].as<double>();
-  bool dcfl = config["dynamic CFL"]["enabled"].as<bool>();
+  bool dcfl      = config["dynamic CFL"]["enabled"].as<bool>();
   printer.print(config["case name"]);
 
   // ... get domain stats
@@ -120,7 +120,7 @@ int main(int argc, char* argv[]){
   spdlog::info("Initializing the domain");
   double rho  = 1.0e3;   // density
   double rrho = 1.0e-3;  // reciprocal of density
-  double nu   = 1e-6;    // kinematic viscosity m^2/s
+  double nu   = 1.0e-6;    // kinematic viscosity m^2/s
   double mu   = nu*rho;  // dynamic viscosity
   double rdx  = 1.0/dx;  // reciprocal of dx
   double rdy  = 1.0/dy;  // reciprocal of dx
@@ -131,7 +131,7 @@ int main(int argc, char* argv[]){
   // initialize domain and calculate exact solution
   DO_LOOP(j,jstr-nghosts,jend+nghosts,{
     DO_LOOP(i,istr-nghosts,iend+nghosts,{
-      q(1,i,j) = 0.0002; // average u
+      q(1,i,j) = 0.007; // average u
       q(2,i,j) = 0.0; // zero y-velocity
       q2(1,i,j) = 0.0;
       q2(2,i,j) = 0.0;
@@ -158,7 +158,7 @@ int main(int argc, char* argv[]){
     double minval = 1e5;
     DO_LOOP(j,jstr-nghosts,jend+nghosts,{
       DO_LOOP(i,istr-nghosts,iend+nghosts,{
-        dt = min(minval,cfl*dx/abs(q(1,i,j)));
+        dt = min(minval,static_cast<double>(cfl)*dx/abs(q(1,i,j)));
       });
     });
 

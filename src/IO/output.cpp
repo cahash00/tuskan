@@ -34,11 +34,10 @@ static void vtk_output_2D_IMPL(const string& caseName,const FMatrix<double>& q,
   pprint::PrettyPrinter printer;
   FILE *out;
   std::ostringstream foutss;
-  foutss << config["output"]["flowviz"]["directory"] << "/flow." << caseName << ".vts";
+  foutss << config["output"]["flowviz"]["directory"].as<string>() << "/flow." << caseName << ".vts";
   string fout = foutss.str();
   int nx = config["domain"]["dimensions"]["x"].as<int>();
   int ny = config["domain"]["dimensions"]["y"].as<int>();
-  int nz = config["domain"]["dimensions"]["z"].as<int>();
   out = fopen(fout.c_str(),"w");
   fprintf(out,"# vtk DataFile Version 3.0\n");
   fprintf(out,"TUSKAN 2D Flow Solution File.\n");
@@ -66,7 +65,7 @@ void vtk_output_2D(const int& ii,const FMatrix<double>& q,
     const FMatrix<double>& xn,
     const FMatrix<double>& yn) {
   std::ostringstream foutss;
-  foutss << setw(4) << std::setfill('0') << ii << ".vts";
+  foutss << setw(5) << std::setfill('0') << ii << ".vts";
   string caseName = foutss.str();
   vtk_output_2D_IMPL(caseName, q, xn, yn);
 }
