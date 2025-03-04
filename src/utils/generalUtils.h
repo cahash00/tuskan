@@ -8,10 +8,15 @@
  */
 
 #include <chrono>
+#include <spdlog/spdlog.h>
 
+using namespace std;
+/**
+ * @brief Timer class for timing things
+ */
 class Timer {
   private:
-    std::chrono::high_resolution_clock::time_point start_time, end_time;
+    chrono::high_resolution_clock::time_point start_time, end_time;
     bool running = false;
 
   public:
@@ -20,4 +25,21 @@ class Timer {
     void result(const char* message) const;
     double time();
 };
+/******************************************************************************/
+/**
+ * @brief Custom formatter for relative timestamps
+ */
+class customSPDLOG : public spdlog::custom_flag_formatter {
+   private:
+     std::chrono::steady_clock::time_point start_time;
+
+   public:
+     customSPDLOG();
+
+     void format(const spdlog::details::log_msg&,
+         const std::tm&,
+         spdlog::memory_buf_t& dest) override;
+
+     std::unique_ptr<custom_flag_formatter> clone() const override;
+ };
 #endif // GENERAL_UTILS_H

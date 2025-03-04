@@ -9,6 +9,7 @@
 #include <chrono>
 #include <iostream>
 #include <iomanip>
+#include <spdlog/spdlog.h>
 
 void Timer::start() {
   start_time = std::chrono::high_resolution_clock::now();
@@ -38,3 +39,22 @@ double Timer::time() {
   double elapsedDouble = elapsed.count();
   return elapsedDouble;
 }
+/******************************************************************************/
+/**
+ * @brief Custom formatter for relative timestamps
+ */
+customSPDLOG::customSPDLOG() : start_time(std::chrono::steady_clock::now()) {}
+
+void customSPDLOG::format(const spdlog::details::log_msg&,
+                                   const std::tm&,
+                                   spdlog::memory_buf_t& dest) {
+    auto now = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
+
+    fmt::format_to(std::back_inserter(dest), "[{:03}.{:03}]", duration.count() / 1000, duration.count() % 1000);
+}
+
+std::unique_ptr<spdlog::custom_flag_formatter> customSPDLOG::clone() const {
+    return std::make_unique<customSPDLOG>();
+}
+
