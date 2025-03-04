@@ -58,6 +58,7 @@ add_subdirectory(${src}/common)
 add_subdirectory(${src}/IO)
 add_subdirectory(${src}/utils)
 add_subdirectory(${src}/solver)
+add_subdirectory(${src}/BCs)
 
 # ... compile and create the executable
 add_executable(tuskan ${cxx_sources})
@@ -71,6 +72,7 @@ target_include_directories(tuskan PRIVATE "${src}/common")
 target_include_directories(tuskan PRIVATE "${src}/IO")
 target_include_directories(tuskan PRIVATE "${src}/utils")
 target_include_directories(tuskan PRIVATE "${src}/solver")
+target_include_directories(tuskan PRIVATE "${src}/BCs")
 # ... include MATAR headers
 target_include_directories(tuskan PRIVATE ${matar_headers})
 # ... include pprint headers
@@ -90,6 +92,7 @@ target_link_libraries(tuskan PRIVATE Kokkos::kokkos
                                      paramsLib
                                      generalUtils
                                      solvers
+                                     BCs
 )
 
 # ... Install so that you can use anywhere
