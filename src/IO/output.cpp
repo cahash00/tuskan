@@ -27,15 +27,14 @@ using namespace std;
  * @param[in] xn matrix of x nodal values
  * @param[in] yn matrix of y nodal values
  */
-void vtk_output_2D(const int& ii,const FMatrix<double>& q,
+static void vtk_output_2D_IMPL(const string& caseName,const FMatrix<double>& q,
                    const FMatrix<double>& xn,
                    const FMatrix<double>& yn) {
   // power on the printer
   pprint::PrettyPrinter printer;
   FILE *out;
   std::ostringstream foutss;
-  foutss << config["output"]["directory"] << "/flow." << std::setw(4) 
-    << std::setfill('0') << ii << ".vts";
+  foutss << config["output"]["flowviz"]["directory"] << "/flow." << caseName << ".vts";
   string fout = foutss.str();
   int nx = config["domain"]["dimensions"]["x"].as<int>();
   int ny = config["domain"]["dimensions"]["y"].as<int>();
@@ -61,6 +60,20 @@ void vtk_output_2D(const int& ii,const FMatrix<double>& q,
     });
   });
   fclose(out);
+}
+
+void vtk_output_2D(const int& ii,const FMatrix<double>& q,
+    const FMatrix<double>& xn,
+    const FMatrix<double>& yn) {
+  std::ostringstream foutss;
+  foutss << setw(4) << std::setfill('0') << ii << ".vts";
+  string caseName = foutss.str();
+  vtk_output_2D_IMPL(caseName, q, xn, yn);
+}
+void vtk_output_2D(const string& caseName,const FMatrix<double>& q,
+    const FMatrix<double>& xn,
+    const FMatrix<double>& yn) {
+  vtk_output_2D_IMPL(caseName, q, xn, yn);
 }
 
 /**
