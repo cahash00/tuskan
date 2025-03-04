@@ -28,29 +28,6 @@
 using namespace std;
 using namespace mtr;
 
-// Custom formatter for relative timestamps
-class RelativeTimeFormatter : public spdlog::custom_flag_formatter {
-private:
-    std::chrono::steady_clock::time_point start_time;
-
-public:
-    RelativeTimeFormatter() : start_time(std::chrono::steady_clock::now()) {}
-
-    void format(const spdlog::details::log_msg&,
-                const std::tm&,
-                spdlog::memory_buf_t& dest) override {
-        auto now = std::chrono::steady_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
-        
-        // Correct usage: append formatted string to dest
-        fmt::format_to(std::back_inserter(dest), "[{:03}.{:03}]", duration.count() / 1000, duration.count() % 1000);
-    }
-
-    std::unique_ptr<custom_flag_formatter> clone() const override {
-        return std::make_unique<RelativeTimeFormatter>();
-    }
-};
-
 /**
  * Main program
  */
@@ -64,7 +41,7 @@ int main(int argc, char* argv[]){
   auto logger = spdlog::stdout_color_mt("console");
   // Apply a custom formatter with relative timestamps
   auto formatter = std::make_unique<spdlog::pattern_formatter>();
-  formatter->add_flag<RelativeTimeFormatter>('R'); // Use %R for relative time
+  formatter->add_flag<customSPDLOG>('R'); // Use %R for relative time
   formatter->set_pattern("%R [%^%l%$] %v"); // Example: [12.345] [INFO] Message
   logger->set_formatter(std::move(formatter));
   // Set the logger as default
@@ -75,85 +52,85 @@ int main(int argc, char* argv[]){
    */
   argparse::ArgumentParser program("TUSKAN","0.0.0");
   getUserInput(argc,argv,program);
+  // assign the input file that was given
+  auto inFile = program.get<string>("-i");
+
 
   /***************************************************************************
    *                           MAIN PROGRAM START                            *
    **************************************************************************/
-  // splashScreen();
 
-  // assign the input file that was given
-  auto inFile = program.get<string>("-i");
-
-  // automatically initialize and finalize Kokkos with the main program
+  // ... initialize and finalize Kokkos with the main scope
+  spdlog::info("Initializing Kokkos");
   Kokkos::ScopeGuard kokkos_guard(argc, argv); 
-  spdlog::info("Kokkos has been initialized");
+  spdlog::info(" done");
   
-  // call input file parser
+  // ... call input file parser
   parse_user(inFile);
   
-  // generate the domain
-  double dx,dy;
+  /**
+   * parse the yaml file
+   */
+  double dx,dy = {0.0};
+  // domain settings
   double lx = config["domain"]["lengths"]["x"].as<double>();
   double ly = config["domain"]["lengths"]["y"].as<double>();
-  int nx = config["domain"]["dimensions"]["x"].as<int>();
-  int ny = config["domain"]["dimensions"]["y"].as<int>();
-  int iter = config["solver"]["iterations"].as<int>();
-  double cfl = config["solver"]["CFL"].as<double>();
-  double toler = config["solver"]["tolerance"].as<double>();
-  bool fvflag = config["output"]["flowviz"]["enabled"].as<bool>();
-  int fvfreq = config["output"]["flowviz"]["frequency"].as<int>();
-  bool resflag = config["output"]["residuals"]["enabled"].as<bool>();
-  int resfreq = config["output"]["residuals"]["frequency"].as<int>();
+  int nx    = config["domain"]["dimensions"]["x"].as<int>();
+  int ny    = config["domain"]["dimensions"]["y"].as<int>();
+  // solver settings
+  int iter      = config["solver"]["iterations"].as<int>();
+  double cfl    = config["solver"]["CFL"].as<double>();
+  bool fvflag   = config["output"]["flowviz"]["enabled"].as<bool>();
+  int fvfreq    = config["output"]["flowviz"]["frequency"].as<int>();
+  bool resflag  = config["output"]["residuals"]["enabled"].as<bool>();
+  int resfreq   = config["output"]["residuals"]["frequency"].as<int>();
+  // convergence criteria
+  double toler = config["convergence"]["residual"].as<double>();
+  double cfli = config["dynamic CFL"]["cfli"].as<double>();
+  double cflf = config["dynamic CFL"]["cflf"].as<double>();
+  double cflFact = config["dynamic CFL"]["factor"].as<double>();
+  bool dcfl = config["dynamic CFL"]["enabled"].as<bool>();
+  printer.print(config["case name"]);
 
+  // ... get domain stats
   getDomainIndices(nx,ny);
-
-  // get the TOTAL number of cells here so we can allocate properly
   vector<int> ndims(2,0);
   ndims[0] = nx+nghosts*2;
   ndims[1] = ny+nghosts*2;
 
-  // initialize the Kokkos matrices for the domain
+  // ... initialize the MATAR matrices for the domain
   FMatrix<double> xc(ndims[0],ndims[1]),
                   yc(ndims[0],ndims[1]),
                   xn(ndims[0]+1,ndims[1]+1),
                   yn(ndims[0]+1,ndims[1]+1);
-
-  // initialize flow solution variables - staggered mesh method
-  // q(1)  rho
-  // q(2)  u
-  // q(3)  v
-  // q(4)  w
-  // q(5)  temperature
-  // q(6)  pressure
   FMatrix<double> q(2,ndims[0]+1,ndims[1]+1);
   FMatrix<double> q2(2,ndims[0]+1,ndims[1]+1);
   FMatrix<double> uexact(1,ndims[0]+1,ndims[1]+1);
   
-  // call mesh generator
-  Timer timeMe;
-  timeMe.start();
+  // ... call mesh generator
+  Timer timer;
+  timer.start();
   spdlog::info("Generating 2D mesh");
   mesher2D(lx,ly,nx,ny,xc,yc,xn,yn,dx,dy);
-  timeMe.stop();
-  spdlog::info("  Done ({} seconds)",timeMe.time());
+  timer.stop();
+  spdlog::info("  done ({} seconds)",timer.time());
 
   // ... initialization
-  timeMe.start();
+  timer.start();
   spdlog::info("Initializing the domain");
-  double rho = 1.0e3;  // density
-  double rrho = 1.0e-3; // reciprocal of density
-  double nu = 1e-6;    // kinematic viscosity m^2/s
-  double mu = nu*rho;  // dynamic viscosity
-  double rdx = 1.0/dx; // reciprocal of dx
-  double rdy = 1.0/dy; // reciprocal of dx
+  double rho  = 1.0e3;   // density
+  double rrho = 1.0e-3;  // reciprocal of density
+  double nu   = 1e-6;    // kinematic viscosity m^2/s
+  double mu   = nu*rho;  // dynamic viscosity
+  double rdx  = 1.0/dx;  // reciprocal of dx
+  double rdy  = 1.0/dy;  // reciprocal of dx
+  double dt   = {0};     // initialize dt
+  double dpdx = -0.3;    // analytical solution for dpdx
   spdlog::info("  dx: {},dy: {}",dx,dy);
-  double dt = {0};
-  double dpdx = -0.3;
 
   // initialize domain and calculate exact solution
   DO_LOOP(j,jstr-nghosts,jend+nghosts,{
     DO_LOOP(i,istr-nghosts,iend+nghosts,{
-      printer.print(i,j);
       q(1,i,j) = 0.0002; // average u
       q(2,i,j) = 0.0; // zero y-velocity
       q2(1,i,j) = 0.0;
@@ -161,17 +138,15 @@ int main(int argc, char* argv[]){
       uexact(1,i,j) = 1.0/(2.0*mu)*dpdx*(yn(i,j)*yn(i,j)-ly*yn(i,j)); 
     });
   });
-  vtk_output_2D(777,uexact,xn,yn);
-  printer.print("Here after vtk out");
-
-  timeMe.stop();
-  spdlog::info("  Done ({} seconds)",timeMe.time());
+  timer.stop();
+  spdlog::info("  done ({} seconds)",timer.time());
   
   /**
    * main solver loop
    * Will loop over and solve until L2Norm is met
    */
-  timeMe.start();
+  double ires,res0,res1,cfl0,resmax = {0.0};
+  timer.start();
   spdlog::info("Starting Main Solver");
   for (int ii = 0; ii < iter; ii++) {
 
@@ -181,8 +156,8 @@ int main(int argc, char* argv[]){
 
     // ... get the minimum dt in the domain for current iteration
     double minval = 1e5;
-    DO_LOOP(i,istr,iend,{
-      DO_LOOP(j,jstr,jend,{
+    DO_LOOP(j,jstr-nghosts,jend+nghosts,{
+      DO_LOOP(i,istr-nghosts,iend+nghosts,{
         dt = min(minval,cfl*dx/abs(q(1,i,j)));
       });
     });
@@ -194,12 +169,12 @@ int main(int argc, char* argv[]){
         double advec = getAdvec(i,j,rdx,rdy,q);
         // get the diffusion term
         double diffu = getDiffu(i,j,rdx,rdy,q);
-        // Predictor step
+        // predictor step
         double ustar = q(1,i,j) + dt*(-advec + nu*diffu);
-        // get the u^n+1 values
+        // projection step
         q2(1,i,j) = ustar - rrho*dt*dpdx;
-      }); // end of i-loop
-    }); // end of j-loop
+      }); 
+    }); 
 
     // ... output intermediate flowviz
     if (fvflag) {
@@ -207,41 +182,57 @@ int main(int argc, char* argv[]){
         vtk_output_2D(ii,q,xn,yn);
       }
     } 
+    // ... Dyanmic CFL 
+    if (dcfl) {
+      if (ii > 0) res1 = ires;
+      double cflb = cfl; // store current cfl
+      ires = L2NORM(q,q2,nx*ny);
+      resmax = max(resmax,ires);
+      if (ii==0) {
+        res0 = ires;
+        res1 = ires;
+      }
+      if (ires == resmax) cfl0 = cfl; // if res is higher, keep
+      if (ires < res1) cfl = cfl0*resmax/ires*cflFact; // if res is lower, increase CFL
+      cfl = max(cfl,cflb);
+      cfl = min(cflf,max(cfl,cfli));
+    } else {
+      ires = L2NORM(q,q2,nx*ny);
+      if (ii==0) res0 = ires;
+    }
     // ... update the q array with the updated solution array
-    double resid = L2NORM(q,q2,nx*ny);
-    DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-      DO_LOOP(i,istr-nghosts,iend+nghosts,{
+    DO_LOOP(j,jstr,jend,{
+      DO_LOOP(i,istr,iend,{
         q(1,i,j) = q2(1,i,j);
-      }); // end of i-loop
-    }); // end of j-loop
+      });
+    });
 
     // ... calculate residuals
-    double l2norm = L2NORM(uexact,q,nx*ny);
     if (resflag) {
-      printer.print("here after resflag");
       if (ii % resfreq == 0) {
-        spdlog::info("  iter {:04}, comp: {:5e}, res: {:5e}",ii,l2norm,resid);
+        spdlog::info("  iter {:04}, cfl: {:5e}, res: {:5e}",ii,cfl,ires/res0);
       }
     }
 
     // exit if converged
-    if (resid < toler || l2norm < toler) {
+    if (ires/res0 < toler) {
       iter=ii;
       break;
     }
   } // end of ii-loop
-  timeMe.stop();
-  spdlog::info("  Done ({} seconds)",timeMe.time());
+  timer.stop();
+  spdlog::info("  done ({} seconds)",timer.time());
   spdlog::info("Average time / iteration: {} seconds",
-               timeMe.time()/static_cast<double>(iter));
+               timer.time()/static_cast<double>(iter));
 
   /**
    * output section
    */
   if (fvflag) {
     spdlog::info("Outputting final flow solution");
-    string fout = "final";
-    vtk_output_2D(fout,q,xn,yn);
+    vtk_output_2D(string("final"),q,xn,yn);
+    spdlog::info("Outputting exact flow solution");
+    vtk_output_2D(string("exact"),uexact,xn,yn);
   } else {
     spdlog::warn("Output was disabled.");
   }
