@@ -1,16 +1,28 @@
-#
-# ... Master YAML file for inputs
-#
-case name: hw4
+# ... DOMAIN
 domain:
-  type: rectilinear
-  dimension: 2D
-  xlength: 0.04
-  ylength: 0.02
-iterations: 1000
+  lengths:
+    x: 0.04
+    y: 0.02
+  dimensions:
+    x: 60
+    y: 30
+# ... SOLVER
+solver:
+  iterations: 50000
+  CFL: 0.01
+dynamic CFL:
+  enabled: true
+  cfli: 0.01
+  cflf: 0.02
+convergence:
+  residual: 1.0e-4
+# ... OUTPUT
 output:
-  type: vtk
-  variables:
-    - pressure
-    - velocity
-    - temperature
+  residuals:
+    enabled: true
+    frequency: 1
+    file: resid.30.dat
+  flowviz:
+    enabled: true
+    frequency: 1000
+    directory: output
