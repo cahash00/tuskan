@@ -1,35 +1,28 @@
-#
-# ... Master YAML file for TUSKAN inputs
-#
-case name: hw4
+# ... DOMAIN
 domain:
   lengths:
     x: 0.04
     y: 0.02
-    z: 0.001
   dimensions:
-    x: 10
-    y: 10
-    z: 10
+    x: 60
+    y: 30
+# ... SOLVER
 solver:
-  iterations: 100000
-  CFL: 0.20
+  iterations: 50000
+  CFL: 0.01
 dynamic CFL:
-  enabled: false
-  cfli: 0.001
-  cflf: 0.5
-  factor: 0.8
+  enabled: true
+  cfli: 0.01
+  cflf: 0.02
 convergence:
-  residual: 1.0e-6
+  residual: 1.0e-4
+# ... OUTPUT
 output:
   residuals:
     enabled: true
     frequency: 1
+    file: resid.30.dat
   flowviz:
-    enabled: false
-    frequency: 100
+    enabled: true
+    frequency: 1000
     directory: output
-    variables:
-      - pressure
-      - velocity
-      - temperature

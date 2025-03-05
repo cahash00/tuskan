@@ -24,6 +24,7 @@
 #include <memory>
 #include <cmath>
 #include <BCs.h>
+#include <fstream>
 
 using namespace std;
 using namespace mtr;
@@ -84,11 +85,11 @@ int main(int argc, char* argv[]){
   int fvfreq   = config["output"]["flowviz"]["frequency"].as<int>();
   bool resflag = config["output"]["residuals"]["enabled"].as<bool>();
   int resfreq  = config["output"]["residuals"]["frequency"].as<int>();
+  string resFile  = config["output"]["residuals"]["file"].as<string>();
   // convergence criteria
   double toler   = config["convergence"]["residual"].as<double>();
   double cfli    = config["dynamic CFL"]["cfli"].as<double>();
   double cflf    = config["dynamic CFL"]["cflf"].as<double>();
-  double cflFact = config["dynamic CFL"]["factor"].as<double>();
   bool dcfl      = config["dynamic CFL"]["enabled"].as<bool>();
   printer.print(config["case name"]);
 
@@ -116,6 +117,11 @@ int main(int argc, char* argv[]){
   spdlog::info("  done ({} seconds)",timer.time());
 
   // ... initialization
+  ofstream logFile(resFile, ios::out);
+  if (!logFile) {
+      std::cerr << "Error opening log file!\n";
+      return -1;
+  }
   timer.start();
   spdlog::info("Initializing the domain");
   double rho  = 1.0e3;   // density
@@ -129,21 +135,12 @@ int main(int argc, char* argv[]){
   spdlog::info("  dx: {},dy: {}",dx,dy);
 
   // initialize domain and calculate exact solution
-  DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-    DO_LOOP(i,istr-nghosts,iend+nghosts,{
-      q(1,i,j) = 0.007; // average u
-      q(2,i,j) = 0.0; // zero y-velocity
-      q2(1,i,j) = 0.0;
-      q2(2,i,j) = 0.0;
-      uexact(1,i,j) = 1.0/(2.0*mu)*dpdx*(yn(i,j)*yn(i,j)-ly*yn(i,j)); 
-    });
-  });
+  initialize_solution(q,q2);
   timer.stop();
   spdlog::info("  done ({} seconds)",timer.time());
   
   /**
    * main solver loop
-   * Will loop over and solve until L2Norm is met
    */
   double ires,res0,res1,cfl0,resmax = {0.0};
   timer.start();
@@ -155,12 +152,7 @@ int main(int argc, char* argv[]){
     bc_periodic(q);
 
     // ... get the minimum dt in the domain for current iteration
-    double minval = 1e5;
-    DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-      DO_LOOP(i,istr-nghosts,iend+nghosts,{
-        dt = min(minval,static_cast<double>(cfl)*dx/abs(q(1,i,j)));
-      });
-    });
+    dt = get_min_dt(cfl,dx,q);
 
     // ... loop over domain
     DO_LOOP(j,jstr,jend,{
@@ -182,7 +174,9 @@ int main(int argc, char* argv[]){
         vtk_output_2D(ii,q,xn,yn);
       }
     } 
-    // ... Dyanmic CFL 
+    // ires = L2NORM(q,q2,nx*ny);
+    // if (ii==0) res0 = ires;
+    // ... Dyanmic CFL
     if (dcfl) {
       if (ii > 0) res1 = ires;
       double cflb = cfl; // store current cfl
@@ -193,7 +187,9 @@ int main(int argc, char* argv[]){
         res1 = ires;
       }
       if (ires == resmax) cfl0 = cfl; // if res is higher, keep
-      if (ires < res1) cfl = cfl0*resmax/ires*cflFact; // if res is lower, increase CFL
+      if (ires < res1) {
+        cfl = cfl0*resmax/ires; // if res is lower, increase CFL
+      }
       cfl = max(cfl,cflb);
       cfl = min(cflf,max(cfl,cfli));
     } else {
@@ -201,21 +197,19 @@ int main(int argc, char* argv[]){
       if (ii==0) res0 = ires;
     }
     // ... update the q array with the updated solution array
-    DO_LOOP(j,jstr,jend,{
-      DO_LOOP(i,istr,iend,{
-        q(1,i,j) = q2(1,i,j);
-      });
-    });
+    update_solution(q,q2);
 
     // ... calculate residuals
+    logFile << ii << " " << ires/res0 << "\n";
     if (resflag) {
       if (ii % resfreq == 0) {
         spdlog::info("  iter {:04}, cfl: {:5e}, res: {:5e}",ii,cfl,ires/res0);
+        logFile.flush();
       }
     }
 
     // exit if converged
-    if (ires/res0 < toler) {
+    if (ires/res0 < toler && ii > 1000) {
       iter=ii;
       break;
     }
@@ -233,6 +227,17 @@ int main(int argc, char* argv[]){
     vtk_output_2D(string("final"),q,xn,yn);
     spdlog::info("Outputting exact flow solution");
     vtk_output_2D(string("exact"),uexact,xn,yn);
+    // output the values along the channel
+    ofstream fout("compare.dat",ios::out);
+    DO_LOOP(j,jstr-nghosts,jend+nghosts,{
+      DO_LOOP(i,istr-nghosts,iend+nghosts,{
+        uexact(1,i,j) = 1.0/(2.0*mu)*dpdx*(yc(i,j)*yc(i,j)-ly*yc(i,j));
+      });
+    });
+    DO_LOOP(j,jstr-1,jend+1,{
+      fout << yc(nx/2,j) << " " << q(1,nx/2,j) 
+           << " " << uexact(1,nx/2,j) << endl;
+    });
   } else {
     spdlog::warn("Output was disabled.");
   }

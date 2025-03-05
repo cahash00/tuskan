@@ -9,8 +9,10 @@
 
 #include <chrono>
 #include <spdlog/spdlog.h>
+#include <matar.h>
 
 using namespace std;
+using namespace mtr;
 /**
  * @brief Timer class for timing things
  */
@@ -42,4 +44,5 @@ class customSPDLOG : public spdlog::custom_flag_formatter {
 
      std::unique_ptr<custom_flag_formatter> clone() const override;
  };
+void print_field(FMatrix<double>& q);
 #endif // GENERAL_UTILS_H
