@@ -8,4 +8,5 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # Add sources to the target
 add_library(meshLib ${SOURCES} ${HEADERS})
 target_include_directories(meshLib PRIVATE ${matar_headers})
+target_include_directories(meshLib PRIVATE ${pprint_headers})
 target_include_directories(meshLib PRIVATE ${src}/common)
