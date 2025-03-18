@@ -25,6 +25,7 @@
 #include <cmath>
 #include <BCs.h>
 #include <fstream>
+#include <gridpro.h>
 
 using namespace std;
 using namespace mtr;
@@ -55,7 +56,6 @@ int main(int argc, char* argv[]){
   getUserInput(argc,argv,program);
   // assign the input file that was given
   auto inFile = program.get<string>("-i");
-
 
   /***************************************************************************
    *                           MAIN PROGRAM START                            *
@@ -91,6 +91,7 @@ int main(int argc, char* argv[]){
   double cfli    = config["dynamic CFL"]["cfli"].as<double>();
   double cflf    = config["dynamic CFL"]["cflf"].as<double>();
   bool dcfl      = config["dynamic CFL"]["enabled"].as<bool>();
+  string gridType = config["domain"]["type"]
   printer.print(config["case name"]);
 
   // ... get domain stats
@@ -98,8 +99,9 @@ int main(int argc, char* argv[]){
   vector<int> ndims(2,0);
   ndims[0] = nx+nghosts*2;
   ndims[1] = ny+nghosts*2;
-
+  
   // ... initialize the MATAR matrices for the domain
+  printer.print(nbglob.dims(0));
   FMatrix<double> xc(ndims[0],ndims[1]),
                   yc(ndims[0],ndims[1]),
                   xn(ndims[0]+1,ndims[1]+1),
@@ -109,6 +111,8 @@ int main(int argc, char* argv[]){
   FMatrix<double> uexact(1,ndims[0]+1,ndims[1]+1);
   
   // ... call mesh generator
+  gridpro::reader("blk.tmp",nblk,xc,yc);
+  return 0;
   Timer timer;
   timer.start();
   spdlog::info("Generating 2D mesh");
@@ -126,7 +130,7 @@ int main(int argc, char* argv[]){
   spdlog::info("Initializing the domain");
   double rho  = 1.0e3;   // density
   double rrho = 1.0e-3;  // reciprocal of density
-  double nu   = 1.0e-6;    // kinematic viscosity m^2/s
+  double nu   = 1.0e-6;  // kinematic viscosity m^2/s
   double mu   = nu*rho;  // dynamic viscosity
   double rdx  = 1.0/dx;  // reciprocal of dx
   double rdy  = 1.0/dy;  // reciprocal of dx

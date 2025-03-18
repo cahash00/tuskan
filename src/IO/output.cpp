@@ -45,16 +45,16 @@ static void vtk_output_2D_IMPL(const string& caseName,const FMatrix<double>& q,
   fprintf(out,"DATASET STRUCTURED_GRID\n");
   fprintf(out,"DIMENSIONS %d %d %d\n",nx+1,ny+1,1);
   fprintf(out,"POINTS %d float\n",(nx+1)*(ny+1));
-  DO_LOOP(j,jstr,jend,{
-    DO_LOOP(i,istr,iend,{
+  DO_LOOP(j,jstr,jend+1,{
+    DO_LOOP(i,istr,iend+1,{
       fprintf(out,"%f %f %f\n",xn(i,j),yn(i,j),0.0);
     });
   });
   fprintf(out,"POINT_DATA %d\n",(nx+1)*(ny+1));
   fprintf(out,"SCALARS u float 1\n");
   fprintf(out,"LOOKUP_TABLE default\n");
-  DO_LOOP(j,jstr,jend,{
-    DO_LOOP(i,istr,iend,{
+  DO_LOOP(j,jstr,jend+1,{
+    DO_LOOP(i,istr,iend+1,{
       fprintf(out,"%f\n",q(1,i,j));
     });
   });
