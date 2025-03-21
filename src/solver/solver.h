@@ -5,18 +5,47 @@
 
 using namespace std;
 
-double getAdvec(const int& i,const int& j,
-                const double rdx,const double rdy,
-                mtr::FMatrix<double>& q);
+/*******************************************************************************
+ * @brief get the advection contribution
+ ******************************************************************************/
+double getAdvec(const int& i,
+                const int& j,
+                const double rdx,
+                const double rdy,
+                mtr::FMatrix<double>& u,
+                mtr::FMatrix<double>& v);
 
-double getDiffu(const int& i,const int& j,
-                const double rdx,const double rdy,
-                mtr::FMatrix<double>& q);
+/*******************************************************************************
+ * @brief get the diffusion contribution
+ ******************************************************************************/
+double getDiffu(const int& i,
+                const int& j,
+                const double rdx,
+                const double rdy,
+                mtr::FMatrix<double>& u);
 
-double L2NORM(mtr::FMatrix<double>& qexact, mtr::FMatrix<double>& q, 
+/*******************************************************************************
+ * @brief get the L2NORM between two arrays
+ ******************************************************************************/
+double L2NORM(mtr::FMatrix<double>& uexact, 
+              mtr::FMatrix<double>& u, 
               const int& N);
 
-double get_min_dt(const double& cfl, const double& dx,FMatrix<double>& q);
-void update_solution(mtr::FMatrix<double>& q, mtr::FMatrix<double> q2);
-void initialize_solution(mtr::FMatrix<double>& q, mtr::FMatrix<double> q2);
+/*******************************************************************************
+ * @brief get the global minimum timestep
+ ******************************************************************************/
+double get_min_dt(const double& cfl, 
+                  const double& dx,
+                  mtr::FMatrix<double>& u);
+
+/*******************************************************************************
+ * @brief initialize the domain and arrays
+ ******************************************************************************/
+void initialize_solution(mtr::FMatrix<double>& u, 
+                         mtr::FMatrix<double>& v,
+                         mtr::FMatrix<double>& u2,
+                         mtr::FMatrix<double>& p,
+                         mtr::FMatrix<double>& ustar,
+                         mtr::FMatrix<double>& vstar);
+
 #endif
