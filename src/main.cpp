@@ -215,7 +215,7 @@ int main(int argc, char* argv[]){
         res1 = ires;
       }
       if (ires == resmax) cfl0 = cfl; // if res is higher, keep
-      if (ires < res1) {
+      if (ires < res1 && ires < res0) {
         cfl = cfl0*resmax/ires; // if res is lower, increase CFL
       }
       cfl = max(cfl,cflb);
