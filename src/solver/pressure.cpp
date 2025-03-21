@@ -167,12 +167,10 @@ void SOR(mtr::FMatrix<double>& p,
     }
 
   } // end Jacobi loop
-  for (int j = jstr-nghosts; j <= jend; j++) {
-    for (int i = istr-nghosts; i <= iend; i++) {
-      double c1 = p2(i,j);
-      p(i,j) = c1;
-    }
-  }
+  DO_ALL(j,jstr-nghosts,jend+nghosts,
+         i,istr-nghosts,iend+nghosts,{
+      p(i,j) = p2(i,j);
+  });
 
 }
 

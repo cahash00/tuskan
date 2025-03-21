@@ -61,10 +61,9 @@ double get_min_dt(const double& cfl,
                   mtr::FMatrix<double>& u) {
   double minval = 1e5;
   double dt = 1e5;
-  DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-    DO_LOOP(i,istr-nghosts,iend+nghosts,{
-      dt = min(dt,cfl*dx/abs(u(i,j)));
-    });
+  DO_ALL(j,jstr-nghosts,jend+nghosts,
+         i,istr-nghosts,iend+nghosts,{
+    dt = min(dt,cfl*dx/abs(u(i,j)));
   });
   return dt;
 }
@@ -75,12 +74,8 @@ void initialize_solution(mtr::FMatrix<double>& u,
                          mtr::FMatrix<double>& p,
                          mtr::FMatrix<double>& ustar,
                          mtr::FMatrix<double>& vstar) {
-  DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-    DO_LOOP(i,istr-nghosts,iend+nghosts,{
-      u(i,j) = 0.007; // average u
-      v(i,j) = 0.0; // zero y-velocity
-    });
-  });
+  u.set_values(0.007);
+  v.set_values(0.0);
   v.set_values(0.0);
   u2.set_values(0.0);
   p.set_values(0.0);

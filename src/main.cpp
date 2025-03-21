@@ -70,7 +70,6 @@ int main(int argc, char* argv[]){
   
   // ... parse the yaml file
   double dx,dy = {0.0};
-
   double nx = config.nx;
   double ny = config.ny;
 
@@ -126,7 +125,8 @@ int main(int argc, char* argv[]){
   /**********
    * main solver loop
    **********/
-  double ires,res0,res1,cfl0,resmax = {0.0};
+  double ires,res0,res1,cfl0,resmax = 0.0;
+  double cfl = cfli;
   timer.start();
   spdlog::info("Starting Main Solver");
   double cfl = config.cfli;
@@ -176,7 +176,9 @@ int main(int argc, char* argv[]){
     } 
     
     // ... Dyanmic CFL
-    if (ii > 0) res1 = ires;
+    if (ii > 0) {
+      res1 = ires;
+    }
     double cflb = cfl; // store current cfl
     ires = L2NORM(u,u2,nx*ny);
     resmax = max(resmax,ires);
@@ -184,19 +186,19 @@ int main(int argc, char* argv[]){
       res0 = ires;
       res1 = ires;
     }
-    if (ires == resmax) cfl0 = cfl; // if res is higher, keep
-    if (ires < res1 && ires < res0) {
+    if (ires == resmax) {
+      cfl0 = cfl; // if res is higher, keep
+    } else if (ires < res1 && ires < res0) {
       cfl = cfl0*resmax/ires; // if res is lower, increase CFL
     }
     cfl = max(cfl,cflb);
-    cfl = min(config.cflf,max(cfl,config.cfli));
-    
+    cfl = min(cflf,max(cfl,cfli));
+
     // ... update the u array with the updated solution array
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    DO_ALL(j,jstr,jend,
+           i,istr,iend,{
         u(i,j) = u2(i,j);
-      }
-    }
+    });
     
     // ... calculate residuals
     logFile << ii << " " << ires << "\n";
@@ -226,10 +228,9 @@ int main(int argc, char* argv[]){
     vtk_output_2D(string("final"),config.foutDir,u,nx,ny,xn,yn);
     // output the values along the channel
     ofstream fout("compare.dat",ios::out);
-    DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-      DO_LOOP(i,istr-nghosts,iend+nghosts,{
-        uexact(i,j) = 1.0/(2.0*mu)*-0.3*(yc(i,j)*yc(i,j)-config.ly*yc(i,j));
-      });
+    DO_ALL(j,jstr-nghosts,jend+nghosts,
+           i,istr-nghosts,iend+nghosts,{
+      uexact(i,j) = 1.0/(2.0*mu)*-0.3*(yc(i,j)*yc(i,j)-ly*yc(i,j));
     });
     DO_LOOP(j,jstr-1,jend+1,{
       fout << yc(nx/2,j) << " " << u(nx/2,j) << " " << uexact(nx/2,j) << endl;
