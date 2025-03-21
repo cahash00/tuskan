@@ -27,9 +27,10 @@ using namespace std;
  * @param[in] xn matrix of x nodal values
  * @param[in] yn matrix of y nodal values
  */
-static void vtk_output_2D_IMPL(const string& caseName,const FMatrix<double>& q,
-                   const FMatrix<double>& xn,
-                   const FMatrix<double>& yn) {
+static void vtk_output_2D_IMPL(const string& caseName,
+                               const FMatrix<double>& q,
+                               const FMatrix<double>& xn,
+                               const FMatrix<double>& yn) {
   // power on the printer
   pprint::PrettyPrinter printer;
   FILE *out;
@@ -43,21 +44,21 @@ static void vtk_output_2D_IMPL(const string& caseName,const FMatrix<double>& q,
   fprintf(out,"TUSKAN 2D Flow Solution File.\n");
   fprintf(out,"ASCII\n");
   fprintf(out,"DATASET STRUCTURED_GRID\n");
-  fprintf(out,"DIMENSIONS %d %d %d\n",nx+1,ny+1,1);
-  fprintf(out,"POINTS %d float\n",(nx+1)*(ny+1));
-  DO_LOOP(j,jstr,jend,{
-    DO_LOOP(i,istr,iend,{
+  fprintf(out,"DIMENSIONS %d %d %d\n",nx+2,ny+2,1);
+  fprintf(out,"POINTS %d float\n",(nx+2)*(ny+2));
+  for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
+    for (int i = istr-nghosts; i <= iend+nghosts; i++) {
       fprintf(out,"%f %f %f\n",xn(i,j),yn(i,j),0.0);
-    });
-  });
-  fprintf(out,"POINT_DATA %d\n",(nx+1)*(ny+1));
+    }
+  }
+  fprintf(out,"POINT_DATA %d\n",(nx+2)*(ny+2));
   fprintf(out,"SCALARS u float 1\n");
   fprintf(out,"LOOKUP_TABLE default\n");
-  DO_LOOP(j,jstr,jend,{
-    DO_LOOP(i,istr,iend,{
-      fprintf(out,"%f\n",q(1,i,j));
-    });
-  });
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
+      fprintf(out,"%f\n",q(i,j));
+    }
+  }
   fclose(out);
 }
 

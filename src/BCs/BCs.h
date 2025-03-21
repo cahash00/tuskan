@@ -15,7 +15,7 @@ using namespace std;
 using namespace mtr;
 
 /******************************************************************************/
-void bc_noslip(FMatrix<double>& q);
-void bc_periodic(FMatrix<double>& q);
+void bc_noslip(FMatrix<double>& u);
+void bc_periodic(FMatrix<double>& u);
 /******************************************************************************/
 #endif // BCS_H

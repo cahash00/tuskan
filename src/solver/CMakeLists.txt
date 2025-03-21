@@ -8,4 +8,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # Add sources to the target
 add_library(solvers ${SOURCES} ${HEADERS})
 target_include_directories(solvers PRIVATE ${matar_headers})
+target_include_directories(solvers PRIVATE ${pprint_headers})
 target_include_directories(solvers PRIVATE ${src}/common)
+target_include_directories(solvers PRIVATE ${src}/BCs)

@@ -13,62 +13,77 @@ using namespace std;
 /******************************************************************************/
 double getAdvec(const int& i,const int& j,
                 const double rdx,const double rdy,
-                mtr::FMatrix<double>& q) {
+                mtr::FMatrix<double>& u,
+                mtr::FMatrix<double>& v) {
   double advec;
-  advec = rdx*pow((q(1,i+1,j)+q(1,i,j))*0.5,2)
-        - rdx*pow((q(1,i,j)+q(1,i-1,j))*0.5,2);
-        // + rdy*(q(1,i,j)+q(1,i,j+1))*0.5 * (q(2,i,j)+q(2,i+1,j))*0.5 
-        // - rdy*(q(1,i,j)+q(1,i,j-1))*0.5 * (q(2,i+1,j-1)+q(2,i,j-1))*0.5;
+  advec = rdx*pow((u(i+1,j)+u(i,j))*0.5,2)
+        - rdx*pow((u(i,j)+u(i-1,j))*0.5,2)
+        + rdy*(u(i,j)+u(i,j+1))*0.5 * (v(i,j)+v(i+1,j))*0.5 
+        - rdy*(u(i,j)+u(i,j-1))*0.5 * (v(i+1,j-1)+v(i,j-1))*0.5;
   return advec;
 }
 
 /******************************************************************************/
-double getDiffu(const int& i,const int& j,
-                const double rdx,const double rdy,
-                mtr::FMatrix<double>& q) {
+double getDiffu(const int& i,
+                const int& j,
+                const double rdx,
+                const double rdy,
+                mtr::FMatrix<double>& u) {
   double diffu;
-  diffu = ( q(1,i+1,j) - 2.0*q(1,i,j) + q(1,i-1,j))*rdx*rdx + 
-          ( q(1,i,j+1) - 2.0*q(1,i,j) + q(1,i,j-1))*rdy*rdx;
+  diffu = ( u(i+1,j) - 2.0*u(i,j) + u(i-1,j))*rdx*rdx + 
+          ( u(i,j+1) - 2.0*u(i,j) + u(i,j-1))*rdy*rdx;
   return diffu;
 }
 
 /******************************************************************************/
-double L2NORM(mtr::FMatrix<double>& m1, mtr::FMatrix<double>& m2, 
+double L2NORM(mtr::FMatrix<double>& m1, 
+              mtr::FMatrix<double>& m2, 
               const int& N) {
-  double l2norm = {0.0};
-  DO2D(j,jstr,jend,i,istr,iend,{
-    l2norm = l2norm + pow(m1(1,i,j) - m2(1,i,j),2);
-  });
-  l2norm = sqrt(l2norm / static_cast<double>(N));
+  // assert that the matrices must be equal in rank
+  assert(m1.order() == m2.order());
+  
+  double l2norm = 0.0;
+  double lsum = 0.0;
+  double total = 0.0;
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
+      double d = m2(i,j) - m1(i,j);
+      l2norm += d*d;
+      total += 1.0;
+    }
+  }
+  l2norm = sqrt(l2norm / total);
   return l2norm;
 }
 /******************************************************************************/
-double get_min_dt(const double& cfl, const double& dx,mtr::FMatrix<double>& q) {
+double get_min_dt(const double& cfl, 
+                  const double& dx,
+                  mtr::FMatrix<double>& u) {
   double minval = 1e5;
-  double dt = {0.0};
+  double dt = 1e5;
   DO_LOOP(j,jstr-nghosts,jend+nghosts,{
     DO_LOOP(i,istr-nghosts,iend+nghosts,{
-      dt = min(minval,cfl*dx/abs(q(1,i,j)));
+      dt = min(dt,cfl*dx/abs(u(i,j)));
     });
   });
   return dt;
 }
 /******************************************************************************/
-void update_solution(mtr::FMatrix<double>& q, mtr::FMatrix<double> q2) {
-  DO_LOOP(j,jstr,jend,{
-    DO_LOOP(i,istr,iend,{
-      q(1,i,j) = q2(1,i,j);
-    });
-  });
-}
-/******************************************************************************/
-void initialize_solution(mtr::FMatrix<double>& q, mtr::FMatrix<double> q2) {
+void initialize_solution(mtr::FMatrix<double>& u,
+                         mtr::FMatrix<double>& v,
+                         mtr::FMatrix<double>& u2,
+                         mtr::FMatrix<double>& p,
+                         mtr::FMatrix<double>& ustar,
+                         mtr::FMatrix<double>& vstar) {
   DO_LOOP(j,jstr-nghosts,jend+nghosts,{
     DO_LOOP(i,istr-nghosts,iend+nghosts,{
-      q(1,i,j) = 0.007; // average u
-      q(2,i,j) = 0.0; // zero y-velocity
-      q2(1,i,j) = 0.0;
-      q2(2,i,j) = 0.0;
+      u(i,j) = 0.007; // average u
+      v(i,j) = 0.0; // zero y-velocity
     });
   });
+  v.set_values(0.0);
+  u2.set_values(0.0);
+  p.set_values(0.0);
+  ustar.set_values(0.0);
+  vstar.set_values(0.0);
 }

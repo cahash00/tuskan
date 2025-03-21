@@ -12,17 +12,19 @@ using namespace std;
 using namespace mtr;
 
 /******************************************************************************/
-void bc_noslip(FMatrix<double>& q) {
-  DO_LOOP(i,istr-nghosts,iend+nghosts,{
-    q(1,i,jstr-1) = -q(1,i,jstr);
-    q(1,i,jend+1) = -q(1,i,jend);
-  });
+void bc_noslip(FMatrix<double>& u) {
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
+      u(i,jstr-1) = -u(i,jstr);
+      u(i,jend+1) = -u(i,jend);
+    }
+  }
 }
 /******************************************************************************/
-void bc_periodic(FMatrix<double>& q) {
-  DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-    q(1,istr-1,j) = q(1,iend,j);
-    q(1,iend+1,j) = q(1,istr,j);
-  });
+void bc_periodic(FMatrix<double>& u) {
+  for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
+    u(istr-1,j) = u(iend,j);
+    u(iend+1,j) = u(istr,j);
+  }
 }
 /******************************************************************************/

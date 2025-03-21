@@ -1,21 +1,26 @@
 # ... DOMAIN
 domain:
+  type: rectilinear
   lengths:
     x: 0.04
     y: 0.02
   dimensions:
-    x: 60
-    y: 30
+    x: 20
+    y: 10
 # ... SOLVER
 solver:
-  iterations: 50000
-  CFL: 0.01
+  iterations: 010000
+  CFL: 0.0001
+  pressure solver:
+    method: Jacobi
+    iterations: 1000
+    SOR weight: 1.5
 dynamic CFL:
   enabled: true
-  cfli: 0.01
-  cflf: 0.02
+  cfli: 0.0001
+  cflf: 0.0002
 convergence:
-  residual: 1.0e-4
+  residual: 0.000001
 # ... OUTPUT
 output:
   residuals:
