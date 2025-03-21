@@ -185,14 +185,14 @@ int main(int argc, char* argv[]){
     bc_periodic(ustar);
     // p.set_values(0.0);
     if (pMethod == "Jacobi") {
-      psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+      // psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+      psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
     }
     
     // ... apply the pressure correctior
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         dpdx = (p(i,j) - p(i-1,j)) / (dx);
-        if (i==30 && j == 15) cout << dpdx << endl;
         u2(i,j) = ustar(i,j) - rrho*dt*dpdx;
       }
     }
