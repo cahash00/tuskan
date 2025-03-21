@@ -192,6 +192,7 @@ int main(int argc, char* argv[]){
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         dpdx = (p(i,j) - p(i-1,j)) / (dx);
+        if (i==30 && j == 15) cout << dpdx << endl;
         u2(i,j) = ustar(i,j) - rrho*dt*dpdx;
       }
     }
