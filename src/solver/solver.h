@@ -22,7 +22,15 @@ double getDiffu(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
-                mtr::FMatrix<double>& u);
+                mtr::FMatrix<double>& u,
+                mtr::FMatrix<double>& v);
+/******************************************************************************/
+double getDiffv(const int& i,
+                const int& j,
+                const double rdx,
+                const double rdy,
+                mtr::FMatrix<double>& u,
+                mtr::FMatrix<double>& v);
 
 /*******************************************************************************
  * @brief get the L2NORM between two arrays

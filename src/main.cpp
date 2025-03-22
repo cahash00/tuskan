@@ -145,7 +145,8 @@ int main(int argc, char* argv[]){
         // get the advection term
         double advec = getAdvec(i,j,rdx,rdy,u,v);
         // get the diffusion term
-        double diffu = getDiffu(i,j,rdx,rdy,u);
+        double diffu = getDiffu(i,j,rdx,rdy,u,v);
+        double diffv = getDiffv(i,j,rdx,rdy,u,v);
         // predictor step
         ustar(i,j) = u(i,j) + dt*(-advec + nu*diffu);
       }
@@ -164,6 +165,7 @@ int main(int argc, char* argv[]){
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         dpdx = (p(i,j) - p(i-1,j)) / (dx);
+        if (i==30 && j==15) dpdx1 = dpdx;
         u2(i,j) = ustar(i,j) - rrho*dt*dpdx;
       }
     }

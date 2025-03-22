@@ -28,11 +28,44 @@ double getDiffu(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
-                mtr::FMatrix<double>& u) {
+                mtr::FMatrix<double>& u,
+                mtr::FMatrix<double>& v) {
   double diffu;
-  diffu = ( u(i+1,j) - 2.0*u(i,j) + u(i-1,j))*rdx*rdx + 
-          ( u(i,j+1) - 2.0*u(i,j) + u(i,j-1))*rdy*rdx;
+
+  // Second derivatives (viscous terms)
+  double d2udx2 = (u(i+1,j) - 2.0*u(i,j) + u(i-1,j)) * rdx * rdx;
+  double d2udy2 = (u(i,j+1) - 2.0*u(i,j) + u(i,j-1)) * rdy * rdy;
+
+  // Cross-diffusion term
+  double d2uvdxdy = (v(i+1,j+1) - v(i-1,j+1) 
+                   - v(i+1,j-1) + v(i-1,j-1)) 
+                  * 0.25 * rdx * rdy;
+
+  diffu = d2udx2 + d2udy2 + d2uvdxdy;
+
   return diffu;
+}
+/******************************************************************************/
+double getDiffv(const int& i, 
+                const int& j,
+                const double rdx, 
+                const double rdy,
+                mtr::FMatrix<double>& u,
+                mtr::FMatrix<double>& v) {
+  double diffv;
+
+  // Second derivatives (viscous terms)
+  double d2vdx2 = (v(i+1,j) - 2.0*v(i,j) + v(i-1,j)) * rdx * rdx;
+  double d2vdy2 = (v(i,j+1) - 2.0*v(i,j) + v(i,j-1)) * rdy * rdy;
+
+  // Cross-diffusion term
+  double d2uvdxdy = (u(i+1,j+1) - u(i-1,j+1) 
+                   - u(i+1,j-1) + u(i-1,j-1)) 
+                  * 0.25 * rdx * rdy;
+
+  diffv = d2vdx2 + d2vdy2 + d2uvdxdy;
+
+  return diffv;
 }
 
 /******************************************************************************/
