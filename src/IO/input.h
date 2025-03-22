@@ -8,9 +8,39 @@ using namespace std;
 
 extern YAML::Node config;
 
-void parse_user(const string& inFile);
+namespace IO_input {
+
+struct ConfigData {
+  // domain settings
+  double lx;
+  double ly;
+  int    nx;
+  int    ny;
+  // solver settings
+  int    iter;
+  double cfl;
+  bool   fvflag;
+  int    fvfreq;
+  bool   resflag;
+  int    resfreq;
+  string resFile;
+  string pMethod;
+  int    pIter;
+  double sorWeight; 
+  // convergence criteria
+  double toler;
+  double cfli;
+  double cflf;
+  bool   dcfl;
+
+  static ConfigData fromYAMLConfig(const YAML::Node& config);
+};
+
+ConfigData parseInputDeck(const string& inFile);
 
 void getUserInput(int argc, char* argv[],
                   argparse::ArgumentParser& program);
+
+}
 
 #endif // INPUT_H

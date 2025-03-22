@@ -54,7 +54,7 @@ int main(int argc, char* argv[]){
    * Parse out the user input form command line
    */
   argparse::ArgumentParser program("TUSKAN","0.0.0");
-  getUserInput(argc,argv,program);
+  IO_input::getUserInput(argc,argv,program);
   // assign the input file that was given
   auto inFile = program.get<string>("-i");
 
@@ -69,37 +69,13 @@ int main(int argc, char* argv[]){
   spdlog::info(" done");
   
   // ... call input file parser
-  parse_user(inFile);
+  IO_input::ConfigData config = IO_input::parseInputDeck(inFile);
   
-  /**
-   * parse the yaml file
-   */
+  // ... parse the yaml file
   double dx,dy = {0.0};
-  // domain settings
-  double lx = config["domain"]["lengths"]["x"].as<double>();
-  double ly = config["domain"]["lengths"]["y"].as<double>();
-  int nx    = config["domain"]["dimensions"]["x"].as<int>();
-  int ny    = config["domain"]["dimensions"]["y"].as<int>();
-  // solver settings
-  int iter     = config["solver"]["iterations"].as<int>();
-  double cfl   = config["solver"]["CFL"].as<double>();
-  bool fvflag  = config["output"]["flowviz"]["enabled"].as<bool>();
-  int fvfreq   = config["output"]["flowviz"]["frequency"].as<int>();
-  bool resflag = config["output"]["residuals"]["enabled"].as<bool>();
-  int resfreq  = config["output"]["residuals"]["frequency"].as<int>();
-  string resFile  = config["output"]["residuals"]["file"].as<string>();
-  string pMethod = config["solver"]["pressure solver"]["method"].as<string>();
-  int pIter = config["solver"]["pressure solver"]["iterations"].as<int>();
-  if (pMethod == "SOR") {
-    double sorWeight = config["solver"]["pressure solver"]["SOR weight"].as<double>(); 
-  }
-  // convergence criteria
-  double toler   = config["convergence"]["residual"].as<double>();
-  double cfli    = config["dynamic CFL"]["cfli"].as<double>();
-  double cflf    = config["dynamic CFL"]["cflf"].as<double>();
-  bool dcfl      = config["dynamic CFL"]["enabled"].as<bool>();
 
-  printer.print(config["case name"]);
+  double nx = config.nx;
+  double ny = config.ny;
 
   // ... get domain stats
   getDomainIndices(nx,ny);
@@ -125,12 +101,13 @@ int main(int argc, char* argv[]){
   Timer timer;
   timer.start();
   spdlog::info("Generating 2D mesh");
-  mesher2D(lx,ly,nx,ny,xc,yc,xn,yn,dx,dy);
+  mesher2D(config.lx,config.ly,config.nx,config.ny,
+           xc,yc,xn,yn,dx,dy);
   timer.stop();
   spdlog::info("  done ({} seconds)",timer.time());
 
   // ... initialization
-  ofstream logFile(resFile, ios::out);
+  ofstream logFile(config.resFile, ios::out);
   if (!logFile) {
       std::cerr << "Error opening log file!\n";
       return -1;
@@ -158,7 +135,8 @@ int main(int argc, char* argv[]){
   double ires,res0,res1,cfl0,resmax = {0.0};
   timer.start();
   spdlog::info("Starting Main Solver");
-  for (int ii = 0; ii < iter; ii++) {
+  double cfl = config.cfli;
+  for (int ii = 0; ii < config.iter; ii++) {
 
     // ... update boundary conditions
     bc_noslip(u);
@@ -184,7 +162,7 @@ int main(int argc, char* argv[]){
     bc_noslip(ustar);
     bc_periodic(ustar);
     // p.set_values(0.0);
-    if (pMethod == "Jacobi") {
+    if (config.pMethod == "Jacobi") {
       // psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
       psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
     }
@@ -198,14 +176,14 @@ int main(int argc, char* argv[]){
     }
 
     // ... output intermediate flowviz
-    if (fvflag) {
-      if (ii % fvfreq == 0) {
+    if (config.fvflag) {
+      if (ii % config.fvfreq == 0) {
         vtk_output_2D(ii,u,xn,yn);
       }
     } 
     
     // ... Dyanmic CFL
-    if (dcfl) {
+    if (config.dcfl) {
       if (ii > 0) res1 = ires;
       double cflb = cfl; // store current cfl
       ires = L2NORM(u,u2,nx*ny);
@@ -219,7 +197,7 @@ int main(int argc, char* argv[]){
         cfl = cfl0*resmax/ires; // if res is lower, increase CFL
       }
       cfl = max(cfl,cflb);
-      cfl = min(cflf,max(cfl,cfli));
+      cfl = min(config.cflf,max(cfl,config.cfli));
     } else {
       ires = L2NORM(u,u2,nx*ny);
       if (ii==0) res0 = ires;
@@ -233,35 +211,35 @@ int main(int argc, char* argv[]){
     
     // ... calculate residuals
     logFile << ii << " " << ires << "\n";
-    if (resflag) {
-      if (ii % resfreq == 0) {
+    if (config.resflag) {
+      if (ii % config.resfreq == 0) {
         spdlog::info("  iter {:04}, cfl: {:5e}, res: {:5e}",ii,cfl,ires/res0);
         logFile.flush();
       }
     }
 
     // exit if converged
-    if (ires/res0 < toler && ii > 1000) {
-      iter=ii;
+    if (ires/res0 < config.toler && ii > 1000) {
+      config.iter=ii;
       break;
     }
   } // end of ii-loop
   timer.stop();
   spdlog::info("  done ({} seconds)",timer.time());
   spdlog::info("Average time / iteration: {} seconds",
-               timer.time()/static_cast<double>(iter));
+               timer.time()/static_cast<double>(config.iter));
 
   /**
    * output section
    */
-  if (fvflag) {
+  if (config.fvflag) {
     spdlog::info("Outputting final flow solution");
     vtk_output_2D(string("final"),u,xn,yn);
     // output the values along the channel
     ofstream fout("compare.dat",ios::out);
     DO_LOOP(j,jstr-nghosts,jend+nghosts,{
       DO_LOOP(i,istr-nghosts,iend+nghosts,{
-        uexact(i,j) = 1.0/(2.0*mu)*-0.3*(yc(i,j)*yc(i,j)-ly*yc(i,j));
+        uexact(i,j) = 1.0/(2.0*mu)*-0.3*(yc(i,j)*yc(i,j)-config.ly*yc(i,j));
       });
     });
     DO_LOOP(j,jstr-1,jend+1,{
