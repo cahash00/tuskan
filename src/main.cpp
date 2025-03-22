@@ -115,10 +115,11 @@ int main(int argc, char* argv[]){
   double rdy  = 1.0/dy;  // reciprocal of dx
   double dt   = {0};     // initialize dt
   double dpdx = -0.3;    // analytical solution for dpdx
+  double dpdy = 0.0;    // analytical solution for dpdx
   spdlog::info("  dx: {},dy: {}",dx,dy);
 
   // initialize domain and calculate exact solution
-  initialize_solution(u,v,u2,ustar,vstar,p);
+  initialize_solution(u,v,u2,v2,ustar,vstar,p);
   timer.stop();
   spdlog::info("  done ({} seconds)",timer.time());
   
@@ -129,9 +130,7 @@ int main(int argc, char* argv[]){
   double cfl = cfli;
   timer.start();
   spdlog::info("Starting Main Solver");
-  double cfl = config.cfli;
-  double finalIter;
-  for (int ii = 0; ii < config.iter; ii++) {
+  for (int ii = 0; ii < iter; ii++) {
     // ... update boundary conditions
     bc_noslip(u);
     bc_periodic(u);
@@ -143,12 +142,14 @@ int main(int argc, char* argv[]){
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         // get the advection term
-        double advec = getAdvec(i,j,rdx,rdy,u,v);
+        double advecu = getAdvecU(i,j,rdx,rdy,u,v);
+        double advecv = getAdvecV(i,j,rdx,rdy,u,v);
         // get the diffusion term
         double diffu = getDiffu(i,j,rdx,rdy,u,v);
         double diffv = getDiffv(i,j,rdx,rdy,u,v);
         // predictor step
-        ustar(i,j) = u(i,j) + dt*(-advec + nu*diffu);
+        ustar(i,j) = u(i,j) + dt*(-advecu + nu*diffu);
+        vstar(i,j) = v(i,j) + dt*(-advecv + nu*diffv);
       }
     }
 
@@ -156,17 +157,23 @@ int main(int argc, char* argv[]){
     // set the ghost cells for the ustar
     bc_noslip(ustar);
     bc_periodic(ustar);
-    if (config.pMethod == "Jacobi") {
-      // psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
-      psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
-    }
+    switch (pMethod) {
+      case "Jacobi":
+        psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+      case "SOR":
+        psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+      case "Gauss Seidel":
+        // Gauss Seidel solver is SOR but with a weight=1
+        psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+    } 
     
     // ... apply the pressure correctior
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         dpdx = (p(i,j) - p(i-1,j)) / (dx);
-        if (i==30 && j==15) dpdx1 = dpdx;
+        dpdy = (p(i,j) - p(i,j-1)) / (dy);
         u2(i,j) = ustar(i,j) - rrho*dt*dpdx;
+        v2(i,j) = vstar(i,j) - rrho*dt*dpdy;
       }
     }
 
@@ -203,9 +210,9 @@ int main(int argc, char* argv[]){
     });
     
     // ... calculate residuals
-    logFile << ii << " " << ires << "\n";
-    if (config.resflag) {
-      if (ii % config.resfreq == 0) {
+    logFile << ii << " " << ires/res0 << "\n";
+    if (resflag) {
+      if (ii % resfreq == 0) {
         spdlog::info("  iter {:04}, cfl: {:5e}, res: {:5e}",ii,cfl,ires/res0);
         logFile.flush();
       }

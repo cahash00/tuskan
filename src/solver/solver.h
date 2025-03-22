@@ -8,12 +8,19 @@ using namespace std;
 /*******************************************************************************
  * @brief get the advection contribution
  ******************************************************************************/
-double getAdvec(const int& i,
-                const int& j,
-                const double rdx,
-                const double rdy,
-                mtr::FMatrix<double>& u,
-                mtr::FMatrix<double>& v);
+double getAdvecU(const int& i,
+                 const int& j,
+                 const double rdx,
+                 const double rdy,
+                 mtr::FMatrix<double>& u,
+                 mtr::FMatrix<double>& v);
+/******************************************************************************/
+double getAdvecV(const int& i,
+                 const int& j,
+                 const double rdx,
+                 const double rdy,
+                 mtr::FMatrix<double>& u,
+                 mtr::FMatrix<double>& v);
 
 /*******************************************************************************
  * @brief get the diffusion contribution
@@ -52,6 +59,7 @@ double get_min_dt(const double& cfl,
 void initialize_solution(mtr::FMatrix<double>& u, 
                          mtr::FMatrix<double>& v,
                          mtr::FMatrix<double>& u2,
+                         mtr::FMatrix<double>& v2,
                          mtr::FMatrix<double>& p,
                          mtr::FMatrix<double>& ustar,
                          mtr::FMatrix<double>& vstar);
