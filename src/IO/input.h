@@ -22,7 +22,7 @@ struct ConfigData {
   bool   resflag;
   int    resfreq;
   string resFile;
-  string pMethod;
+  int pMethod;
   int    pIter;
   double sorWeight; 
   // convergence criteria

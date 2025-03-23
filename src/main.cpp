@@ -65,10 +65,9 @@ int main(int argc, char* argv[]){
   Kokkos::ScopeGuard kokkos_guard(argc, argv); 
   spdlog::info(" done");
   
-  // ... call input file parser
+  // ... parse the YAML file
   IO_input::ConfigData config = IO_input::parseInputDeck(inFile);
   
-  // ... parse the yaml file
   double dx,dy = {0.0};
   double nx = config.nx;
   double ny = config.ny;
@@ -127,10 +126,10 @@ int main(int argc, char* argv[]){
    * main solver loop
    **********/
   double ires,res0,res1,cfl0,resmax = 0.0;
-  double cfl = cfli;
+  double cfl = config.cfli;
   timer.start();
   spdlog::info("Starting Main Solver");
-  for (int ii = 0; ii < iter; ii++) {
+  for (int ii = 0; ii < config.iter; ii++) {
     // ... update boundary conditions
     bc_noslip(u);
     bc_periodic(u);
@@ -157,12 +156,12 @@ int main(int argc, char* argv[]){
     // set the ghost cells for the ustar
     bc_noslip(ustar);
     bc_periodic(ustar);
-    switch (pMethod) {
-      case "Jacobi":
+    switch (config.pMethod) {
+      case 1:
         psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
-      case "SOR":
+      case 2:
         psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
-      case "Gauss Seidel":
+      case 3:
         // Gauss Seidel solver is SOR but with a weight=1
         psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
     } 

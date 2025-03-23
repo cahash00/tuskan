@@ -30,9 +30,16 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& config) {
   ideck.resflag = config["output"]["residuals"]["enabled"].as<bool>();
   ideck.resfreq = config["output"]["residuals"]["frequency"].as<int>();
   ideck.resFile = config["output"]["residuals"]["file"].as<string>();
-  ideck.pMethod = config["solver"]["pressure solver"]["method"].as<string>();
+  string pMethod = config["solver"]["pressure solver"]["method"].as<string>();
+  if (pMethod == "Jacobi") {
+    ideck.pMethod = 0;
+  } else if (pMethod == "SOR") {
+    ideck.pMethod = 1;
+  } else if (pMethod == "Gauss Seidel") {
+    ideck.pMethod = 2;
+  }
   ideck.pIter   = config["solver"]["pressure solver"]["iterations"].as<int>();
-  if (ideck.pMethod == "SOR") {
+  if (ideck.pMethod == 1) {
     if (config["solver"]["pressure solver"]["SOR weight"]) {
       ideck.sorWeight = config["solver"]["pressure solver"]["SOR weight"].as<double>(); 
     } else {
