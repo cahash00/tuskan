@@ -25,7 +25,6 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& config) {
   ideck.ny = config["domain"]["dimensions"]["y"].as<int>();
   // solver settings
   ideck.iter    = config["solver"]["iterations"].as<int>();
-  ideck.cfl     = config["solver"]["CFL"].as<double>();
   ideck.fvflag  = config["output"]["flowviz"]["enabled"].as<bool>();
   ideck.fvfreq  = config["output"]["flowviz"]["frequency"].as<int>();
   ideck.resflag = config["output"]["residuals"]["enabled"].as<bool>();
@@ -44,7 +43,8 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& config) {
   ideck.toler = config["convergence"]["residual"].as<double>();
   ideck.cfli  = config["dynamic CFL"]["cfli"].as<double>();
   ideck.cflf  = config["dynamic CFL"]["cflf"].as<double>();
-  ideck.dcfl  = config["dynamic CFL"]["enabled"].as<bool>();
+  // IO parameters
+  ideck.foutDir = config["output"]["flowviz"]["directory"].as<string>();
   return ideck;
 }
 

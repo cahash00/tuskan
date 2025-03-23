@@ -6,8 +6,6 @@
 
 using namespace std;
 
-extern YAML::Node config;
-
 namespace IO_input {
 
 struct ConfigData {
@@ -32,11 +30,14 @@ struct ConfigData {
   double cfli;
   double cflf;
   bool   dcfl;
+  // IO parameters
+  string foutDir;
+
 
   static ConfigData fromYAMLConfig(const YAML::Node& config);
 };
 
-ConfigData parseInputDeck(const string& inFile);
+extern ConfigData parseInputDeck(const string& inFile);
 
 void getUserInput(int argc, char* argv[],
                   argparse::ArgumentParser& program);
