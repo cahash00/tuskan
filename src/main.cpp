@@ -70,7 +70,6 @@ int main(int argc, char* argv[]){
   
   // ... parse the yaml file
   double dx,dy = {0.0};
-
   double nx = config.nx;
   double ny = config.ny;
 
@@ -116,22 +115,22 @@ int main(int argc, char* argv[]){
   double rdy  = 1.0/dy;  // reciprocal of dx
   double dt   = {0};     // initialize dt
   double dpdx = -0.3;    // analytical solution for dpdx
+  double dpdy = 0.0;    // analytical solution for dpdx
   spdlog::info("  dx: {},dy: {}",dx,dy);
 
   // initialize domain and calculate exact solution
-  initialize_solution(u,v,u2,ustar,vstar,p);
+  initialize_solution(u,v,u2,v2,ustar,vstar,p);
   timer.stop();
   spdlog::info("  done ({} seconds)",timer.time());
   
   /**********
    * main solver loop
    **********/
-  double ires,res0,res1,cfl0,resmax = {0.0};
+  double ires,res0,res1,cfl0,resmax = 0.0;
+  double cfl = cfli;
   timer.start();
   spdlog::info("Starting Main Solver");
-  double cfl = config.cfli;
-  double finalIter;
-  for (int ii = 0; ii < config.iter; ii++) {
+  for (int ii = 0; ii < iter; ii++) {
     // ... update boundary conditions
     bc_noslip(u);
     bc_periodic(u);
@@ -143,11 +142,14 @@ int main(int argc, char* argv[]){
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         // get the advection term
-        double advec = getAdvec(i,j,rdx,rdy,u,v);
+        double advecu = getAdvecU(i,j,rdx,rdy,u,v);
+        double advecv = getAdvecV(i,j,rdx,rdy,u,v);
         // get the diffusion term
-        double diffu = getDiffu(i,j,rdx,rdy,u);
+        double diffu = getDiffu(i,j,rdx,rdy,u,v);
+        double diffv = getDiffv(i,j,rdx,rdy,u,v);
         // predictor step
-        ustar(i,j) = u(i,j) + dt*(-advec + nu*diffu);
+        ustar(i,j) = u(i,j) + dt*(-advecu + nu*diffu);
+        vstar(i,j) = v(i,j) + dt*(-advecv + nu*diffv);
       }
     }
 
@@ -155,16 +157,23 @@ int main(int argc, char* argv[]){
     // set the ghost cells for the ustar
     bc_noslip(ustar);
     bc_periodic(ustar);
-    if (config.pMethod == "Jacobi") {
-      // psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
-      psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
-    }
+    switch (pMethod) {
+      case "Jacobi":
+        psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+      case "SOR":
+        psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+      case "Gauss Seidel":
+        // Gauss Seidel solver is SOR but with a weight=1
+        psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+    } 
     
     // ... apply the pressure correctior
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         dpdx = (p(i,j) - p(i-1,j)) / (dx);
+        dpdy = (p(i,j) - p(i,j-1)) / (dy);
         u2(i,j) = ustar(i,j) - rrho*dt*dpdx;
+        v2(i,j) = vstar(i,j) - rrho*dt*dpdy;
       }
     }
 
@@ -176,7 +185,9 @@ int main(int argc, char* argv[]){
     } 
     
     // ... Dyanmic CFL
-    if (ii > 0) res1 = ires;
+    if (ii > 0) {
+      res1 = ires;
+    }
     double cflb = cfl; // store current cfl
     ires = L2NORM(u,u2,nx*ny);
     resmax = max(resmax,ires);
@@ -184,24 +195,24 @@ int main(int argc, char* argv[]){
       res0 = ires;
       res1 = ires;
     }
-    if (ires == resmax) cfl0 = cfl; // if res is higher, keep
-    if (ires < res1 && ires < res0) {
+    if (ires == resmax) {
+      cfl0 = cfl; // if res is higher, keep
+    } else if (ires < res1 && ires < res0) {
       cfl = cfl0*resmax/ires; // if res is lower, increase CFL
     }
     cfl = max(cfl,cflb);
-    cfl = min(config.cflf,max(cfl,config.cfli));
-    
+    cfl = min(cflf,max(cfl,cfli));
+
     // ... update the u array with the updated solution array
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    DO_ALL(j,jstr,jend,
+           i,istr,iend,{
         u(i,j) = u2(i,j);
-      }
-    }
+    });
     
     // ... calculate residuals
-    logFile << ii << " " << ires << "\n";
-    if (config.resflag) {
-      if (ii % config.resfreq == 0) {
+    logFile << ii << " " << ires/res0 << "\n";
+    if (resflag) {
+      if (ii % resfreq == 0) {
         spdlog::info("  iter {:04}, cfl: {:5e}, res: {:5e}",ii,cfl,ires/res0);
         logFile.flush();
       }
@@ -226,10 +237,9 @@ int main(int argc, char* argv[]){
     vtk_output_2D(string("final"),config.foutDir,u,nx,ny,xn,yn);
     // output the values along the channel
     ofstream fout("compare.dat",ios::out);
-    DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-      DO_LOOP(i,istr-nghosts,iend+nghosts,{
-        uexact(i,j) = 1.0/(2.0*mu)*-0.3*(yc(i,j)*yc(i,j)-config.ly*yc(i,j));
-      });
+    DO_ALL(j,jstr-nghosts,jend+nghosts,
+           i,istr-nghosts,iend+nghosts,{
+      uexact(i,j) = 1.0/(2.0*mu)*-0.3*(yc(i,j)*yc(i,j)-ly*yc(i,j));
     });
     DO_LOOP(j,jstr-1,jend+1,{
       fout << yc(nx/2,j) << " " << u(nx/2,j) << " " << uexact(nx/2,j) << endl;

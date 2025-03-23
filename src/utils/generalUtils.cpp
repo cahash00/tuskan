@@ -64,10 +64,10 @@ std::unique_ptr<spdlog::custom_flag_formatter> customSPDLOG::clone() const {
 
 /******************************************************************************/
 void print_field(FMatrix<double>& q) {
-  DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-    DO_LOOP(i,istr-nghosts,iend+nghosts,{
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
       cout << q(i,j) << " ";
-    });
+    }
     cout << endl;
-  });
+  }
 }

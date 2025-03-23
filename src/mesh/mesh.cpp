@@ -26,15 +26,15 @@ void mesher2D(const double& lx, const double& ly,
   
   // calculate cell center values
   int i,j;
-  DO2D(j,jstr-nghosts,jend+nghosts,
-       i,istr-nghosts,iend+nghosts,{
+  DO_ALL(j,jstr-nghosts,jend+nghosts,
+         i,istr-nghosts,iend+nghosts,{
     xc(i,j) = (i-(1+nghosts))*dx + dx*0.5;
     yc(i,j) = (j-(1+nghosts))*dy + dy*0.5;
   });
 
   // calculate the cell nodal points
-  DO2D(j,jstr-nghosts,jend+nghosts,
-       i,istr-nghosts,iend+nghosts,{
+  DO_ALL(j,jstr-nghosts,jend+nghosts,
+         i,istr-nghosts,iend+nghosts,{
     xn(i,j) = (i-(1+nghosts)) * dx;
     yn(i,j) = (j-(1+nghosts)) * dy;
   });
