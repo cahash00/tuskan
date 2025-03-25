@@ -76,11 +76,11 @@ double getDiffu(const int& i,
   double d2udy2 = (u(i,j+1) - 2.0*u(i,j) + u(i,j-1)) * rdy * rdy;
 
   // Cross-diffusion term
-  double d2uvdxdy = (v(i+1,j+1) - v(i-1,j+1) 
-                   - v(i+1,j-1) + v(i-1,j-1)) 
-                  * 0.25 * rdx * rdy;
+  // double d2uvdxdy = (v(i+1,j+1) - v(i-1,j+1) 
+  //                  - v(i+1,j-1) + v(i-1,j-1)) 
+  //                 * 0.25 * rdx * rdy;
 
-  diffu = d2udx2 + d2udy2 + d2uvdxdy;
+  diffu = d2udx2 + d2udy2 + 0.0;
 
   return diffu;
 }

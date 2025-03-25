@@ -101,8 +101,8 @@ int main(int argc, char* argv[]){
   // ... initialization
   ofstream logFile(config.resFile, ios::out);
   if (!logFile) {
-      std::cerr << "Error opening log file!\n";
-      return -1;
+    std::cerr << "Error opening log file!\n";
+    return -1;
   }
   timer.start();
   spdlog::info("Initializing the domain");
@@ -129,10 +129,13 @@ int main(int argc, char* argv[]){
   double cfl = config.cfli;
   timer.start();
   spdlog::info("Starting Main Solver");
+  int finalIter;
   for (int ii = 0; ii < config.iter; ii++) {
     // ... update boundary conditions
     bc_noslip(u);
+    bc_noslip(v);
     bc_periodic(u);
+    bc_periodic(v);
 
     // ... get the minimum dt in the domain for current iteration
     dt = get_min_dt(cfl,dx,u);
@@ -156,14 +159,18 @@ int main(int argc, char* argv[]){
     // set the ghost cells for the ustar
     bc_noslip(ustar);
     bc_periodic(ustar);
-    switch (config.pMethod) {
-      case 1:
-        psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
-      case 2:
-        psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
-      case 3:
-        // Gauss Seidel solver is SOR but with a weight=1
-        psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+    bc_noslip(vstar);
+    bc_periodic(vstar);
+    
+    if (config.pMethod == 0) {
+      // Jacobi iterative solver
+      psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+    } else if (config.pMethod == 1) {
+      // Successive Over Relaxation (SOR) iterative solver
+      psolve::SOR(1.0,p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+    } else if (config.pMethod == 2) {
+      // Gauss Seidel solver is SOR but with a weight=1
+      psolve::SOR(config.sorWeight,p,ustar,vstar,dx,dy,dt,rho,nx,ny);
     } 
     
     // ... apply the pressure correctior
@@ -200,18 +207,19 @@ int main(int argc, char* argv[]){
       cfl = cfl0*resmax/ires; // if res is lower, increase CFL
     }
     cfl = max(cfl,cflb);
-    cfl = min(cflf,max(cfl,cfli));
+    cfl = min(config.cflf,max(cfl,config.cfli));
 
     // ... update the u array with the updated solution array
     DO_ALL(j,jstr,jend,
            i,istr,iend,{
-        u(i,j) = u2(i,j);
+      u(i,j) = u2(i,j);
+      v(i,j) = v2(i,j);
     });
     
     // ... calculate residuals
     logFile << ii << " " << ires/res0 << "\n";
-    if (resflag) {
-      if (ii % resfreq == 0) {
+    if (config.resflag) {
+      if (ii % config.resfreq == 0) {
         spdlog::info("  iter {:04}, cfl: {:5e}, res: {:5e}",ii,cfl,ires/res0);
         logFile.flush();
       }
@@ -238,7 +246,7 @@ int main(int argc, char* argv[]){
     ofstream fout("compare.dat",ios::out);
     DO_ALL(j,jstr-nghosts,jend+nghosts,
            i,istr-nghosts,iend+nghosts,{
-      uexact(i,j) = 1.0/(2.0*mu)*-0.3*(yc(i,j)*yc(i,j)-ly*yc(i,j));
+      uexact(i,j) = 1.0/(2.0*mu)*-0.3*(yc(i,j)*yc(i,j)-config.ly*yc(i,j));
     });
     DO_LOOP(j,jstr-1,jend+1,{
       fout << yc(nx/2,j) << " " << u(nx/2,j) << " " << uexact(nx/2,j) << endl;
