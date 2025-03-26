@@ -111,21 +111,22 @@ void SOR(mtr::FMatrix<double>& p,
   // ... start the jacobi iterations
   int jiter = 5000;
   p1.set_values(0.99);
+  p2.set_values(0.99);
 
   vstar.set_values(0.000);
   double omega = 1.7;
 
   for (int n = 0; n <= jiter; n++) {
-    for (int i = istr; i <= iend; i++) {
-      p1(i,jend) = p1(i,jend-1);
+    for (int i = istr-1; i <= iend+1; i++) {
+      p1(i,jend+1) = p1(i,jend);
       p1(i,jstr-1) = p1(i,jstr);
     }
     // ... loop over the domain
-    for (int j = jstr; j <= jend-1; j++) {
+    for (int j = jstr; j <= jend; j++) {
       p1(istr-1,j) = 1.0;
-      p1(iend,j) = 1.0 + -0.3*dx*(nx);
+      p1(iend+1,j) = 1.0 + -0.3*dx*(nx);
 
-      for (int i = istr; i <= iend-1; i++) {
+      for (int i = istr; i <= iend; i++) {
         // ... variable dx and dy
         double term2 = rho / dt * ((ustar(i+1,j)-ustar(i,j))/dx
                                  + (vstar(i,j+1)-vstar(i,j))/dy);
@@ -136,17 +137,17 @@ void SOR(mtr::FMatrix<double>& p,
         p2(i,j) = (1.0-omega)*p1(i,j) + omega/(2.0*(dy2+dx2))*(term1 - dx2*dy2*term2);
       } // end i-loopp
       p2(istr-1,j) = 1.0;
-      p2(iend,j) = 1.0 + -0.3*dx*(nx);
+      p2(iend+1,j) = 1.0 + -0.3*dx*(nx);
     } // end j-loop
-    for (int i = istr; i <= iend; i++) {
-      p2(i,jend) = p2(i,jend-1);
+    for (int i = istr-1; i <= iend+1; i++) {
+      p2(i,jend+1) = p2(i,jend);
       p2(i,jstr-1) = p2(i,jstr);
     }
 
     // double res = L2NORM(p1,p2,nx*ny);
     double res = 0.0;
-    for (int j = jstr-1; j <= jend; j++) {
-      for (int i = istr-1; i <= iend; i++) {
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
         double d = p2(i,j) - p1(i,j);
         res += d;
       }
@@ -160,23 +161,19 @@ void SOR(mtr::FMatrix<double>& p,
     }
     // update the solution
 
-    for (int j = jstr-nghosts; j <= jend; j++) {
-      for (int i = istr-nghosts; i <= iend; i++) {
+    for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
+      for (int i = istr-nghosts; i <= iend-nghosts; i++) {
         p1(i,j) = p2(i,j);
       }
     }
 
   } // end Jacobi loop
-  for (int j = jstr-nghosts; j <= jend; j++) {
-    for (int i = istr-nghosts; i <= iend; i++) {
+  for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
+    for (int i = istr-nghosts; i <= iend+nghosts; i++) {
       double c1 = p2(i,j);
       p(i,j) = c1;
     }
   }
-
-}
-
-void SOR() {
 
 }
 

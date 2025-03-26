@@ -224,6 +224,9 @@ int main(int argc, char* argv[]){
   if (config.fvflag) {
     spdlog::info("Outputting final flow solution");
     vtk_output_2D(string("final"),config.foutDir,u,nx,ny,xn,yn);
+    vtk_output_2D(string("finalu"),config.foutDir,u,nx,ny,xn,yn);
+    vtk_output_2D(string("finalv"),config.foutDir,v,nx,ny,xn,yn);
+    vtk_output_2D(string("finalp"),config.foutDir,p,nx,ny,xn,yn);
     // output the values along the channel
     ofstream fout("compare.dat",ios::out);
     DO_LOOP(j,jstr-nghosts,jend+nghosts,{
