@@ -31,8 +31,6 @@ void Jacobi(mtr::FMatrix<double>& p,
   int jiter = 5000;
   p1.set_values(0.99);
   
-  vstar.set_values(0.000);
-  
   for (int n = 0; n <= jiter; n++) {
     for (int i = istr; i <= iend; i++) {
       p1(i,jend) = p1(i,jend-1);
@@ -112,8 +110,6 @@ void SOR(mtr::FMatrix<double>& p,
   int jiter = 5000;
   p1.set_values(0.99);
   p2.set_values(0.99);
-
-  vstar.set_values(0.000);
   double omega = 1.7;
 
   for (int n = 0; n <= jiter; n++) {

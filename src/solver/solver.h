@@ -8,21 +8,34 @@ using namespace std;
 /*******************************************************************************
  * @brief get the advection contribution
  ******************************************************************************/
-double getAdvec(const int& i,
+double getAdvecU(const int& i,
+                 const int& j,
+                 const double rdx,
+                 const double rdy,
+                 mtr::FMatrix<double>& u,
+                 mtr::FMatrix<double>& v);
+double getAdvecV(const int& i,
+                 const int& j,
+                 const double rdx,
+                 const double rdy,
+                 mtr::FMatrix<double>& u,
+                 mtr::FMatrix<double>& v);
+
+/*******************************************************************************
+ * @brief get the diffusion contribution
+ ******************************************************************************/
+double getDiffU(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
                 mtr::FMatrix<double>& u,
                 mtr::FMatrix<double>& v);
-
-/*******************************************************************************
- * @brief get the diffusion contribution
- ******************************************************************************/
-double getDiffu(const int& i,
+double getDiffV(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
-                mtr::FMatrix<double>& u);
+                mtr::FMatrix<double>& u,
+                mtr::FMatrix<double>& v);
 
 /*******************************************************************************
  * @brief get the L2NORM between two arrays
@@ -44,8 +57,9 @@ double get_min_dt(const double& cfl,
 void initialize_solution(mtr::FMatrix<double>& u, 
                          mtr::FMatrix<double>& v,
                          mtr::FMatrix<double>& u2,
-                         mtr::FMatrix<double>& p,
+                         mtr::FMatrix<double>& v2,
                          mtr::FMatrix<double>& ustar,
-                         mtr::FMatrix<double>& vstar);
+                         mtr::FMatrix<double>& vstar,
+                         mtr::FMatrix<double>& p);
 
 #endif

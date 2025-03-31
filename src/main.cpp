@@ -116,10 +116,11 @@ int main(int argc, char* argv[]){
   double rdy  = 1.0/dy;  // reciprocal of dx
   double dt   = {0};     // initialize dt
   double dpdx = -0.3;    // analytical solution for dpdx
+  double dpdy = 0.0;    // analytical solution for dpdx
   spdlog::info("  dx: {},dy: {}",dx,dy);
 
   // initialize domain and calculate exact solution
-  initialize_solution(u,v,u2,ustar,vstar,p);
+  initialize_solution(u,v,u2,v2,ustar,vstar,p);
   timer.stop();
   spdlog::info("  done ({} seconds)",timer.time());
   
@@ -142,12 +143,17 @@ int main(int argc, char* argv[]){
     // ... loop over domain for predictor step
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
+        std::vector<double> advec(2,0.0);
+        std::vector<double> diffu(2,0.0);
         // get the advection term
-        double advec = getAdvec(i,j,rdx,rdy,u,v);
+        advec[0] = getAdvecU(i,j,rdx,rdy,u,v);
+        advec[1] = getAdvecV(i,j,rdx,rdy,u,v);
         // get the diffusion term
-        double diffu = getDiffu(i,j,rdx,rdy,u);
+        diffu[0] = getDiffU(i,j,rdx,rdy,u,v);
+        diffu[1] = getDiffV(i,j,rdx,rdy,u,v);
         // predictor step
-        ustar(i,j) = u(i,j) + dt*(-advec + nu*diffu);
+        ustar(i,j) = u(i,j) + dt*(-advec[0] + nu*diffu[0]);
+        vstar(i,j) = v(i,j) + dt*(-advec[1] + nu*diffu[1]);
       }
     }
 
@@ -155,16 +161,16 @@ int main(int argc, char* argv[]){
     // set the ghost cells for the ustar
     bc_noslip(ustar);
     bc_periodic(ustar);
-    if (config.pMethod == "Jacobi") {
-      // psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
-      psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
-    }
+    // psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+    psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
     
     // ... apply the pressure correctior
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         dpdx = (p(i,j) - p(i-1,j)) / (dx);
+        dpdy = (p(i,j) - p(i,j-1)) / (dy);
         u2(i,j) = ustar(i,j) - rrho*dt*dpdx;
+        v2(i,j) = vstar(i,j) - rrho*dt*dpdy;
       }
     }
 
@@ -195,6 +201,7 @@ int main(int argc, char* argv[]){
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         u(i,j) = u2(i,j);
+        v(i,j) = v2(i,j);
       }
     }
     

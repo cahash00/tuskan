@@ -11,30 +11,53 @@
 using namespace std;
 
 /******************************************************************************/
-double getAdvec(const int& i,const int& j,
+double getAdvecU(const int& i,const int& j,
                 const double rdx,const double rdy,
                 mtr::FMatrix<double>& u,
                 mtr::FMatrix<double>& v) {
   double advec;
   advec = rdx*pow((u(i+1,j)+u(i,j))*0.5,2)
         - rdx*pow((u(i,j)+u(i-1,j))*0.5,2)
-        + rdy*(u(i,j)+u(i,j+1))*0.5 * (v(i,j)+v(i+1,j))*0.5 
-        - rdy*(u(i,j)+u(i,j-1))*0.5 * (v(i+1,j-1)+v(i,j-1))*0.5;
+        + rdy*(u(i,j)+u(i,j+1))*0.5 * (v(i-1,j+1)+v(i,j+1))*0.5 
+        - rdy*(u(i,j)+u(i,j-1))*0.5 * (v(i,j)+v(i-1,j))*0.5;
   return advec;
 }
-
 /******************************************************************************/
-double getDiffu(const int& i,
+double getAdvecV(const int& i,const int& j,
+                 const double rdx,const double rdy,
+                 mtr::FMatrix<double>& u,
+                 mtr::FMatrix<double>& v) {
+  double advec;
+  advec = rdy*pow((v(i,j)+v(i,j+1))*0.5,2)
+        - rdy*pow((v(i,j)+v(i,j-1))*0.5,2)
+        + rdx*(u(i+1,j)+u(i+1,j-1))*0.5 * (v(i,j)+v(i+1,j))*0.5;
+        - rdx*(u(i,j)+u(i,j-1))*0.5 * (v(i,j)+v(i-1,j))*0.5;
+  return advec;
+}
+/******************************************************************************/
+double getDiffU(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
-                mtr::FMatrix<double>& u) {
+                mtr::FMatrix<double>& u,
+                mtr::FMatrix<double>& v) {
   double diffu;
   diffu = ( u(i+1,j) - 2.0*u(i,j) + u(i-1,j))*rdx*rdx + 
           ( u(i,j+1) - 2.0*u(i,j) + u(i,j-1))*rdy*rdx;
   return diffu;
 }
-
+/******************************************************************************/
+double getDiffV(const int& i,
+                const int& j,
+                const double rdx,
+                const double rdy,
+                mtr::FMatrix<double>& u,
+                mtr::FMatrix<double>& v) {
+  double diffv;
+  diffv = ( v(i+1,j) - 2.0*v(i,j) + v(i-1,j))*rdx*rdx + 
+          ( v(i,j+1) - 2.0*v(i,j) + v(i,j-1))*rdy*rdx;
+  return diffv;
+}
 /******************************************************************************/
 double L2NORM(mtr::FMatrix<double>& m1, 
               mtr::FMatrix<double>& m2, 
@@ -72,18 +95,15 @@ double get_min_dt(const double& cfl,
 void initialize_solution(mtr::FMatrix<double>& u,
                          mtr::FMatrix<double>& v,
                          mtr::FMatrix<double>& u2,
-                         mtr::FMatrix<double>& p,
+                         mtr::FMatrix<double>& v2,
                          mtr::FMatrix<double>& ustar,
-                         mtr::FMatrix<double>& vstar) {
-  DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-    DO_LOOP(i,istr-nghosts,iend+nghosts,{
-      u(i,j) = 0.007; // average u
-      v(i,j) = 0.0; // zero y-velocity
-    });
-  });
+                         mtr::FMatrix<double>& vstar,
+                         mtr::FMatrix<double>& p) {
+  u.set_values(0.007); // average u
   v.set_values(0.0);
   u2.set_values(0.0);
-  p.set_values(0.0);
+  v2.set_values(0.0);
   ustar.set_values(0.0);
   vstar.set_values(0.0);
+  p.set_values(0.0);
 }
