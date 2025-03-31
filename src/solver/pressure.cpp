@@ -83,8 +83,7 @@ void Jacobi(mtr::FMatrix<double>& p,
   } // end Jacobi loop
   for (int j = jstr-nghosts; j <= jend; j++) {
     for (int i = istr-nghosts; i <= iend; i++) {
-      double c1 = p2(i,j);
-      p(i,j) = c1;
+      p(i,j) = p2(i,j);
     }
   }
 }
@@ -113,10 +112,24 @@ void SOR(mtr::FMatrix<double>& p,
   double omega = 1.7;
 
   for (int n = 0; n <= jiter; n++) {
-    for (int i = istr-1; i <= iend+1; i++) {
-      p1(i,jend+1) = p1(i,jend);
-      p1(i,jstr-1) = p1(i,jstr);
+
+    // ... set pressure gradient boundary conditions
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
+        // set pressure gradient for x-direction
+        p2(istr-1,j) = 1.0;
+        p2(iend+1,j) = 1.0 + -0.3*dx*(nx);
+        p1(i,jend+1) = p1(i,jend);
+        p1(i,jstr-1) = p1(i,jstr);
+        // set pressure gradient for y-direction
+        // p1(i,jstr-1) = 1.0;
+        // p1(i,jend+1) = 1.0 + -0.3*dx*(nx);
+        // p1(iend+1,j) = p1(iend,j);
+        // p1(istr-1,j) = p1(istr,j);
+        
+      }
     }
+    
     // ... loop over the domain
     for (int j = jstr; j <= jend; j++) {
       p1(istr-1,j) = 1.0;
@@ -131,9 +144,7 @@ void SOR(mtr::FMatrix<double>& p,
                      + (p1(i,j+1) + p2(i,j-1))*dx2;
 
         p2(i,j) = (1.0-omega)*p1(i,j) + omega/(2.0*(dy2+dx2))*(term1 - dx2*dy2*term2);
-      } // end i-loopp
-      p2(istr-1,j) = 1.0;
-      p2(iend+1,j) = 1.0 + -0.3*dx*(nx);
+      } // end i-loop
     } // end j-loop
     for (int i = istr-1; i <= iend+1; i++) {
       p2(i,jend+1) = p2(i,jend);
@@ -149,7 +160,7 @@ void SOR(mtr::FMatrix<double>& p,
       }
     }
 
-    if (res < 5.0e-4 && n > 100) {
+    if (res < 5.0e-6 && n > 100) {
       break;
     } else if (n == jiter) {
       cout << res << endl;
@@ -166,8 +177,7 @@ void SOR(mtr::FMatrix<double>& p,
   } // end Jacobi loop
   for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
     for (int i = istr-nghosts; i <= iend+nghosts; i++) {
-      double c1 = p2(i,j);
-      p(i,j) = c1;
+      p(i,j) = p2(i,j);
     }
   }
 

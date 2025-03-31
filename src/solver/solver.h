@@ -49,7 +49,8 @@ double L2NORM(mtr::FMatrix<double>& uexact,
  ******************************************************************************/
 double get_min_dt(const double& cfl, 
                   const double& dx,
-                  mtr::FMatrix<double>& u);
+                  mtr::FMatrix<double>& u,
+                  mtr::FMatrix<double>& v);
 
 /*******************************************************************************
  * @brief initialize the domain and arrays

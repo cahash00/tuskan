@@ -43,7 +43,7 @@ double getDiffU(const int& i,
                 mtr::FMatrix<double>& v) {
   double diffu;
   diffu = ( u(i+1,j) - 2.0*u(i,j) + u(i-1,j))*rdx*rdx + 
-          ( u(i,j+1) - 2.0*u(i,j) + u(i,j-1))*rdy*rdx;
+          ( u(i,j+1) - 2.0*u(i,j) + u(i,j-1))*rdy*rdy;
   return diffu;
 }
 /******************************************************************************/
@@ -55,7 +55,7 @@ double getDiffV(const int& i,
                 mtr::FMatrix<double>& v) {
   double diffv;
   diffv = ( v(i+1,j) - 2.0*v(i,j) + v(i-1,j))*rdx*rdx + 
-          ( v(i,j+1) - 2.0*v(i,j) + v(i,j-1))*rdy*rdx;
+          ( v(i,j+1) - 2.0*v(i,j) + v(i,j-1))*rdy*rdy;
   return diffv;
 }
 /******************************************************************************/
@@ -81,12 +81,14 @@ double L2NORM(mtr::FMatrix<double>& m1,
 /******************************************************************************/
 double get_min_dt(const double& cfl, 
                   const double& dx,
-                  mtr::FMatrix<double>& u) {
+                  mtr::FMatrix<double>& u,
+                  mtr::FMatrix<double>& v) {
   double minval = 1e5;
   double dt = 1e5;
   DO_LOOP(j,jstr-nghosts,jend+nghosts,{
     DO_LOOP(i,istr-nghosts,iend+nghosts,{
-      dt = min(dt,cfl*dx/abs(u(i,j)));
+      double vmag = sqrt(u(i,j)*u(i,j) + v(i,j)*v(i,j));
+      dt = min(dt,cfl*dx/vmag);
     });
   });
   return dt;

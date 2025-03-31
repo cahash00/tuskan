@@ -33,8 +33,8 @@ void mesher2D(const double& lx, const double& ly,
   });
 
   // calculate the cell nodal points
-  DO2D(j,jstr-nghosts,jend+nghosts,
-       i,istr-nghosts,iend+nghosts,{
+  DO2D(j,jstr-nghosts,jend+nghosts+1,
+       i,istr-nghosts,iend+nghosts+1,{
     xn(i,j) = (i-(1+nghosts)) * dx;
     yn(i,j) = (j-(1+nghosts)) * dy;
   });

@@ -138,7 +138,7 @@ int main(int argc, char* argv[]){
     bc_periodic(u);
 
     // ... get the minimum dt in the domain for current iteration
-    dt = get_min_dt(cfl,dx,u);
+    dt = get_min_dt(cfl,dx,u,v);
 
     // ... loop over domain for predictor step
     for (int j = jstr; j <= jend; j++) {
