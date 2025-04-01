@@ -134,6 +134,8 @@ int main(int argc, char* argv[]){
   double finalIter;
   for (int ii = 0; ii < config.iter; ii++) {
     // ... update boundary conditions
+    bc_noslip(u);
+    bc_periodic(u);
     bc_noslip(v);
     bc_periodic(v);
 
@@ -159,8 +161,8 @@ int main(int argc, char* argv[]){
 
     // ... solve for the pressure correction term
     // set the ghost cells for the ustar
-    // bc_noslip(ustar);
-    // bc_periodic(ustar);
+    bc_noslip(ustar);
+    bc_periodic(ustar);
     bc_noslip(vstar);
     bc_periodic(vstar);
     // psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
@@ -179,7 +181,7 @@ int main(int argc, char* argv[]){
     // ... output intermediate flowviz
     if (config.fvflag) {
       if (ii % config.fvfreq == 0) {
-        vtk_output_2D(ii,config.foutDir,u,nx,ny,xn,yn);
+        vtk_output_2D(ii,config.foutDir,u,v,p,nx,ny,xn,yn);
       }
     } 
     
@@ -232,22 +234,7 @@ int main(int argc, char* argv[]){
    */
   if (config.fvflag) {
     spdlog::info("Outputting final flow solution");
-    vtk_output_2D(string("final"),config.foutDir,u,nx,ny,xn,yn);
-    vtk_output_2D(string("finalu"),config.foutDir,u,nx,ny,xn,yn);
-    vtk_output_2D(string("finalv"),config.foutDir,v,nx,ny,xn,yn);
-    vtk_output_2D(string("finalp"),config.foutDir,p,nx,ny,xn,yn);
-    // output the values along the channel
-    ofstream fout("compare.dat",ios::out);
-    DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-      DO_LOOP(i,istr-nghosts,iend+nghosts,{
-        uexact(i,j) = 1.0/(2.0*mu)*-0.3*(yc(i,j)*yc(i,j)-config.ly*yc(i,j));
-      });
-    });
-    DO_LOOP(j,jstr-1,jend+1,{
-      fout << yc(nx/2,j) << " " << u(nx/2,j) << " " << uexact(nx/2,j) << endl;
-    });
-    spdlog::info("Outputting exact flow solution");
-    vtk_output_2D(string("exact"),config.foutDir,uexact,nx,ny,xn,yn);
+    vtk_output_2D(string("final"),config.foutDir,ustar,vstar,p,nx,ny,xn,yn);
   } else {
     spdlog::warn("Output was disabled.");
   }

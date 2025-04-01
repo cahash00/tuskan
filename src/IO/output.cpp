@@ -28,7 +28,9 @@ using namespace std;
  */
 static void vtk_output_2D_IMPL(const string& caseName,
                                const string& foutDir,
-                               const mtr::FMatrix<double>& q,
+                               const mtr::FMatrix<double>& u,
+                               const mtr::FMatrix<double>& v,
+                               const mtr::FMatrix<double>& p,
                                const int& nx,
                                const int& ny,
                                const mtr::FMatrix<double>& xn,
@@ -54,9 +56,23 @@ static void vtk_output_2D_IMPL(const string& caseName,
   fprintf(out,"POINT_DATA %d\n",(nx+2)*(ny+2));
   fprintf(out,"SCALARS u float 1\n");
   fprintf(out,"LOOKUP_TABLE default\n");
-  for (int j = jstr-1; j <= jend+1; j++) {
-    for (int i = istr-1; i <= iend+1; i++) {
-      fprintf(out,"%f\n",q(i,j));
+  for (int j = jstr-1; j <= jend+nghosts; j++) {
+    for (int i = istr-1; i <= iend+nghosts; i++) {
+      fprintf(out,"%f\n",u(i,j));
+    }
+  }
+  fprintf(out,"SCALARS v float 1\n");
+  fprintf(out,"LOOKUP_TABLE default\n");
+  for (int j = jstr-1; j <= jend+nghosts; j++) {
+    for (int i = istr-1; i <= iend+nghosts; i++) {
+      fprintf(out,"%f\n",v(i,j));
+    }
+  }
+  fprintf(out,"SCALARS p float 1\n");
+  fprintf(out,"LOOKUP_TABLE default\n");
+  for (int j = jstr-1; j <= jend+nghosts; j++) {
+    for (int i = istr-1; i <= iend+nghosts; i++) {
+      fprintf(out,"%f\n",p(i,j));
     }
   }
   fclose(out);
@@ -64,7 +80,9 @@ static void vtk_output_2D_IMPL(const string& caseName,
 
 void vtk_output_2D(const int& ii,
                    const string& foutDir,
-                   const mtr::FMatrix<double>& q,
+                   const mtr::FMatrix<double>& u,
+                   const mtr::FMatrix<double>& v,
+                   const mtr::FMatrix<double>& p,
                    const int& nx,
                    const int& ny,
                    const mtr::FMatrix<double>& xn,
@@ -72,14 +90,16 @@ void vtk_output_2D(const int& ii,
   std::ostringstream foutss;
   foutss << setw(5) << std::setfill('0') << ii;
   string caseName = foutss.str();
-  vtk_output_2D_IMPL(caseName,foutDir,q,nx,ny,xn,yn);
+  vtk_output_2D_IMPL(caseName,foutDir,u,v,p,nx,ny,xn,yn);
 }
 void vtk_output_2D(const string& caseName,
                    const string& foutDir,
-                   const mtr::FMatrix<double>& q,
+                   const mtr::FMatrix<double>& u,
+                   const mtr::FMatrix<double>& v,
+                   const mtr::FMatrix<double>& p,
                    const int& nx,
                    const int& ny,
                    const mtr::FMatrix<double>& xn,
                    const mtr::FMatrix<double>& yn) {
-  vtk_output_2D_IMPL(caseName,foutDir,q,nx,ny,xn,yn);
+  vtk_output_2D_IMPL(caseName,foutDir,u,v,p,nx,ny,xn,yn);
 }

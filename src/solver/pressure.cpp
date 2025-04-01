@@ -74,11 +74,11 @@ void Jacobi(mtr::FMatrix<double>& p,
     }
     // update the solution
 
-    for (int j = jstr-nghosts; j <= jend; j++) {
-      for (int i = istr-nghosts; i <= iend; i++) {
-        p1(i,j) = p2(i,j);
-      }
-    }
+//     for (int j = jstr-nghosts; j <= jend; j++) {
+//       for (int i = istr-nghosts; i <= iend; i++) {
+//         p1(i,j) = p2(i,j);
+//       }
+//     }
 
   } // end Jacobi loop
   for (int j = jstr-nghosts; j <= jend; j++) {
