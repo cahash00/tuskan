@@ -30,7 +30,7 @@ double getAdvecV(const int& i,const int& j,
   double advec;
   advec = rdy*pow((v(i,j)+v(i,j+1))*0.5,2)
         - rdy*pow((v(i,j)+v(i,j-1))*0.5,2)
-        + rdx*(u(i+1,j)+u(i+1,j-1))*0.5 * (v(i,j)+v(i+1,j))*0.5;
+        + rdx*(u(i+1,j)+u(i+1,j-1))*0.5 * (v(i,j)+v(i+1,j))*0.5
         - rdx*(u(i,j)+u(i,j-1))*0.5 * (v(i,j)+v(i-1,j))*0.5;
   return advec;
 }
@@ -43,7 +43,7 @@ double getDiffU(const int& i,
                 mtr::FMatrix<double>& v) {
   double diffu;
   diffu = ( u(i+1,j) - 2.0*u(i,j) + u(i-1,j))*rdx*rdx + 
-          ( u(i,j+1) - 2.0*u(i,j) + u(i,j-1))*rdy*rdx;
+          ( u(i,j+1) - 2.0*u(i,j) + u(i,j-1))*rdy*rdy;
   return diffu;
 }
 /******************************************************************************/
@@ -55,7 +55,7 @@ double getDiffV(const int& i,
                 mtr::FMatrix<double>& v) {
   double diffv;
   diffv = ( v(i+1,j) - 2.0*v(i,j) + v(i-1,j))*rdx*rdx + 
-          ( v(i,j+1) - 2.0*v(i,j) + v(i,j-1))*rdy*rdx;
+          ( v(i,j+1) - 2.0*v(i,j) + v(i,j-1))*rdy*rdy;
   return diffv;
 }
 /******************************************************************************/
