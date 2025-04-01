@@ -13,18 +13,28 @@ using namespace mtr;
 
 /******************************************************************************/
 void bc_noslip(FMatrix<double>& u) {
+  // ... x-direction noslip
+  // for (int i = istr; i <= iend; i++) {
+  //   u(i,jstr-1) = -u(i,jstr);
+  //   u(i,jend+1) = -u(i,jend);
+  // }
+  // ... y-direction noslip
   for (int j = jstr; j <= jend; j++) {
-    for (int i = istr; i <= iend; i++) {
-      u(i,jstr-1) = -u(i,jstr);
-      u(i,jend+1) = -u(i,jend);
-    }
+    u(istr-1,j) = -u(istr,j);
+    u(iend+1,j) = -u(iend,j);
   }
 }
 /******************************************************************************/
 void bc_periodic(FMatrix<double>& u) {
-  for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
-    u(istr-1,j) = u(iend,j);
-    u(iend+1,j) = u(istr,j);
+  // ... x-direction periodic
+  // for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
+  //   u(istr-1,j) = u(iend,j);
+  //   u(iend+1,j) = u(istr,j);
+  // }
+  // ... y-direction periodic
+  for (int i = istr-nghosts; i <= iend+nghosts; i++) {
+    u(i,jstr-1) = u(i,jend);
+    u(i,jend+1) = u(i,jstr);
   }
 }
 /******************************************************************************/

@@ -30,7 +30,7 @@ double getAdvecV(const int& i,const int& j,
   double advec;
   advec = rdy*pow((v(i,j)+v(i,j+1))*0.5,2)
         - rdy*pow((v(i,j)+v(i,j-1))*0.5,2)
-        + rdx*(u(i+1,j)+u(i+1,j-1))*0.5 * (v(i,j)+v(i+1,j))*0.5;
+        + rdx*(u(i+1,j)+u(i+1,j-1))*0.5 * (v(i,j)+v(i+1,j))*0.5
         - rdx*(u(i,j)+u(i,j-1))*0.5 * (v(i,j)+v(i-1,j))*0.5;
   return advec;
 }
@@ -85,12 +85,12 @@ double get_min_dt(const double& cfl,
                   mtr::FMatrix<double>& v) {
   double minval = 1e5;
   double dt = 1e5;
-  DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-    DO_LOOP(i,istr-nghosts,iend+nghosts,{
+  for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
+    for (int i = istr-nghosts; i <= iend+nghosts; i++) {
       double vmag = sqrt(u(i,j)*u(i,j) + v(i,j)*v(i,j));
       dt = min(dt,cfl*dx/vmag);
-    });
-  });
+    }
+  }
   return dt;
 }
 /******************************************************************************/
@@ -101,8 +101,8 @@ void initialize_solution(mtr::FMatrix<double>& u,
                          mtr::FMatrix<double>& ustar,
                          mtr::FMatrix<double>& vstar,
                          mtr::FMatrix<double>& p) {
-  u.set_values(0.007); // average u
-  v.set_values(0.0);
+  u.set_values(0.000); // average u
+  v.set_values(0.007);
   u2.set_values(0.0);
   v2.set_values(0.0);
   ustar.set_values(0.0);

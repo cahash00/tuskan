@@ -115,7 +115,7 @@ int main(int argc, char* argv[]){
   double rdx  = 1.0/dx;  // reciprocal of dx
   double rdy  = 1.0/dy;  // reciprocal of dx
   double dt   = {0};     // initialize dt
-  double dpdx = -0.3;    // analytical solution for dpdx
+  double dpdx = 0.0;    // analytical solution for dpdx
   double dpdy = 0.0;    // analytical solution for dpdx
   spdlog::info("  dx: {},dy: {}",dx,dy);
 
@@ -134,8 +134,8 @@ int main(int argc, char* argv[]){
   double finalIter;
   for (int ii = 0; ii < config.iter; ii++) {
     // ... update boundary conditions
-    bc_noslip(u);
-    bc_periodic(u);
+    bc_noslip(v);
+    bc_periodic(v);
 
     // ... get the minimum dt in the domain for current iteration
     dt = get_min_dt(cfl,dx,u,v);
@@ -159,8 +159,10 @@ int main(int argc, char* argv[]){
 
     // ... solve for the pressure correction term
     // set the ghost cells for the ustar
-    bc_noslip(ustar);
-    bc_periodic(ustar);
+    // bc_noslip(ustar);
+    // bc_periodic(ustar);
+    bc_noslip(vstar);
+    bc_periodic(vstar);
     // psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
     psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
     
@@ -198,12 +200,12 @@ int main(int argc, char* argv[]){
     cfl = min(config.cflf,max(cfl,config.cfli));
     
     // ... update the u array with the updated solution array
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
-        u(i,j) = u2(i,j);
-        v(i,j) = v2(i,j);
-      }
-    }
+    // for (int j = jstr; j <= jend; j++) {
+    //   for (int i = istr; i <= iend; i++) {
+    //     u(i,j) = u2(i,j);
+    //     v(i,j) = v2(i,j);
+    //   }
+    // }
     
     // ... calculate residuals
     logFile << ii << " " << ires << "\n";
