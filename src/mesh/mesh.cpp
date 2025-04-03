@@ -9,16 +9,16 @@
 #include <matar.h>  // MATAR headers
 #include <params.h>
 
-using namespace std;
-using namespace mtr;
 
-/**********************
- * 2D Meshing Routine *
- **********************/
+namespace mesh {
+
+/**
+ * Domain generation in 2D
+ */
 void mesher2D(const double& lx, const double& ly, 
               const int& nx,const int& ny,
-              FMatrix<double>& xc, FMatrix<double>& yc,
-              FMatrix<double>& xn, FMatrix<double>& yn,
+              mtr::FMatrix<double>& xc, mtr::FMatrix<double>& yc,
+              mtr::FMatrix<double>& xn, mtr::FMatrix<double>& yn,
               double& dx, double& dy){
   // get dx and dy
   dx = lx/static_cast<double>(nx);
@@ -26,16 +26,20 @@ void mesher2D(const double& lx, const double& ly,
   
   // calculate cell center values
   int i,j;
-  DO2D(j,jstr-nghosts,jend+nghosts,
-       i,istr-nghosts,iend+nghosts,{
-    xc(i,j) = (i-(1+nghosts))*dx + dx*0.5;
-    yc(i,j) = (j-(1+nghosts))*dy + dy*0.5;
-  });
+  for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
+    for (int i = istr-nghosts; i <= iend+nghosts; i++) {
+      xc(i,j) = (i-(1+nghosts))*dx + dx*0.5;
+      yc(i,j) = (j-(1+nghosts))*dy + dy*0.5;
+    }
+  }
 
   // calculate the cell nodal points
-  DO2D(j,jstr-nghosts,jend+nghosts+1,
-       i,istr-nghosts,iend+nghosts+1,{
-    xn(i,j) = (i-(1+nghosts)) * dx;
-    yn(i,j) = (j-(1+nghosts)) * dy;
-  });
-}
+  for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
+    for (int i = istr-nghosts; i <= iend+nghosts; i++) {
+      xn(i,j) = (i-(1+nghosts)) * dx;
+      yn(i,j) = (j-(1+nghosts)) * dy;
+    }
+  }
+} // end mesher2D
+
+} // end namespace mesh

@@ -14,8 +14,10 @@
 using namespace std;
 using namespace mtr;
 
+namespace BC {
 /******************************************************************************/
 void bc_noslip(FMatrix<double>& u);
 void bc_periodic(FMatrix<double>& u);
 /******************************************************************************/
+} // end namespace BC
 #endif // BCS_H

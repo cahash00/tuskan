@@ -96,7 +96,7 @@ int main(int argc, char* argv[]){
   Timer timer;
   timer.start();
   spdlog::info("Generating 2D mesh");
-  mesher2D(config.lx,config.ly,config.nx,config.ny,xc,yc,xn,yn,dx,dy);
+  mesh::mesher2D(config.lx,config.ly,config.nx,config.ny,xc,yc,xn,yn,dx,dy);
   timer.stop();
   spdlog::info("  done ({} seconds)",timer.time());
 
@@ -134,10 +134,10 @@ int main(int argc, char* argv[]){
   double finalIter;
   for (int ii = 0; ii < config.iter; ii++) {
     // ... update boundary conditions
-    bc_noslip(u);
-    bc_periodic(u);
-    bc_noslip(v);
-    bc_periodic(v);
+    BC::bc_noslip(u);
+    BC::bc_periodic(u);
+    BC::bc_noslip(v);
+    BC::bc_periodic(v);
 
     // ... get the minimum dt in the domain for current iteration
     dt = get_min_dt(cfl,dx,u,v);
@@ -161,10 +161,10 @@ int main(int argc, char* argv[]){
 
     // ... solve for the pressure correction term
     // set the ghost cells for the ustar
-    bc_noslip(ustar);
-    bc_periodic(ustar);
-    bc_noslip(vstar);
-    bc_periodic(vstar);
+    BC::bc_noslip(ustar);
+    BC::bc_periodic(ustar);
+    BC::bc_noslip(vstar);
+    BC::bc_periodic(vstar);
     // psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
     psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
     
@@ -202,12 +202,12 @@ int main(int argc, char* argv[]){
     cfl = min(config.cflf,max(cfl,config.cfli));
     
     // ... update the u array with the updated solution array
-    // for (int j = jstr; j <= jend; j++) {
-    //   for (int i = istr; i <= iend; i++) {
-    //     u(i,j) = u2(i,j);
-    //     v(i,j) = v2(i,j);
-    //   }
-    // }
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
+        u(i,j) = u2(i,j);
+        v(i,j) = v2(i,j);
+      }
+    }
     
     // ... calculate residuals
     logFile << ii << " " << ires << "\n";

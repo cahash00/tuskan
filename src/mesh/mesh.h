@@ -24,10 +24,11 @@ using namespace mtr;
  * @param[inout] dx cell width in the x-direction
  * @param[inout] dy cell width in the y-direction
  */
+namespace mesh {
 void mesher2D(const double& lx, const double& ly, 
               const int& nx, const int& ny,
               FMatrix<double>& xc, FMatrix<double>& yc,
               FMatrix<double>& xn, FMatrix<double>& yn,
               double& dx, double& dy);
-
+} // end namespace mesh
 #endif // MESH_H
