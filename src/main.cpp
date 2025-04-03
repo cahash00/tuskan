@@ -181,7 +181,7 @@ int main(int argc, char* argv[]){
     // ... output intermediate flowviz
     if (config.fvflag) {
       if (ii % config.fvfreq == 0) {
-        vtk_output_2D(ii,config.foutDir,u,v,p,nx,ny,xn,yn);
+        IO::vtk_output_2D(ii,config.foutDir,u,v,p,nx,ny,xn,yn);
       }
     } 
     
@@ -234,7 +234,7 @@ int main(int argc, char* argv[]){
    */
   if (config.fvflag) {
     spdlog::info("Outputting final flow solution");
-    vtk_output_2D(string("final"),config.foutDir,ustar,vstar,p,nx,ny,xn,yn);
+    IO::vtk_output_2D(string("final"),config.foutDir,ustar,vstar,p,nx,ny,xn,yn);
   } else {
     spdlog::warn("Output was disabled.");
   }

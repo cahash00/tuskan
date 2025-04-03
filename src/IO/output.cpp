@@ -19,6 +19,8 @@
 
 using namespace std;
 
+namespace IO {
+
 /**
  * @brief VTK output for a 2D mesh
  * @param[in] nx number of cells in y-direction
@@ -103,3 +105,5 @@ void vtk_output_2D(const string& caseName,
                    const mtr::FMatrix<double>& yn) {
   vtk_output_2D_IMPL(caseName,foutDir,u,v,p,nx,ny,xn,yn);
 }
+
+} // end namepsace IO
