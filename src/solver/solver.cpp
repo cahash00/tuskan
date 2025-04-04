@@ -188,13 +188,17 @@ void initialize_solution(const double& uinit,
                          const double& vinit,
                          mtr::FMatrix<double>& u,
                          mtr::FMatrix<double>& v,
+                         mtr::FMatrix<double>& u_old,
+                         mtr::FMatrix<double>& v_old,
                          mtr::FMatrix<double>& u2,
                          mtr::FMatrix<double>& v2,
                          mtr::FMatrix<double>& ustar,
                          mtr::FMatrix<double>& vstar,
                          mtr::FMatrix<double>& p) {
-  u.set_values(uinit); // average u
+  u.set_values(uinit);
   v.set_values(vinit);
+  u_old.set_values(uinit);
+  v_old.set_values(vinit);
   u2.set_values(uinit);
   v2.set_values(vinit);
   ustar.set_values(0.0);

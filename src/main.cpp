@@ -72,6 +72,8 @@ int main(int argc, char* argv[]){
   fmatD v(ndims[0]+1,ndims[1]+1);
   fmatD u2(ndims[0]+1,ndims[1]+1);
   fmatD v2(ndims[0]+1,ndims[1]+1);
+  fmatD u_old(ndims[0]+1,ndims[1]+1);
+  fmatD v_old(ndims[0]+1,ndims[1]+1);
   fmatD uexact(ndims[0]+1,ndims[1]+1);
   
   // ... call mesh generator
@@ -110,7 +112,12 @@ int main(int argc, char* argv[]){
   IO::logger->info("  dx: {},dy: {}",dx,dy);
 
   // initialize domain and calculate exact solution
-  initialize_solution(config.uinit,config.vinit,u,v,u2,v2,ustar,vstar,p);
+  initialize_solution(config.uinit,config.vinit,
+                      u,v,
+                      u_old,v_old,
+                      u2,v2,
+                      ustar,vstar,
+                      p);
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   
@@ -133,14 +140,26 @@ int main(int argc, char* argv[]){
     // ... get the minimum dt in the domain for current iteration
     dt = get_min_dt(cfl,dx,dy,u,v);
 
+    // ... store the previous timestep
+    for (int j = jstr-1; j <= jend+1; j++) {
+      for (int i = istr-1; i <= iend+1; i++) {
+        u_old(i,j) = u(i,j);
+        v_old(i,j) = v(i,j);
+      }
+    }
+    
+
     // ... loop over domain for predictor step
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         std::vector<double> advec(2,0.0);
+        std::vector<double> advec_old(2,0.0);
         std::vector<double> diffu(2,0.0);
         // get the advection term
         advec[0] = getAdvecU(i,j,rdx,rdy,u,v);
         advec[1] = getAdvecV(i,j,rdx,rdy,u,v);
+        advec_old[0] = getAdvecU(i,j,rdx,rdy,u_old,v_old);
+        advec_old[1] = getAdvecV(i,j,rdx,rdy,u_old,v_old);
         // get the diffusion term
         diffu[0] = getDiffU(i,j,rdx,rdy,u,v);
         diffu[1] = getDiffV(i,j,rdx,rdy,u,v);
@@ -175,7 +194,6 @@ int main(int argc, char* argv[]){
     if (ii > 0) res1 = ires;
     double cflb = cfl; // store current cfl
     ires = max(L2NORM(u,u2),L2NORM(v,v2));
-    if (ii % config.resfreq==0) printer.print(L2NORM(u,u2),L2NORM(v,v2),dt);
     resmax = max(resmax,ires);
     if (ii==0) {
       res0 = ires;
@@ -188,6 +206,13 @@ int main(int argc, char* argv[]){
     cfl = max(cfl,cflb);
     cfl = min(config.cflf,max(cfl,config.cfli)); 
     
+    // ... store the previous timestep
+    for (int j = jstr-1; j <= jend+1; j++) {
+      for (int i = istr-1; i <= iend+1; i++) {
+        u_old(i,j) = u(i,j);
+        v_old(i,j) = v(i,j);
+      }
+    }
     // ... update the u array with the updated solution array
     for (int j = jstr-1; j <= jend+1; j++) {
       for (int i = istr-1; i <= iend+1; i++) {
