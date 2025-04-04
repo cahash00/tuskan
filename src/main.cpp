@@ -144,7 +144,7 @@ int main(int argc, char* argv[]){
         // get the diffusion term
         diffu[0] = getDiffU(i,j,rdx,rdy,u,v);
         diffu[1] = getDiffV(i,j,rdx,rdy,u,v);
-        // predictor step
+        // predictor step - explicit
         ustar(i,j) = u(i,j) + dt*(-advec[0] + nu*diffu[0]);
         vstar(i,j) = v(i,j) + dt*(-advec[1] + nu*diffu[1]);
       }

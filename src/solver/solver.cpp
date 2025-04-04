@@ -84,7 +84,7 @@ double get_min_dt(const double& cfl,
                   const double& dy,
                   mtr::FMatrix<double>& u,
                   mtr::FMatrix<double>& v) {
-  double dt;
+  double dt=1.0e5;
   for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
     for (int i = istr-nghosts; i <= iend+nghosts; i++) {
       dt = min(abs(cfl*dy/(v(i,j)+1.0e-15)),abs(cfl*dx/(u(i,j)+1.0e-15)));
