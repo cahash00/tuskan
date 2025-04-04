@@ -109,3 +109,33 @@ void initialize_solution(mtr::FMatrix<double>& u,
   vstar.set_values(0.0);
   p.set_values(0.0);
 }
+/******************************************************************************/
+double dynamic_cfl(const int ii,
+                   mtr::FMatrix<double>& u,
+                   mtr::FMatrix<double>& u2,
+                   mtr::FMatrix<double>& v,
+                   mtr::FMatrix<double>& v2,
+                   double cfl,
+                   double ires,
+                   double resmax,
+                   double cfli,
+                   double cflf,
+                   const int nx,
+                   const int ny) {
+  double res0,res1,cfl0; 
+  if (ii > 0) res1 = ires;
+  double cflb = cfl; // store current cfl
+  ires = L2NORM(u,u2,nx*ny);
+  resmax = max(resmax,ires);
+  if (ii==0) {
+    res0 = ires;
+    res1 = ires;
+  }
+  if (ires == resmax) cfl0 = cfl; // if res is higher, keep
+  if (ires < res1 && ires < res0) {
+    cfl = cfl0*resmax/ires; // if res is lower, increase CFL
+  }
+  cfl = max(cfl,cflb);
+  cfl = min(cflf,max(cfl,cfli));
+  return cfl;
+} // end dynamic_cfl

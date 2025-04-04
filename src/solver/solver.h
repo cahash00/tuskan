@@ -62,5 +62,16 @@ void initialize_solution(mtr::FMatrix<double>& u,
                          mtr::FMatrix<double>& ustar,
                          mtr::FMatrix<double>& vstar,
                          mtr::FMatrix<double>& p);
-
+double dynamic_cfl(const int ii,
+                   mtr::FMatrix<double>& u,
+                   mtr::FMatrix<double>& u2,
+                   mtr::FMatrix<double>& v,
+                   mtr::FMatrix<double>& v2,
+                   double cfl,
+                   double ires,
+                   double resmax,
+                   double cfli,
+                   double cflf,
+                   const int nx,
+                   const int ny);
 #endif

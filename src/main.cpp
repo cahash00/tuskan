@@ -141,7 +141,6 @@ int main(int argc, char* argv[]){
     // ... update boundary conditions
     BC::update_BCs(bcTags,u);
     BC::update_BCs(bcTags,v);
-    print_field(v);
 
     // ... get the minimum dt in the domain for current iteration
     dt = get_min_dt(cfl,dx,u,v);
@@ -189,20 +188,9 @@ int main(int argc, char* argv[]){
     } 
     
     // ... Dyanmic CFL
-    if (ii > 0) res1 = ires;
-    double cflb = cfl; // store current cfl
     ires = L2NORM(u,u2,nx*ny);
-    resmax = max(resmax,ires);
-    if (ii==0) {
-      res0 = ires;
-      res1 = ires;
-    }
-    if (ires == resmax) cfl0 = cfl; // if res is higher, keep
-    if (ires < res1 && ires < res0) {
-      cfl = cfl0*resmax/ires; // if res is lower, increase CFL
-    }
-    cfl = max(cfl,cflb);
-    cfl = min(config.cflf,max(cfl,config.cfli));
+    if (ii==0) res0 = ires;
+    cfl = dynamic_cfl(ii,u,u2,v,v2,cfl,ires,resmax,config.cfli,config.cflf,nx,ny);
     
     // ... update the u array with the updated solution array
     for (int j = jstr; j <= jend; j++) {
