@@ -11,7 +11,8 @@ using namespace std;
 namespace psolve {
 
 
-void SOR(mtr::FMatrix<double>& p,
+void SOR(const double& omega,
+         mtr::FMatrix<double>& p,
          mtr::FMatrix<double>& ustar,
          mtr::FMatrix<double>& vstar,
          const double& dx,
@@ -32,7 +33,7 @@ void SOR(mtr::FMatrix<double>& p,
   int jiter = 5000;
   p1.set_values(0.99);
   p2.set_values(0.99);
-  double omega = 1.9;
+
   // ... set pressure gradient boundary conditions
   for (int j = jstr-1; j <= jend+1; j++) {
     p1(istr-1,j) = 1.0;

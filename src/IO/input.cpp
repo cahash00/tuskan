@@ -13,7 +13,7 @@
 
 YAML::Node config;
 
-namespace IO_input {
+namespace IO {
 
 ConfigData ConfigData::fromYAMLConfig(const YAML::Node& config) {
   ConfigData ideck;
@@ -31,12 +31,11 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& config) {
   ideck.resfreq = config["output"]["residuals"]["frequency"].as<int>();
   ideck.resFile = config["output"]["residuals"]["file"].as<string>();
   ideck.pMethod = config["solver"]["pressure solver"]["method"].as<string>();
-  ideck.pIter   = config["solver"]["pressure solver"]["iterations"].as<int>();
   if (ideck.pMethod == "SOR") {
-    if (config["solver"]["pressure solver"]["SOR weight"]) {
-      ideck.sorWeight = config["solver"]["pressure solver"]["SOR weight"].as<double>(); 
+    if (config["solver"]["pressure solver"]["omega"]) {
+      ideck.sorOmega = config["solver"]["pressure solver"]["omega"].as<double>(); 
     } else {
-      throw runtime_error("ERROR: INPUT DECK: SOR solver requires \"SOR weight\".");
+      throw runtime_error("ERROR: INPUT DECK: SOR solver requires \"omega\".");
     }
   }
   // convergence criteria
@@ -77,6 +76,7 @@ void getUserInput(int argc, char* argv[], argparse::ArgumentParser& program) {
   // add arguments to the program
   program.add_argument("-i","--input")
          .required()
+         .default_value("master.yaml")
          .help("Input deck for the calculation.");
   // try to parse the arguments - error out if it fails
   try {

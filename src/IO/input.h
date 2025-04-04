@@ -6,7 +6,7 @@
 
 using namespace std;
 
-namespace IO_input {
+namespace IO {
 
 struct ConfigData {
   // domain settings
@@ -23,8 +23,7 @@ struct ConfigData {
   int    resfreq;
   string resFile;
   string pMethod;
-  int    pIter;
-  double sorWeight; 
+  double sorOmega; 
   // convergence criteria
   double toler;
   double cfli;

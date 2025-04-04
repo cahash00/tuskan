@@ -17,20 +17,15 @@
 #include <generalUtils.h>
 #include <solver.h>
 #include <pressure.h>
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/pattern_formatter.h>
-#include <chrono>
-#include <memory>
+#include <logger.h>
 #include <cmath>
 #include <BCs.h>
 #include <fstream>
 #include <string>
 
 using namespace std;
-using namespace mtr;
-using fmatD = mtr::FMatrix<double>;
-using fmatI = mtr::FMatrix<double>;
+typedef mtr::FMatrix<double> fmatD;
+typedef mtr::FMatrix<int> fmatI;
 
 /**
  * Main program
@@ -40,18 +35,11 @@ int main(int argc, char* argv[]){
   pprint::PrettyPrinter printer;
 
   // ... create the logger
-  auto logger = spdlog::stdout_color_mt("console");
-  // Apply a custom formatter with relative timestamps
-  auto formatter = std::make_unique<spdlog::pattern_formatter>();
-  formatter->add_flag<customSPDLOG>('R'); // Use %R for relative time
-  formatter->set_pattern("%R [%^%l%$] %v"); // Example: [12.345] [INFO] Message
-  logger->set_formatter(std::move(formatter));
-  // Set the logger as default
-  spdlog::set_default_logger(logger);
+  IO::init_logger();
 
   // ... Parse out the user input form command line
   argparse::ArgumentParser program("TUSKAN","0.0.0");
-  IO_input::getUserInput(argc,argv,program);
+  IO::getUserInput(argc,argv,program);
   // assign the input file that was given
   auto inFile = program.get<string>("-i");
 
@@ -61,12 +49,12 @@ int main(int argc, char* argv[]){
    **************************************************************************/
 
   // ... initialize and finalize Kokkos with the main scope
-  spdlog::info("Initializing Kokkos");
+  IO::logger->info("Initializing Kokkos");
   Kokkos::ScopeGuard kokkos_guard(argc, argv); 
-  spdlog::info(" done");
+  IO::logger->info(" done");
   
   // ... parse the YAML input deck
-  IO_input::ConfigData config = IO_input::parseInputDeck(inFile);
+  IO::ConfigData config = IO::parseInputDeck(inFile);
   
   double nx = config.nx;
   double ny = config.ny;
@@ -92,18 +80,18 @@ int main(int argc, char* argv[]){
   // ... call mesh generator
   Timer timer;
   timer.start();
-  spdlog::info("Generating 2D mesh");
+  IO::logger->info("Generating 2D mesh");
   double dx,dy = 0.0;
   mesh::mesher2D(config.lx,config.ly,config.nx,config.ny,xc,yc,xn,yn,dx,dy);
   timer.stop();
-  spdlog::info("  done ({} seconds)",timer.time());
-  spdlog::info("Tagging boundaries");
+  IO::logger->info("  done ({} seconds)",timer.time());
+  IO::logger->info("Tagging boundaries");
   vector<string> bcList = {config.bcLeft,
                            config.bcRight,
                            config.bcBottom,
                            config.bcTop};
   BC::bcTags bcTags = BC::tag_BCs(bcList,u.dims(1),u.dims(2));
-  spdlog::info("  done");
+  IO::logger->info("  done");
 
   // ... initialization
   ofstream logFile(config.resFile, ios::out);
@@ -112,7 +100,7 @@ int main(int argc, char* argv[]){
       return -1;
   }
   timer.start();
-  spdlog::info("Initializing the domain");
+  IO::logger->info("Initializing the domain");
   double rho  = 1.0e3;   // density
   double rrho = 1.0e-3;  // reciprocal of density
   double nu   = 1.0e-6;  // kinematic viscosity m^2/s
@@ -122,19 +110,19 @@ int main(int argc, char* argv[]){
   double dt   = {0};     // initialize dt
   double dpdx = 0.0;     // analytical solution for dpdx
   double dpdy = 0.0;     // analytical solution for dpdx
-  spdlog::info("  dx: {},dy: {}",dx,dy);
+  IO::logger->info("  dx: {},dy: {}",dx,dy);
 
   // initialize domain and calculate exact solution
   initialize_solution(config.uinit,config.vinit,u,v,u2,v2,ustar,vstar,p);
   timer.stop();
-  spdlog::info("  done ({} seconds)",timer.time());
+  IO::logger->info("  done ({} seconds)",timer.time());
   
   /**********
    * main solver loop
    **********/
   double ires,res0,res1,cfl0,resmax = {0.0};
   timer.start();
-  spdlog::info("Starting Main Solver");
+  IO::logger->info("Starting Main Solver");
   double cfl = config.cfli;
   double finalIter;
   for (int ii = 0; ii < config.iter; ii++) {
@@ -146,6 +134,7 @@ int main(int argc, char* argv[]){
     dt = get_min_dt(cfl,dx,u,v);
 
     // ... loop over domain for predictor step
+    printer.print("before main loop");
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         std::vector<double> advec(2,0.0);
@@ -162,15 +151,18 @@ int main(int argc, char* argv[]){
       }
     }
 
+    printer.print("before main loop");
     // ... solve for the pressure correction term
     // set the ghost cells for the ustar
     BC::update_BCs(bcTags,ustar);
     BC::update_BCs(bcTags,vstar);
     
     // solve for the pressure
-    psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+    printer.print("before main loop");
+    psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho,nx,ny);
     
     // ... apply the pressure correctior
+    printer.print("before main loop");
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         dpdx = (p(i,j) - p(i-1,j)) / (dx);
@@ -214,7 +206,7 @@ int main(int argc, char* argv[]){
     logFile << ii << " " << ires << "\n";
     if (config.resflag) {
       if (ii % config.resfreq == 0) {
-        spdlog::info("  iter {:04}, cfl: {:5e}, res: {:5e}",ii,cfl,ires/res0);
+        IO::logger->info("  iter {:04}, cfl: {:5e}, res: {:5e}",ii,cfl,ires/res0);
         logFile.flush();
       }
     }
@@ -226,24 +218,24 @@ int main(int argc, char* argv[]){
     }
   } // end of ii-loop
   timer.stop();
-  spdlog::info("  done ({} seconds)",timer.time());
-  spdlog::info("Average time / iteration: {} seconds",
+  IO::logger->info("  done ({} seconds)",timer.time());
+  IO::logger->info("Average time / iteration: {} seconds",
                timer.time()/static_cast<double>(finalIter));
 
   /**
    * output section
    */
   if (config.fvflag) {
-    spdlog::info("Outputting final flow solution");
+    IO::logger->info("Outputting final flow solution");
     IO::vtk_output_2D_node(string("final"),config.foutDir,u,v,p,nx,ny,xn,yn);
   } else {
-    spdlog::warn("Output was disabled.");
+    IO::logger->warn("Output was disabled.");
   }
 
   /**
    * Final run summary output here
    */
-  spdlog::info("Done!");
+  IO::logger->info("Done!");
 
   return 0;
 }

@@ -5,16 +5,16 @@ domain:
     x: 0.04
     y: 0.02
   dimensions:
-    x: 200
-    y: 200
+    x: 30
+    y: 15
 boundary conditions:
-  left: noslip
-  right: noslip
-  bottom: periodic
-  top: periodic
+  left: periodic
+  right: periodic
+  bottom: noslip
+  top: noslip
 initial conditions:
-  u: 0.0
-  v: 0.007
+  u: 0.007
+  v: 0.00
 solver:
   iterations: 2000
   pressure solver:
