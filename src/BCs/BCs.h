@@ -10,14 +10,25 @@
 #include <cmath>
 #include <matar.h>
 #include <params.h>
-
-using namespace std;
-using namespace mtr;
+#include <vector>
 
 namespace BC {
-/******************************************************************************/
-void bc_noslip(FMatrix<double>& u);
-void bc_periodic(FMatrix<double>& u);
-/******************************************************************************/
+
+
+struct bcTags {
+  mtr::FMatrix<int> Left;
+  mtr::FMatrix<int> Right;
+  mtr::FMatrix<int> Bottom;
+  mtr::FMatrix<int> Top;
+  bcTags(int nx, int ny);
+};
+
+bcTags tag_BCs(const std::vector<std::string>& bc_tags,
+               const int nx,
+               const int ny);
+
+void update_BCs(bcTags tags, mtr::FMatrix<double>& q);
+
+
 } // end namespace BC
 #endif // BCS_H
