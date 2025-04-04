@@ -18,8 +18,8 @@ double getAdvecU(const int& i,const int& j,
   double advec;
   advec = rdx*pow((u(i+1,j)+u(i,j))*0.5,2)
         - rdx*pow((u(i,j)+u(i-1,j))*0.5,2)
-        + rdy*(u(i,j)+u(i,j+1))*0.5 * (v(i-1,j+1)+v(i,j+1))*0.5 
-        - rdy*(u(i,j)+u(i,j-1))*0.5 * (v(i,j)+v(i-1,j))*0.5;
+        + rdy*(u(i,j)+u(i,j+1))*0.5 * (v(i+1,j)+v(i,j))*0.5 
+        - rdy*(u(i,j)+u(i,j-1))*0.5 * (v(i+1,j-1)+v(i,j-1))*0.5;
   return advec;
 }
 /******************************************************************************/
@@ -30,8 +30,8 @@ double getAdvecV(const int& i,const int& j,
   double advec;
   advec = rdy*pow((v(i,j)+v(i,j+1))*0.5,2)
         - rdy*pow((v(i,j)+v(i,j-1))*0.5,2)
-        + rdx*(u(i+1,j)+u(i+1,j-1))*0.5 * (v(i,j)+v(i+1,j))*0.5
-        - rdx*(u(i,j)+u(i,j-1))*0.5 * (v(i,j)+v(i-1,j))*0.5;
+        + rdx*(u(i,j)+u(i,j+1))*0.5 * (v(i,j)+v(i+1,j))*0.5
+        - rdx*(u(i-1,j+1)+u(i-1,j))*0.5 * (v(i,j)+v(i-1,j))*0.5;
   return advec;
 }
 /******************************************************************************/
@@ -94,38 +94,36 @@ double get_min_dt(const double& cfl,
   return dt;
 }
 /******************************************************************************/
-void initialize_solution(mtr::FMatrix<double>& u,
+void initialize_solution(const double& uinit,
+                         const double& vinit,
+                         mtr::FMatrix<double>& u,
                          mtr::FMatrix<double>& v,
                          mtr::FMatrix<double>& u2,
                          mtr::FMatrix<double>& v2,
                          mtr::FMatrix<double>& ustar,
                          mtr::FMatrix<double>& vstar,
                          mtr::FMatrix<double>& p) {
-  u.set_values(0.000); // average u
-  v.set_values(0.007);
-  u2.set_values(0.0);
-  v2.set_values(0.0);
+  u.set_values(uinit); // average u
+  v.set_values(vinit);
+  u2.set_values(uinit);
+  v2.set_values(vinit);
   ustar.set_values(0.0);
   vstar.set_values(0.0);
   p.set_values(0.0);
 }
 /******************************************************************************/
 double dynamic_cfl(const int ii,
-                   mtr::FMatrix<double>& u,
-                   mtr::FMatrix<double>& u2,
-                   mtr::FMatrix<double>& v,
-                   mtr::FMatrix<double>& v2,
                    double cfl,
                    double ires,
+                   double res0,
+                   double res1,
                    double resmax,
                    double cfli,
                    double cflf,
                    const int nx,
                    const int ny) {
-  double res0,res1,cfl0; 
+  double cfl0,cflnew; 
   if (ii > 0) res1 = ires;
-  double cflb = cfl; // store current cfl
-  ires = L2NORM(u,u2,nx*ny);
   resmax = max(resmax,ires);
   if (ii==0) {
     res0 = ires;
@@ -133,9 +131,9 @@ double dynamic_cfl(const int ii,
   }
   if (ires == resmax) cfl0 = cfl; // if res is higher, keep
   if (ires < res1 && ires < res0) {
-    cfl = cfl0*resmax/ires; // if res is lower, increase CFL
+    cflnew = cfl0*resmax/ires; // if res is lower, increase CFL
   }
-  cfl = max(cfl,cflb);
-  cfl = min(cflf,max(cfl,cfli));
-  return cfl;
+  cflnew = max(cflnew,cfl);
+  cflnew = min(cflf,max(cflnew,cfli));
+  return cflnew;
 } // end dynamic_cfl

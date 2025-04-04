@@ -8,7 +8,7 @@ int istr,iend,jstr,jend;
 
 void getDomainIndices(int nx,int ny) {
   istr = nghosts+1;
-  iend = nx+istr-1;
+  iend = nx+istr;
   jstr = nghosts+1;
-  jend = ny+jstr-1;
+  jend = ny+jstr;
 }

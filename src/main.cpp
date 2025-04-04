@@ -125,7 +125,7 @@ int main(int argc, char* argv[]){
   spdlog::info("  dx: {},dy: {}",dx,dy);
 
   // initialize domain and calculate exact solution
-  initialize_solution(u,v,u2,v2,ustar,vstar,p);
+  initialize_solution(config.uinit,config.vinit,u,v,u2,v2,ustar,vstar,p);
   timer.stop();
   spdlog::info("  done ({} seconds)",timer.time());
   
@@ -183,14 +183,24 @@ int main(int argc, char* argv[]){
     // ... output intermediate flowviz
     if (config.fvflag) {
       if (ii % config.fvfreq == 0) {
-        IO::vtk_output_2D(ii,config.foutDir,u,v,p,nx,ny,xn,yn);
+        IO::vtk_output_2D_node(ii,config.foutDir,u,v,p,nx,ny,xn,yn);
       }
     } 
-    
     // ... Dyanmic CFL
+    if (ii > 0) res1 = ires;
+    double cflb = cfl; // store current cfl
     ires = L2NORM(u,u2,nx*ny);
-    if (ii==0) res0 = ires;
-    cfl = dynamic_cfl(ii,u,u2,v,v2,cfl,ires,resmax,config.cfli,config.cflf,nx,ny);
+    resmax = max(resmax,ires);
+    if (ii==0) {
+      res0 = ires;
+      res1 = ires;
+    }
+    if (ires == resmax) cfl0 = cfl; // if res is higher, keep
+    if (ires < res1 && ires < res0) {
+      cfl = cfl0*resmax/ires; // if res is lower, increase CFL
+    }
+    cfl = max(cfl,cflb);
+    cfl = min(config.cflf,max(cfl,config.cfli)); 
     
     // ... update the u array with the updated solution array
     for (int j = jstr; j <= jend; j++) {
@@ -225,7 +235,7 @@ int main(int argc, char* argv[]){
    */
   if (config.fvflag) {
     spdlog::info("Outputting final flow solution");
-    IO::vtk_output_2D(string("final"),config.foutDir,ustar,vstar,p,nx,ny,xn,yn);
+    IO::vtk_output_2D_node(string("final"),config.foutDir,u,v,p,nx,ny,xn,yn);
   } else {
     spdlog::warn("Output was disabled.");
   }
