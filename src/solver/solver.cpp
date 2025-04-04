@@ -81,14 +81,13 @@ double L2NORM(mtr::FMatrix<double>& m1,
 /******************************************************************************/
 double get_min_dt(const double& cfl, 
                   const double& dx,
+                  const double& dy,
                   mtr::FMatrix<double>& u,
                   mtr::FMatrix<double>& v) {
-  double minval = 1e5;
-  double dt = 1e5;
+  double dt;
   for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
     for (int i = istr-nghosts; i <= iend+nghosts; i++) {
-      double vmag = sqrt(u(i,j)*u(i,j) + v(i,j)*v(i,j));
-      dt = min(dt,cfl*dx/vmag);
+      dt = min(abs(cfl*dy/(v(i,j)+1.0e-15)),abs(cfl*dx/(u(i,j)+1.0e-15)));
     }
   }
   return dt;
