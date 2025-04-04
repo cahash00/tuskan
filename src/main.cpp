@@ -17,20 +17,15 @@
 #include <generalUtils.h>
 #include <solver.h>
 #include <pressure.h>
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/pattern_formatter.h>
-#include <chrono>
-#include <memory>
+#include <logger.h>
 #include <cmath>
 #include <BCs.h>
 #include <fstream>
 #include <string>
 
 using namespace std;
-using namespace mtr;
-using fmatD = mtr::FMatrix<double>;
-using fmatI = mtr::FMatrix<double>;
+typedef mtr::FMatrix<double> fmatD;
+typedef mtr::FMatrix<int> fmatI;
 
 /**
  * Main program
@@ -40,18 +35,11 @@ int main(int argc, char* argv[]){
   pprint::PrettyPrinter printer;
 
   // ... create the logger
-  auto logger = spdlog::stdout_color_mt("console");
-  // Apply a custom formatter with relative timestamps
-  auto formatter = std::make_unique<spdlog::pattern_formatter>();
-  formatter->add_flag<customSPDLOG>('R'); // Use %R for relative time
-  formatter->set_pattern("%R [%^%l%$] %v"); // Example: [12.345] [INFO] Message
-  logger->set_formatter(std::move(formatter));
-  // Set the logger as default
-  spdlog::set_default_logger(logger);
+  IO::init_logger();
 
   // ... Parse out the user input form command line
   argparse::ArgumentParser program("TUSKAN","0.0.0");
-  IO_input::getUserInput(argc,argv,program);
+  IO::getUserInput(argc,argv,program);
   // assign the input file that was given
   auto inFile = program.get<string>("-i");
 
@@ -61,21 +49,15 @@ int main(int argc, char* argv[]){
    **************************************************************************/
 
   // ... initialize and finalize Kokkos with the main scope
-  spdlog::info("Initializing Kokkos");
+  IO::logger->info("Initializing Kokkos");
   Kokkos::ScopeGuard kokkos_guard(argc, argv); 
-  spdlog::info(" done");
+  IO::logger->info("  done");
   
-  // ... call input file parser
-  IO_input::ConfigData config = IO_input::parseInputDeck(inFile);
+  // ... parse the YAML input deck
+  IO::ConfigData config = IO::parseInputDeck(inFile);
   
-  // ... parse the yaml file
-  double dx,dy = {0.0};
-
-  double nx = config.nx;
-  double ny = config.ny;
-
   // ... get domain stats
-  getDomainIndices(nx,ny);
+  getDomainIndices(config.nx,config.ny);
   vector<int> ndims(2,0);
   ndims[0] = nx+nghosts*2;
   ndims[1] = ny+nghosts*2;
@@ -95,10 +77,18 @@ int main(int argc, char* argv[]){
   // ... call mesh generator
   Timer timer;
   timer.start();
-  spdlog::info("Generating 2D mesh");
-  mesher2D(config.lx,config.ly,config.nx,config.ny,xc,yc,xn,yn,dx,dy);
+  IO::logger->info("Generating 2D mesh");
+  double dx,dy = 0.0;
+  mesh::mesher2D(config.lx,config.ly,xc,yc,xn,yn,dx,dy);
   timer.stop();
-  spdlog::info("  done ({} seconds)",timer.time());
+  IO::logger->info("  done ({} seconds)",timer.time());
+  IO::logger->info("Tagging boundaries");
+  vector<string> bcList = {config.bcLeft,
+                           config.bcRight,
+                           config.bcBottom,
+                           config.bcTop};
+  BC::bcTags bcTags = BC::tag_BCs(bcList,u.dims(1),u.dims(2));
+  IO::logger->info("  done");
 
   // ... initialization
   ofstream logFile(config.resFile, ios::out);
@@ -107,78 +97,85 @@ int main(int argc, char* argv[]){
       return -1;
   }
   timer.start();
-  spdlog::info("Initializing the domain");
+  IO::logger->info("Initializing the domain");
   double rho  = 1.0e3;   // density
   double rrho = 1.0e-3;  // reciprocal of density
-  double nu   = 1.0e-6;    // kinematic viscosity m^2/s
+  double nu   = 1.0e-6;  // kinematic viscosity m^2/s
   double mu   = nu*rho;  // dynamic viscosity
   double rdx  = 1.0/dx;  // reciprocal of dx
   double rdy  = 1.0/dy;  // reciprocal of dx
-  double dt   = {0};     // initialize dt
-  double dpdx = -0.3;    // analytical solution for dpdx
-  spdlog::info("  dx: {},dy: {}",dx,dy);
+  double dt   = 0.0;     // initialize dt
+  double dpdx = 0.0;     // analytical solution for dpdx
+  double dpdy = 0.0;     // analytical solution for dpdx
+  IO::logger->info("  dx: {},dy: {}",dx,dy);
 
   // initialize domain and calculate exact solution
-  initialize_solution(u,v,u2,ustar,vstar,p);
+  initialize_solution(config.uinit,config.vinit,u,v,u2,v2,ustar,vstar,p);
   timer.stop();
-  spdlog::info("  done ({} seconds)",timer.time());
+  IO::logger->info("  done ({} seconds)",timer.time());
   
-  /**********
-   * main solver loop
-   **********/
-  double ires,res0,res1,cfl0,resmax = {0.0};
-  timer.start();
-  spdlog::info("Starting Main Solver");
+  /********************
+   * main solver loop *
+   *******************/
+  // ... initialize doubles
+  double ires,res0,res1,cfl0,resmax = 0.0;
   double cfl = config.cfli;
-  double finalIter;
+  int finalIter;
+
+  // ... start solver & timer
+  timer.start();
+  IO::logger->info("Starting Main Solver");
   for (int ii = 0; ii < config.iter; ii++) {
     // ... update boundary conditions
-    bc_noslip(u);
-    bc_periodic(u);
+    BC::update_BCs(bcTags,u);
+    BC::update_BCs(bcTags,v);
 
     // ... get the minimum dt in the domain for current iteration
-    dt = get_min_dt(cfl,dx,u);
+    dt = get_min_dt(cfl,dx,dy,u,v);
 
     // ... loop over domain for predictor step
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
+        std::vector<double> advec(2,0.0);
+        std::vector<double> diffu(2,0.0);
         // get the advection term
-        double advec = getAdvec(i,j,rdx,rdy,u,v);
+        advec[0] = getAdvecU(i,j,rdx,rdy,u,v);
+        advec[1] = getAdvecV(i,j,rdx,rdy,u,v);
         // get the diffusion term
-        double diffu = getDiffu(i,j,rdx,rdy,u);
-        // predictor step
-        ustar(i,j) = u(i,j) + dt*(-advec + nu*diffu);
+        diffu[0] = getDiffU(i,j,rdx,rdy,u,v);
+        diffu[1] = getDiffV(i,j,rdx,rdy,u,v);
+        // predictor step - explicit
+        ustar(i,j) = u(i,j) + dt*(-advec[0] + nu*diffu[0]);
+        vstar(i,j) = v(i,j) + dt*(-advec[1] + nu*diffu[1]);
       }
     }
 
-    // ... solve for the pressure correction term
-    // set the ghost cells for the ustar
-    bc_noslip(ustar);
-    bc_periodic(ustar);
-    if (config.pMethod == "Jacobi") {
-      // psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
-      psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
-    }
+    // ... solve for the pressure
+    psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho);
     
     // ... apply the pressure correctior
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         dpdx = (p(i,j) - p(i-1,j)) / (dx);
+        dpdy = (p(i,j) - p(i,j-1)) / (dy);
         u2(i,j) = ustar(i,j) - rrho*dt*dpdx;
+        v2(i,j) = vstar(i,j) - rrho*dt*dpdy;
       }
     }
+    BC::update_BCs(bcTags,u2);
+    BC::update_BCs(bcTags,v2);
 
     // ... output intermediate flowviz
     if (config.fvflag) {
       if (ii % config.fvfreq == 0) {
-        vtk_output_2D(ii,config.foutDir,u,nx,ny,xn,yn);
+        IO::vtk_output_2D_node(ii,config.foutDir,u,v,p,xn,yn);
       }
     } 
-    
     // ... Dyanmic CFL
     if (ii > 0) res1 = ires;
     double cflb = cfl; // store current cfl
-    ires = L2NORM(u,u2,nx*ny);
+    ires = max(L2NORM(u,u2),L2NORM(v,v2));
+    if (ii % config.resfreq==0) printer.print(L2NORM(u,u2),L2NORM(v,v2),dt);
     resmax = max(resmax,ires);
     if (ii==0) {
       res0 = ires;
@@ -189,12 +186,13 @@ int main(int argc, char* argv[]){
       cfl = cfl0*resmax/ires; // if res is lower, increase CFL
     }
     cfl = max(cfl,cflb);
-    cfl = min(config.cflf,max(cfl,config.cfli));
+    cfl = min(config.cflf,max(cfl,config.cfli)); 
     
     // ... update the u array with the updated solution array
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    for (int j = jstr-1; j <= jend+1; j++) {
+      for (int i = istr-1; i <= iend+1; i++) {
         u(i,j) = u2(i,j);
+        v(i,j) = v2(i,j);
       }
     }
     
@@ -202,7 +200,7 @@ int main(int argc, char* argv[]){
     logFile << ii << " " << ires << "\n";
     if (config.resflag) {
       if (ii % config.resfreq == 0) {
-        spdlog::info("  iter {:04}, cfl: {:5e}, res: {:5e}",ii,cfl,ires/res0);
+        IO::logger->info("  iter {:04}, cfl: {:5e}, res: {:5e}",ii,cfl,ires/res0);
         logFile.flush();
       }
     }
@@ -211,42 +209,29 @@ int main(int argc, char* argv[]){
     if (ires/res0 < config.toler && ii > 1000) {
       finalIter=ii;
       break;
+    } else if (ires/res0 > 1.0e20) {
+      break;
     }
   } // end of ii-loop
   timer.stop();
-  spdlog::info("  done ({} seconds)",timer.time());
-  spdlog::info("Average time / iteration: {} seconds",
-               timer.time()/static_cast<double>(finalIter));
+  IO::logger->info("  done ({} seconds)",timer.time());
+  IO::logger->info("Average time / iteration: {} seconds",
+                   timer.time()/static_cast<double>(finalIter));
 
   /**
    * output section
    */
   if (config.fvflag) {
-    spdlog::info("Outputting final flow solution");
-    vtk_output_2D(string("final"),config.foutDir,u,nx,ny,xn,yn);
-    vtk_output_2D(string("finalu"),config.foutDir,u,nx,ny,xn,yn);
-    vtk_output_2D(string("finalv"),config.foutDir,v,nx,ny,xn,yn);
-    vtk_output_2D(string("finalp"),config.foutDir,p,nx,ny,xn,yn);
-    // output the values along the channel
-    ofstream fout("compare.dat",ios::out);
-    DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-      DO_LOOP(i,istr-nghosts,iend+nghosts,{
-        uexact(i,j) = 1.0/(2.0*mu)*-0.3*(yc(i,j)*yc(i,j)-config.ly*yc(i,j));
-      });
-    });
-    DO_LOOP(j,jstr-1,jend+1,{
-      fout << yc(nx/2,j) << " " << u(nx/2,j) << " " << uexact(nx/2,j) << endl;
-    });
-    spdlog::info("Outputting exact flow solution");
-    vtk_output_2D(string("exact"),config.foutDir,uexact,nx,ny,xn,yn);
+    IO::logger->info("Outputting final flow solution");
+    IO::vtk_output_2D_node(string("final"),config.foutDir,u,v,p,xn,yn);
   } else {
-    spdlog::warn("Output was disabled.");
+    IO::logger->warn("Output was disabled.");
   }
 
   /**
    * Final run summary output here
    */
-  spdlog::info("Done!");
+  IO::logger->info("Done!");
 
   return 0;
 }

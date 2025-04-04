@@ -6,7 +6,7 @@
 
 using namespace std;
 
-namespace IO_input {
+namespace IO {
 
 struct ConfigData {
   // domain settings
@@ -23,8 +23,7 @@ struct ConfigData {
   int    resfreq;
   string resFile;
   string pMethod;
-  int    pIter;
-  double sorWeight; 
+  double sorOmega; 
   // convergence criteria
   double toler;
   double cfli;
@@ -32,6 +31,14 @@ struct ConfigData {
   bool   dcfl;
   // IO parameters
   string foutDir;
+  // BCs
+  string bcLeft;
+  string bcRight;
+  string bcBottom;
+  string bcTop;
+  // initial conditions
+  double uinit;
+  double vinit;
 
 
   static ConfigData fromYAMLConfig(const YAML::Node& config);

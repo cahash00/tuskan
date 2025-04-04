@@ -11,34 +11,76 @@
 using namespace std;
 
 /******************************************************************************/
-double getAdvec(const int& i,const int& j,
-                const double rdx,const double rdy,
-                mtr::FMatrix<double>& u,
-                mtr::FMatrix<double>& v) {
+double getAdvecU(const int& i,const int& j,
+                       const double rdx,const double rdy,
+                       mtr::FMatrix<double>& u,
+                       mtr::FMatrix<double>& v) {
   double advec;
-  advec = rdx*pow((u(i+1,j)+u(i,j))*0.5,2)
-        - rdx*pow((u(i,j)+u(i-1,j))*0.5,2)
-        + rdy*(u(i,j)+u(i,j+1))*0.5 * (v(i,j)+v(i+1,j))*0.5 
-        - rdy*(u(i,j)+u(i,j-1))*0.5 * (v(i+1,j-1)+v(i,j-1))*0.5;
+  double u_n,u_s,u_e,u_w;
+  double v_n,v_s,v_e,v_w;
+  // u components
+  u_n = 0.5*(u(i,j+1) + u(i,j));
+  u_s = 0.5*(u(i,j-1) + u(i,j));
+  u_e = 0.5*(u(i+1,j) + u(i,j));
+  u_w = 0.5*(u(i-1,j) + u(i,j));
+  // v components
+  v_n = 0.5*(v(i,j)   + v(i+1,j));
+  v_s = 0.5*(v(i,j-1) + v(i+1,j-1));
+  v_e = 0.5*(v(i,j)   + v(i,j-1));
+  v_w = 0.5*(v(i+1,j) + v(i+1,j-1));
+  
+  advec = rdx*(u_e*u_e-u_w*u_w) + rdy*(u_n*v_n-u_s*v_s);
   return advec;
 }
-
 /******************************************************************************/
-double getDiffu(const int& i,
+double getAdvecV(const int& i,const int& j,
+                 const double rdx,const double rdy,
+                 mtr::FMatrix<double>& u,
+                 mtr::FMatrix<double>& v) {
+  double advec;
+  double u_n,u_s,u_e,u_w;
+  double v_n,v_s,v_e,v_w;
+  // v components
+  v_n = 0.5*(v(i,j) + v(i,j+1));
+  v_s = 0.5*(v(i,j) + v(i,j-1));
+  v_e = 0.5*(v(i,j) + v(i+1,j));
+  v_w = 0.5*(v(i,j) + v(i-1,j));
+  // u components
+  u_n = 0.5*(u(i-1,j+1) + u(i,j+1));
+  u_s = 0.5*(u(i-1,j) + u(i,j));
+  u_e = 0.5*(u(i,j+1) + u(i,j));
+  u_w = 0.5*(u(i-1,j+1) + u(i-1,j));
+
+  advec = rdy*( v_n*v_n-v_s*v_s ) + rdx*( v_e*u_e-v_w*u_w );
+  return advec;
+}
+/******************************************************************************/
+double getDiffU(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
-                mtr::FMatrix<double>& u) {
+                mtr::FMatrix<double>& u,
+                mtr::FMatrix<double>& v) {
   double diffu;
   diffu = ( u(i+1,j) - 2.0*u(i,j) + u(i-1,j))*rdx*rdx + 
-          ( u(i,j+1) - 2.0*u(i,j) + u(i,j-1))*rdy*rdx;
+          ( u(i,j+1) - 2.0*u(i,j) + u(i,j-1))*rdy*rdy;
   return diffu;
 }
-
+/******************************************************************************/
+double getDiffV(const int& i,
+                const int& j,
+                const double rdx,
+                const double rdy,
+                mtr::FMatrix<double>& u,
+                mtr::FMatrix<double>& v) {
+  double diffv;
+  diffv = ( v(i+1,j) - 2.0*v(i,j) + v(i-1,j))*rdx*rdx + 
+          ( v(i,j+1) - 2.0*v(i,j) + v(i,j-1))*rdy*rdy;
+  return diffv;
+}
 /******************************************************************************/
 double L2NORM(mtr::FMatrix<double>& m1, 
-              mtr::FMatrix<double>& m2, 
-              const int& N) {
+              mtr::FMatrix<double>& m2) {
   // assert that the matrices must be equal in rank
   assert(m1.order() == m2.order());
   
@@ -47,7 +89,7 @@ double L2NORM(mtr::FMatrix<double>& m1,
   double total = 0.0;
   for (int j = jstr; j <= jend; j++) {
     for (int i = istr; i <= iend; i++) {
-      double d = m2(i,j) - m1(i,j);
+      double d = m2(i,j) - m1(i,j) + 1.0e-15;
       l2norm += d*d;
       total += 1.0;
     }
@@ -58,32 +100,58 @@ double L2NORM(mtr::FMatrix<double>& m1,
 /******************************************************************************/
 double get_min_dt(const double& cfl, 
                   const double& dx,
-                  mtr::FMatrix<double>& u) {
-  double minval = 1e5;
-  double dt = 1e5;
-  DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-    DO_LOOP(i,istr-nghosts,iend+nghosts,{
-      dt = min(dt,cfl*dx/abs(u(i,j)));
-    });
-  });
+                  const double& dy,
+                  mtr::FMatrix<double>& u,
+                  mtr::FMatrix<double>& v) {
+  double dt=1.0e5;
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
+      dt = min(abs(cfl*dy/(v(i,j)+1.0e-15)),abs(cfl*dx/(u(i,j)+1.0e-15)));
+    }
+  }
   return dt;
 }
 /******************************************************************************/
-void initialize_solution(mtr::FMatrix<double>& u,
+void initialize_solution(const double& uinit,
+                         const double& vinit,
+                         mtr::FMatrix<double>& u,
                          mtr::FMatrix<double>& v,
                          mtr::FMatrix<double>& u2,
-                         mtr::FMatrix<double>& p,
+                         mtr::FMatrix<double>& v2,
                          mtr::FMatrix<double>& ustar,
-                         mtr::FMatrix<double>& vstar) {
-  DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-    DO_LOOP(i,istr-nghosts,iend+nghosts,{
-      u(i,j) = 0.007; // average u
-      v(i,j) = 0.0; // zero y-velocity
-    });
-  });
-  v.set_values(0.0);
-  u2.set_values(0.0);
-  p.set_values(0.0);
+                         mtr::FMatrix<double>& vstar,
+                         mtr::FMatrix<double>& p) {
+  u.set_values(uinit); // average u
+  v.set_values(vinit);
+  u2.set_values(uinit);
+  v2.set_values(vinit);
   ustar.set_values(0.0);
   vstar.set_values(0.0);
+  p.set_values(0.0);
 }
+/******************************************************************************/
+double dynamic_cfl(const int ii,
+                   double cfl,
+                   double ires,
+                   double res0,
+                   double res1,
+                   double resmax,
+                   double cfli,
+                   double cflf,
+                   const int nx,
+                   const int ny) {
+  double cfl0,cflnew; 
+  if (ii > 0) res1 = ires;
+  resmax = max(resmax,ires);
+  if (ii==0) {
+    res0 = ires;
+    res1 = ires;
+  }
+  if (ires == resmax) cfl0 = cfl; // if res is higher, keep
+  if (ires < res1 && ires < res0) {
+    cflnew = cfl0*resmax/ires; // if res is lower, increase CFL
+  }
+  cflnew = max(cflnew,cfl);
+  cflnew = min(cflf,max(cflnew,cfli));
+  return cflnew;
+} // end dynamic_cfl

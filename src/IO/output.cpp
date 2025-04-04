@@ -19,6 +19,8 @@
 
 using namespace std;
 
+namespace IO {
+
 /**
  * @brief VTK output for a 2D mesh
  * @param[in] nx number of cells in y-direction
@@ -26,18 +28,18 @@ using namespace std;
  * @param[in] xn matrix of x nodal values
  * @param[in] yn matrix of y nodal values
  */
-static void vtk_output_2D_IMPL(const string& caseName,
+static void vtk_output_2D_node_IMPL(const string& caseName,
                                const string& foutDir,
-                               const mtr::FMatrix<double>& q,
-                               const int& nx,
-                               const int& ny,
+                               const mtr::FMatrix<double>& u,
+                               const mtr::FMatrix<double>& v,
+                               const mtr::FMatrix<double>& p,
                                const mtr::FMatrix<double>& xn,
                                const mtr::FMatrix<double>& yn) {
   // power on the printer
   pprint::PrettyPrinter printer;
   FILE *out;
   std::ostringstream foutss;
-  foutss << foutDir << "/flow." << caseName << ".vts";
+  foutss << foutDir << "/flow." << caseName << ".vtk";
   string fout = foutss.str();
   out = fopen(fout.c_str(),"w");
   fprintf(out,"# vtk DataFile Version 3.0\n");
@@ -46,40 +48,58 @@ static void vtk_output_2D_IMPL(const string& caseName,
   fprintf(out,"DATASET STRUCTURED_GRID\n");
   fprintf(out,"DIMENSIONS %d %d %d\n",nx+2,ny+2,1);
   fprintf(out,"POINTS %d float\n",(nx+2)*(ny+2));
-  for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
-    for (int i = istr-nghosts; i <= iend+nghosts; i++) {
+  for (int j = jstr-1; j <= jend; j++) {
+    for (int i = istr-1; i <= iend; i++) {
       fprintf(out,"%f %f %f\n",xn(i,j),yn(i,j),0.0);
     }
   }
   fprintf(out,"POINT_DATA %d\n",(nx+2)*(ny+2));
   fprintf(out,"SCALARS u float 1\n");
   fprintf(out,"LOOKUP_TABLE default\n");
-  for (int j = jstr-1; j <= jend+1; j++) {
-    for (int i = istr-1; i <= iend+1; i++) {
-      fprintf(out,"%f\n",q(i,j));
+  for (int j = jstr-1; j <= jend; j++) {
+    for (int i = istr-1; i <= iend; i++) {
+      fprintf(out,"%f\n",u(i,j));
+    }
+  }
+  fprintf(out,"SCALARS v float 1\n");
+  fprintf(out,"LOOKUP_TABLE default\n");
+  for (int j = jstr-1; j <= jend; j++) {
+    for (int i = istr-1; i <= iend; i++) {
+      fprintf(out,"%f\n",v(i,j));
+    }
+  }
+  fprintf(out,"SCALARS p float 1\n");
+  fprintf(out,"LOOKUP_TABLE default\n");
+  for (int j = jstr-1; j <= jend; j++) {
+    for (int i = istr-1; i <= iend; i++) {
+      fprintf(out,"%f\n",p(i,j));
     }
   }
   fclose(out);
 }
-
-void vtk_output_2D(const int& ii,
+/**
+ * overloaded vtk node output functions
+ */
+void vtk_output_2D_node(const int& ii,
                    const string& foutDir,
-                   const mtr::FMatrix<double>& q,
-                   const int& nx,
-                   const int& ny,
+                   const mtr::FMatrix<double>& u,
+                   const mtr::FMatrix<double>& v,
+                   const mtr::FMatrix<double>& p,
                    const mtr::FMatrix<double>& xn,
                    const mtr::FMatrix<double>& yn) {
   std::ostringstream foutss;
   foutss << setw(5) << std::setfill('0') << ii;
   string caseName = foutss.str();
-  vtk_output_2D_IMPL(caseName,foutDir,q,nx,ny,xn,yn);
+  vtk_output_2D_node_IMPL(caseName,foutDir,u,v,p,xn,yn);
 }
-void vtk_output_2D(const string& caseName,
+void vtk_output_2D_node(const string& caseName,
                    const string& foutDir,
-                   const mtr::FMatrix<double>& q,
-                   const int& nx,
-                   const int& ny,
+                   const mtr::FMatrix<double>& u,
+                   const mtr::FMatrix<double>& v,
+                   const mtr::FMatrix<double>& p,
                    const mtr::FMatrix<double>& xn,
                    const mtr::FMatrix<double>& yn) {
-  vtk_output_2D_IMPL(caseName,foutDir,q,nx,ny,xn,yn);
+  vtk_output_2D_node_IMPL(caseName,foutDir,u,v,p,xn,yn);
 }
+
+} // end namepsace IO

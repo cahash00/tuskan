@@ -5,23 +5,28 @@ domain:
     x: 0.04
     y: 0.02
   dimensions:
-    x: 20
-    y: 10
-# ... SOLVER
+    x: 30
+    y: 15
+boundary conditions:
+  left: periodic
+  right: periodic
+  bottom: noslip
+  top: noslip
+initial conditions:
+  u: 0.007
+  v: 0.00
 solver:
-  iterations: 010000
-  CFL: 0.0001
+  iterations: 2000
   pressure solver:
-    method: Jacobi
+    method: SOR
     iterations: 1000
-    SOR weight: 1.5
+    SOR weight: 1.3
 dynamic CFL:
   enabled: true
-  cfli: 0.0001
-  cflf: 0.0002
+  cfli: 0.001
+  cflf: 0.1
 convergence:
   residual: 0.000001
-# ... OUTPUT
 output:
   residuals:
     enabled: true
@@ -29,5 +34,5 @@ output:
     file: resid.30.dat
   flowviz:
     enabled: true
-    frequency: 1000
+    frequency: 10000
     directory: output
