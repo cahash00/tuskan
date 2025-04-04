@@ -99,6 +99,13 @@ int main(int argc, char* argv[]){
   mesh::mesher2D(config.lx,config.ly,config.nx,config.ny,xc,yc,xn,yn,dx,dy);
   timer.stop();
   spdlog::info("  done ({} seconds)",timer.time());
+  spdlog::info("Tagging boundaries");
+  vector<string> bcList = {config.bcLeft,
+                           config.bcRight,
+                           config.bcBottom,
+                           config.bcTop};
+  BC::bcTags bcTags = BC::tag_BCs(bcList,nx,ny);
+  spdlog::info("  done");
 
   // ... initialization
   ofstream logFile(config.resFile, ios::out);
@@ -134,10 +141,12 @@ int main(int argc, char* argv[]){
   double finalIter;
   for (int ii = 0; ii < config.iter; ii++) {
     // ... update boundary conditions
-    BC::bc_noslip(u);
-    BC::bc_periodic(u);
-    BC::bc_noslip(v);
-    BC::bc_periodic(v);
+    BC::update_BCs(bcTags,u);
+    BC::update_BCs(bcTags,v);
+    // BC::bc_noslip(u);
+    // BC::bc_periodic(u);
+    // BC::bc_noslip(v);
+    // BC::bc_periodic(v);
 
     // ... get the minimum dt in the domain for current iteration
     dt = get_min_dt(cfl,dx,u,v);
@@ -161,10 +170,10 @@ int main(int argc, char* argv[]){
 
     // ... solve for the pressure correction term
     // set the ghost cells for the ustar
-    BC::bc_noslip(ustar);
-    BC::bc_periodic(ustar);
-    BC::bc_noslip(vstar);
-    BC::bc_periodic(vstar);
+    // BC::bc_noslip(ustar);
+    // BC::bc_periodic(ustar);
+    // BC::bc_noslip(vstar);
+    // BC::bc_periodic(vstar);
     // psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
     psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
     

@@ -32,6 +32,11 @@ struct ConfigData {
   bool   dcfl;
   // IO parameters
   string foutDir;
+  // BCs
+  string bcLeft;
+  string bcRight;
+  string bcBottom;
+  string bcTop;
 
 
   static ConfigData fromYAMLConfig(const YAML::Node& config);

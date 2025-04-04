@@ -11,6 +11,8 @@
 #include <map>
 
 namespace BC {
+
+
 struct bcTags {
   mtr::FMatrix<int> Left;
   mtr::FMatrix<int> Right;
@@ -19,7 +21,7 @@ struct bcTags {
   bcTags(int nx, int ny) :
     Left(ny),Right(ny),Bottom(nx),Top(nx) {}
 };
-/******************************************************************************/
+
 /**
  * @brief tag_BCs
  * @detail goes over the domain and tags the edges for boundary conditions
@@ -47,7 +49,7 @@ bcTags tag_BCs(const std::vector<std::string>& bc_tags,
   }
   return tags;
 }
-/******************************************************************************/
+
 void update_BCs(bcTags tags, mtr::FMatrix<double>& q) {
   // update the left boundary
   for (int j = jstr; j <= jend; j++) {
@@ -77,40 +79,6 @@ void update_BCs(bcTags tags, mtr::FMatrix<double>& q) {
   }
   
 } // end update_BCs
-/******************************************************************************/
-void bc_noslip(mtr::FMatrix<double>& u,
-               const int normal) {
-  if (normal == 1) {
-    // ... x-direction noslip
-    for (int i = istr; i <= iend; i++) {
-      u(i,jstr-1) = -u(i,jstr);
-      u(i,jend+1) = -u(i,jend);
-    }
-  } else if (normal==2) {
-    // ... y-direction noslip
-    for (int j = jstr; j <= jend; j++) {
-      u(istr-1,j) = -u(istr,j);
-      u(iend+1,j) = -u(iend,j);
-    }
-  }
-} // end bc_noslip
-/******************************************************************************/
-void bc_periodic(mtr::FMatrix<double>& u,
-                 const int normal) {
-  if (normal==1) {
-    // ... x-direction periodic
-    for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
-      u(istr-1,j) = u(iend,j);
-      u(iend+1,j) = u(istr,j);
-    }
-  } else if (normal==2) {
-    // ... y-direction periodic
-    for (int i = istr-nghosts; i <= iend+nghosts; i++) {
-      u(i,jstr-1) = u(i,jend);
-      u(i,jend+1) = u(i,jstr);
-    }
-  }
-} // end bc_periodic
+
 
 } // end namespace BC
-/******************************************************************************/
