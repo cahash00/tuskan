@@ -76,7 +76,7 @@ void getUserInput(int argc, char* argv[], argparse::ArgumentParser& program) {
   // add arguments to the program
   program.add_argument("-i","--input")
          .required()
-         .default_value("master.yaml")
+         .default_value("in2d.yaml")
          .help("Input deck for the calculation.");
   // try to parse the arguments - error out if it fails
   try {

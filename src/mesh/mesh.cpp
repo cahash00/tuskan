@@ -11,12 +11,10 @@
 
 
 namespace mesh {
-
 /**
  * Domain generation in 2D
  */
 void mesher2D(const double& lx, const double& ly, 
-              const int& nx,const int& ny,
               mtr::FMatrix<double>& xc, mtr::FMatrix<double>& yc,
               mtr::FMatrix<double>& xn, mtr::FMatrix<double>& yn,
               double& dx, double& dy){

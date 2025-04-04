@@ -12,9 +12,7 @@ void SOR(const double& omega,
          const double& dx,
          const double& dy,
          const double& dt,
-         const double& rho,
-         int nx,
-         int ny);
+         const double& rho);
 
 }
 #endif // end PRESSURE_H

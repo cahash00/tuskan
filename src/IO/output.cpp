@@ -33,8 +33,6 @@ static void vtk_output_2D_node_IMPL(const string& caseName,
                                const mtr::FMatrix<double>& u,
                                const mtr::FMatrix<double>& v,
                                const mtr::FMatrix<double>& p,
-                               const int& nx,
-                               const int& ny,
                                const mtr::FMatrix<double>& xn,
                                const mtr::FMatrix<double>& yn) {
   // power on the printer
@@ -79,31 +77,29 @@ static void vtk_output_2D_node_IMPL(const string& caseName,
   }
   fclose(out);
 }
-
+/**
+ * overloaded vtk node output functions
+ */
 void vtk_output_2D_node(const int& ii,
                    const string& foutDir,
                    const mtr::FMatrix<double>& u,
                    const mtr::FMatrix<double>& v,
                    const mtr::FMatrix<double>& p,
-                   const int& nx,
-                   const int& ny,
                    const mtr::FMatrix<double>& xn,
                    const mtr::FMatrix<double>& yn) {
   std::ostringstream foutss;
   foutss << setw(5) << std::setfill('0') << ii;
   string caseName = foutss.str();
-  vtk_output_2D_node_IMPL(caseName,foutDir,u,v,p,nx,ny,xn,yn);
+  vtk_output_2D_node_IMPL(caseName,foutDir,u,v,p,xn,yn);
 }
 void vtk_output_2D_node(const string& caseName,
                    const string& foutDir,
                    const mtr::FMatrix<double>& u,
                    const mtr::FMatrix<double>& v,
                    const mtr::FMatrix<double>& p,
-                   const int& nx,
-                   const int& ny,
                    const mtr::FMatrix<double>& xn,
                    const mtr::FMatrix<double>& yn) {
-  vtk_output_2D_node_IMPL(caseName,foutDir,u,v,p,nx,ny,xn,yn);
+  vtk_output_2D_node_IMPL(caseName,foutDir,u,v,p,xn,yn);
 }
 
 } // end namepsace IO

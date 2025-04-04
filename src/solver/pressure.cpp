@@ -18,9 +18,7 @@ void SOR(const double& omega,
          const double& dx,
          const double& dy,
          const double& dt,
-         const double& rho,
-         int nx,
-         int ny) {
+         const double& rho) {
   pprint::PrettyPrinter printer;
   // ... initialize pressure array
   double dx2 = dx*dx;

@@ -12,8 +12,6 @@ void vtk_output_2D_node(const int& ii,
                         const mtr::FMatrix<double>& u,
                         const mtr::FMatrix<double>& v,
                         const mtr::FMatrix<double>& p,
-                        const int& nx,
-                        const int& ny,
                         const mtr::FMatrix<double>& xn,
                         const mtr::FMatrix<double>& yn);
 void vtk_output_2D_node(const string& caseName, 
@@ -21,8 +19,6 @@ void vtk_output_2D_node(const string& caseName,
                         const mtr::FMatrix<double>& u,
                         const mtr::FMatrix<double>& v,
                         const mtr::FMatrix<double>& p,
-                        const int& nx,
-                        const int& ny,
                         const mtr::FMatrix<double>& xn,
                         const mtr::FMatrix<double>& yn);
 /******************************************************************************/

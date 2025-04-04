@@ -51,16 +51,13 @@ int main(int argc, char* argv[]){
   // ... initialize and finalize Kokkos with the main scope
   IO::logger->info("Initializing Kokkos");
   Kokkos::ScopeGuard kokkos_guard(argc, argv); 
-  IO::logger->info(" done");
+  IO::logger->info("  done");
   
   // ... parse the YAML input deck
   IO::ConfigData config = IO::parseInputDeck(inFile);
   
-  double nx = config.nx;
-  double ny = config.ny;
-
   // ... get domain stats
-  getDomainIndices(nx,ny);
+  getDomainIndices(config.nx,config.ny);
   vector<int> ndims(2,0);
   ndims[0] = nx+nghosts*2;
   ndims[1] = ny+nghosts*2;
@@ -82,7 +79,7 @@ int main(int argc, char* argv[]){
   timer.start();
   IO::logger->info("Generating 2D mesh");
   double dx,dy = 0.0;
-  mesh::mesher2D(config.lx,config.ly,config.nx,config.ny,xc,yc,xn,yn,dx,dy);
+  mesh::mesher2D(config.lx,config.ly,xc,yc,xn,yn,dx,dy);
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   IO::logger->info("Tagging boundaries");
@@ -107,7 +104,7 @@ int main(int argc, char* argv[]){
   double mu   = nu*rho;  // dynamic viscosity
   double rdx  = 1.0/dx;  // reciprocal of dx
   double rdy  = 1.0/dy;  // reciprocal of dx
-  double dt   = {0};     // initialize dt
+  double dt   = 0.0;     // initialize dt
   double dpdx = 0.0;     // analytical solution for dpdx
   double dpdy = 0.0;     // analytical solution for dpdx
   IO::logger->info("  dx: {},dy: {}",dx,dy);
@@ -117,24 +114,26 @@ int main(int argc, char* argv[]){
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   
-  /**********
-   * main solver loop
-   **********/
-  double ires,res0,res1,cfl0,resmax = {0.0};
+  /********************
+   * main solver loop *
+   *******************/
+  // ... initialize doubles
+  double ires,res0,res1,cfl0,resmax = 0.0;
+  double cfl = config.cfli;
+  int finalIter;
+
+  // ... start solver & timer
   timer.start();
   IO::logger->info("Starting Main Solver");
-  double cfl = config.cfli;
-  double finalIter;
   for (int ii = 0; ii < config.iter; ii++) {
     // ... update boundary conditions
     BC::update_BCs(bcTags,u);
     BC::update_BCs(bcTags,v);
 
     // ... get the minimum dt in the domain for current iteration
-    dt = get_min_dt(cfl,dx,u,v);
+    dt = get_min_dt(cfl,dx,dy,u,v);
 
     // ... loop over domain for predictor step
-    printer.print("before main loop");
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         std::vector<double> advec(2,0.0);
@@ -151,18 +150,12 @@ int main(int argc, char* argv[]){
       }
     }
 
-    printer.print("before main loop");
-    // ... solve for the pressure correction term
-    // set the ghost cells for the ustar
+    // ... solve for the pressure
     BC::update_BCs(bcTags,ustar);
     BC::update_BCs(bcTags,vstar);
-    
-    // solve for the pressure
-    printer.print("before main loop");
-    psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+    psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho);
     
     // ... apply the pressure correctior
-    printer.print("before main loop");
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         dpdx = (p(i,j) - p(i-1,j)) / (dx);
@@ -175,7 +168,7 @@ int main(int argc, char* argv[]){
     // ... output intermediate flowviz
     if (config.fvflag) {
       if (ii % config.fvfreq == 0) {
-        IO::vtk_output_2D_node(ii,config.foutDir,u,v,p,nx,ny,xn,yn);
+        IO::vtk_output_2D_node(ii,config.foutDir,u,v,p,xn,yn);
       }
     } 
     // ... Dyanmic CFL
@@ -220,14 +213,14 @@ int main(int argc, char* argv[]){
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   IO::logger->info("Average time / iteration: {} seconds",
-               timer.time()/static_cast<double>(finalIter));
+                   timer.time()/static_cast<double>(finalIter));
 
   /**
    * output section
    */
   if (config.fvflag) {
     IO::logger->info("Outputting final flow solution");
-    IO::vtk_output_2D_node(string("final"),config.foutDir,u,v,p,nx,ny,xn,yn);
+    IO::vtk_output_2D_node(string("final"),config.foutDir,u,v,p,xn,yn);
   } else {
     IO::logger->warn("Output was disabled.");
   }
