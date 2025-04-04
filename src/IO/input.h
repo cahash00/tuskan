@@ -37,6 +37,9 @@ struct ConfigData {
   string bcRight;
   string bcBottom;
   string bcTop;
+  // initial conditions
+  double uinit;
+  double vinit;
 
 
   static ConfigData fromYAMLConfig(const YAML::Node& config);

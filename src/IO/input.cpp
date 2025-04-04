@@ -50,6 +50,8 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& config) {
   ideck.bcRight = config["boundary conditions"]["right"].as<string>();
   ideck.bcBottom = config["boundary conditions"]["bottom"].as<string>();
   ideck.bcTop = config["boundary conditions"]["top"].as<string>();
+  ideck.uinit = config["initial conditions"]["u"].as<double>();
+  ideck.vinit = config["initial conditions"]["v"].as<double>();
   return ideck;
 }
 
