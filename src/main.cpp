@@ -65,12 +65,9 @@ int main(int argc, char* argv[]){
   Kokkos::ScopeGuard kokkos_guard(argc, argv); 
   spdlog::info(" done");
   
-  // ... call input file parser
+  // ... parse the YAML input deck
   IO_input::ConfigData config = IO_input::parseInputDeck(inFile);
   
-  // ... parse the yaml file
-  double dx,dy = {0.0};
-
   double nx = config.nx;
   double ny = config.ny;
 
@@ -96,6 +93,7 @@ int main(int argc, char* argv[]){
   Timer timer;
   timer.start();
   spdlog::info("Generating 2D mesh");
+  double dx,dy = 0.0;
   mesh::mesher2D(config.lx,config.ly,config.nx,config.ny,xc,yc,xn,yn,dx,dy);
   timer.stop();
   spdlog::info("  done ({} seconds)",timer.time());
@@ -104,7 +102,7 @@ int main(int argc, char* argv[]){
                            config.bcRight,
                            config.bcBottom,
                            config.bcTop};
-  BC::bcTags bcTags = BC::tag_BCs(bcList,nx,ny);
+  BC::bcTags bcTags = BC::tag_BCs(bcList,u.dims(1),u.dims(2));
   spdlog::info("  done");
 
   // ... initialization
@@ -117,13 +115,13 @@ int main(int argc, char* argv[]){
   spdlog::info("Initializing the domain");
   double rho  = 1.0e3;   // density
   double rrho = 1.0e-3;  // reciprocal of density
-  double nu   = 1.0e-6;    // kinematic viscosity m^2/s
+  double nu   = 1.0e-6;  // kinematic viscosity m^2/s
   double mu   = nu*rho;  // dynamic viscosity
   double rdx  = 1.0/dx;  // reciprocal of dx
   double rdy  = 1.0/dy;  // reciprocal of dx
   double dt   = {0};     // initialize dt
-  double dpdx = 0.0;    // analytical solution for dpdx
-  double dpdy = 0.0;    // analytical solution for dpdx
+  double dpdx = 0.0;     // analytical solution for dpdx
+  double dpdy = 0.0;     // analytical solution for dpdx
   spdlog::info("  dx: {},dy: {}",dx,dy);
 
   // initialize domain and calculate exact solution
@@ -143,10 +141,7 @@ int main(int argc, char* argv[]){
     // ... update boundary conditions
     BC::update_BCs(bcTags,u);
     BC::update_BCs(bcTags,v);
-    // BC::bc_noslip(u);
-    // BC::bc_periodic(u);
-    // BC::bc_noslip(v);
-    // BC::bc_periodic(v);
+    print_field(v);
 
     // ... get the minimum dt in the domain for current iteration
     dt = get_min_dt(cfl,dx,u,v);
@@ -170,11 +165,10 @@ int main(int argc, char* argv[]){
 
     // ... solve for the pressure correction term
     // set the ghost cells for the ustar
-    // BC::bc_noslip(ustar);
-    // BC::bc_periodic(ustar);
-    // BC::bc_noslip(vstar);
-    // BC::bc_periodic(vstar);
-    // psolve::Jacobi(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
+    BC::update_BCs(bcTags,ustar);
+    BC::update_BCs(bcTags,vstar);
+    
+    // solve for the pressure
     psolve::SOR(p,ustar,vstar,dx,dy,dt,rho,nx,ny);
     
     // ... apply the pressure correctior
