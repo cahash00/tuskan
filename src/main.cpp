@@ -151,8 +151,6 @@ int main(int argc, char* argv[]){
     }
 
     // ... solve for the pressure
-    BC::update_BCs(bcTags,ustar);
-    BC::update_BCs(bcTags,vstar);
     psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho);
     
     // ... apply the pressure correctior
@@ -164,6 +162,8 @@ int main(int argc, char* argv[]){
         v2(i,j) = vstar(i,j) - rrho*dt*dpdy;
       }
     }
+    BC::update_BCs(bcTags,u2);
+    BC::update_BCs(bcTags,v2);
 
     // ... output intermediate flowviz
     if (config.fvflag) {
@@ -174,7 +174,8 @@ int main(int argc, char* argv[]){
     // ... Dyanmic CFL
     if (ii > 0) res1 = ires;
     double cflb = cfl; // store current cfl
-    ires = L2NORM(u,u2,nx*ny);
+    ires = max(L2NORM(u,u2),L2NORM(v,v2));
+    if (ii % config.resfreq==0) printer.print(L2NORM(u,u2),L2NORM(v,v2),dt);
     resmax = max(resmax,ires);
     if (ii==0) {
       res0 = ires;
@@ -188,8 +189,8 @@ int main(int argc, char* argv[]){
     cfl = min(config.cflf,max(cfl,config.cfli)); 
     
     // ... update the u array with the updated solution array
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    for (int j = jstr-1; j <= jend+1; j++) {
+      for (int i = istr-1; i <= iend+1; i++) {
         u(i,j) = u2(i,j);
         v(i,j) = v2(i,j);
       }
@@ -207,6 +208,8 @@ int main(int argc, char* argv[]){
     // exit if converged
     if (ires/res0 < config.toler && ii > 1000) {
       finalIter=ii;
+      break;
+    } else if (ires/res0 > 1.0e20) {
       break;
     }
   } // end of ii-loop

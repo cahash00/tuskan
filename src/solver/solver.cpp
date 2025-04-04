@@ -12,14 +12,24 @@ using namespace std;
 
 /******************************************************************************/
 double getAdvecU(const int& i,const int& j,
-                const double rdx,const double rdy,
-                mtr::FMatrix<double>& u,
-                mtr::FMatrix<double>& v) {
+                       const double rdx,const double rdy,
+                       mtr::FMatrix<double>& u,
+                       mtr::FMatrix<double>& v) {
   double advec;
-  advec = rdx*pow((u(i+1,j)+u(i,j))*0.5,2)
-        - rdx*pow((u(i,j)+u(i-1,j))*0.5,2)
-        + rdy*(u(i,j)+u(i,j+1))*0.5 * (v(i+1,j)+v(i,j))*0.5 
-        - rdy*(u(i,j)+u(i,j-1))*0.5 * (v(i+1,j-1)+v(i,j-1))*0.5;
+  double u_n,u_s,u_e,u_w;
+  double v_n,v_s,v_e,v_w;
+  // u components
+  u_n = 0.5*(u(i,j+1) + u(i,j));
+  u_s = 0.5*(u(i,j-1) + u(i,j));
+  u_e = 0.5*(u(i+1,j) + u(i,j));
+  u_w = 0.5*(u(i-1,j) + u(i,j));
+  // v components
+  v_n = 0.5*(v(i,j)   + v(i+1,j));
+  v_s = 0.5*(v(i,j-1) + v(i+1,j-1));
+  v_e = 0.5*(v(i,j)   + v(i,j-1));
+  v_w = 0.5*(v(i+1,j) + v(i+1,j-1));
+  
+  advec = rdx*(u_e*u_e-u_w*u_w) + rdy*(u_n*v_n-u_s*v_s);
   return advec;
 }
 /******************************************************************************/
@@ -28,10 +38,20 @@ double getAdvecV(const int& i,const int& j,
                  mtr::FMatrix<double>& u,
                  mtr::FMatrix<double>& v) {
   double advec;
-  advec = rdy*pow((v(i,j)+v(i,j+1))*0.5,2)
-        - rdy*pow((v(i,j)+v(i,j-1))*0.5,2)
-        + rdx*(u(i,j)+u(i,j+1))*0.5 * (v(i,j)+v(i+1,j))*0.5
-        - rdx*(u(i-1,j+1)+u(i-1,j))*0.5 * (v(i,j)+v(i-1,j))*0.5;
+  double u_n,u_s,u_e,u_w;
+  double v_n,v_s,v_e,v_w;
+  // v components
+  v_n = 0.5*(v(i,j) + v(i,j+1));
+  v_s = 0.5*(v(i,j) + v(i,j-1));
+  v_e = 0.5*(v(i,j) + v(i+1,j));
+  v_w = 0.5*(v(i,j) + v(i-1,j));
+  // u components
+  u_n = 0.5*(u(i-1,j+1) + u(i,j+1));
+  u_s = 0.5*(u(i-1,j) + u(i,j));
+  u_e = 0.5*(u(i,j+1) + u(i,j));
+  u_w = 0.5*(u(i-1,j+1) + u(i-1,j));
+
+  advec = rdy*( v_n*v_n-v_s*v_s ) + rdx*( v_e*u_e-v_w*u_w );
   return advec;
 }
 /******************************************************************************/
@@ -60,8 +80,7 @@ double getDiffV(const int& i,
 }
 /******************************************************************************/
 double L2NORM(mtr::FMatrix<double>& m1, 
-              mtr::FMatrix<double>& m2, 
-              const int& N) {
+              mtr::FMatrix<double>& m2) {
   // assert that the matrices must be equal in rank
   assert(m1.order() == m2.order());
   
@@ -70,7 +89,7 @@ double L2NORM(mtr::FMatrix<double>& m1,
   double total = 0.0;
   for (int j = jstr; j <= jend; j++) {
     for (int i = istr; i <= iend; i++) {
-      double d = m2(i,j) - m1(i,j);
+      double d = m2(i,j) - m1(i,j) + 1.0e-15;
       l2norm += d*d;
       total += 1.0;
     }
@@ -85,8 +104,8 @@ double get_min_dt(const double& cfl,
                   mtr::FMatrix<double>& u,
                   mtr::FMatrix<double>& v) {
   double dt=1.0e5;
-  for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
-    for (int i = istr-nghosts; i <= iend+nghosts; i++) {
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
       dt = min(abs(cfl*dy/(v(i,j)+1.0e-15)),abs(cfl*dx/(u(i,j)+1.0e-15)));
     }
   }

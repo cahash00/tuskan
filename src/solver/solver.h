@@ -40,9 +40,8 @@ double getDiffV(const int& i,
 /*******************************************************************************
  * @brief get the L2NORM between two arrays
  ******************************************************************************/
-double L2NORM(mtr::FMatrix<double>& uexact, 
-              mtr::FMatrix<double>& u, 
-              const int& N);
+double L2NORM(mtr::FMatrix<double>& m1, 
+              mtr::FMatrix<double>& m2);
 
 /*******************************************************************************
  * @brief get the global minimum timestep
