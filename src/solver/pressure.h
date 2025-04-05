@@ -3,16 +3,16 @@
 
 #include <matar.h>
 
-namespace psolve {
+namespace SOR {
 
-void SOR(const double& omega,
-         mtr::FMatrix<double>& p,
-         mtr::FMatrix<double>& ustar,
-         mtr::FMatrix<double>& vstar,
-         const double& dx,
-         const double& dy,
-         const double& dt,
-         const double& rho);
+void pressure(const double& omega,
+              mtr::FMatrix<double>& p,
+              mtr::FMatrix<double>& ustar,
+              mtr::FMatrix<double>& vstar,
+              const double& dx,
+              const double& dy,
+              const double& dt,
+              const double& rho);
 
 }
 #endif // end PRESSURE_H

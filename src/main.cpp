@@ -17,6 +17,7 @@
 #include <generalUtils.h>
 #include <solver.h>
 #include <pressure.h>
+#include <helmholtz.h>
 #include <logger.h>
 #include <cmath>
 #include <BCs.h>
@@ -75,6 +76,10 @@ int main(int argc, char* argv[]){
   fmatD u_old(ndims[0]+1,ndims[1]+1);
   fmatD v_old(ndims[0]+1,ndims[1]+1);
   fmatD uexact(ndims[0]+1,ndims[1]+1);
+  fmatD diffu(ndims[0]+1,ndims[1]+1);
+  fmatD diffv(ndims[0]+1,ndims[1]+1);
+  fmatD rhsU(ndims[0]+1,ndims[1]+1);
+  fmatD rhsV(ndims[0]+1,ndims[1]+1);
   
   // ... call mesh generator
   Timer timer;
@@ -140,45 +145,45 @@ int main(int argc, char* argv[]){
     // ... get the minimum dt in the domain for current iteration
     dt = get_min_dt(cfl,dx,dy,u,v);
 
-    // ... store the previous timestep
-    for (int j = jstr-1; j <= jend+1; j++) {
-      for (int i = istr-1; i <= iend+1; i++) {
-        u_old(i,j) = u(i,j);
-        v_old(i,j) = v(i,j);
-      }
-    }
-    
-
     // ... loop over domain for predictor step
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         std::vector<double> advec(2,0.0);
         std::vector<double> advec_old(2,0.0);
-        std::vector<double> diffu(2,0.0);
         // get the advection term
         advec[0] = getAdvecU(i,j,rdx,rdy,u,v);
-        advec[1] = getAdvecV(i,j,rdx,rdy,u,v);
+        // advec[1] = getAdvecV(i,j,rdx,rdy,u,v);
+        // get advection for the old timestep
         advec_old[0] = getAdvecU(i,j,rdx,rdy,u_old,v_old);
-        advec_old[1] = getAdvecV(i,j,rdx,rdy,u_old,v_old);
+        // advec_old[1] = getAdvecV(i,j,rdx,rdy,u_old,v_old);
         // get the diffusion term
-        diffu[0] = getDiffU(i,j,rdx,rdy,u,v);
-        diffu[1] = getDiffV(i,j,rdx,rdy,u,v);
-        // predictor step - explicit
-        ustar(i,j) = u(i,j) + dt*(-advec[0] + nu*diffu[0]);
-        vstar(i,j) = v(i,j) + dt*(-advec[1] + nu*diffu[1]);
+        diffu(i,j) = getDiffU(i,j,rdx,rdy,u,v);
+        // diffv(i,j) = getDiffV(i,j,rdx,rdy,u,v);
+        // build RHS of Helmholtz equation to solve
+        double ab2u = 1.5*advec[0]-0.5*advec_old[0];
+        rhsU(i,j) = u(i,j) + dt*(-ab2u-(p(i,j)-p(i-1,j))*0.5+0.5*nu*diffu(i,j));
+        // rhsV(i,j) = v(i,j) + dt*(-1.5*advec[1]+0.5*advec_old[1]+diffv(i,j));
+        // rhsU(i,j) = 1.5*dt*advec[0]-0.5*dt*advec_old[0]-diffu(i,j)-2.0*nu/dt*u(i,j);
+        // rhsV(i,j) = 1.5*dt*advec[1]-0.5*dt*advec_old[1]-diffv(i,j)-2.0*nu/dt*v(i,j);
       }
     }
 
+    // ... solve the Helmholtz equation using SOR to get u* and v*
+    SOR::helmholtz(config.sorOmega,ustar,rhsU,bcTags,dx,dy,dt,nu);
+    // SOR::helmholtz(config.sorOmega,vstar,rhsV,bcTags,dx,dy,dt,nu);
+    BC::update_BCs(bcTags,ustar);
+    // BC::update_BCs(bcTags,vstar);
+
     // ... solve for the pressure
-    psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho);
+    SOR::pressure(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho);
     
     // ... apply the pressure correctior
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
-        dpdx = (p(i,j) - p(i-1,j)) / (dx);
-        dpdy = (p(i,j) - p(i,j-1)) / (dy);
-        u2(i,j) = ustar(i,j) - rrho*dt*dpdx;
-        v2(i,j) = vstar(i,j) - rrho*dt*dpdy;
+        dpdx = (p(i,j) - p(i-1,j)) / dx;
+        dpdy = (p(i,j) - p(i,j-1)) / dy;
+        u2(i,j) = ustar(i,j) - dt*dpdx;
+        // v2(i,j) = vstar(i,j) - dt*dpdy;
       }
     }
     BC::update_BCs(bcTags,u2);
@@ -210,14 +215,14 @@ int main(int argc, char* argv[]){
     for (int j = jstr-1; j <= jend+1; j++) {
       for (int i = istr-1; i <= iend+1; i++) {
         u_old(i,j) = u(i,j);
-        v_old(i,j) = v(i,j);
+        // v_old(i,j) = v(i,j);
       }
     }
     // ... update the u array with the updated solution array
     for (int j = jstr-1; j <= jend+1; j++) {
       for (int i = istr-1; i <= iend+1; i++) {
         u(i,j) = u2(i,j);
-        v(i,j) = v2(i,j);
+        // v(i,j) = v2(i,j);
       }
     }
     
