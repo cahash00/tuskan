@@ -47,6 +47,7 @@ struct ConfigData {
   // initial conditions
   double uinit;
   double vinit;
+  double pinit;
 
   static ConfigData fromYAMLConfig(const YAML::Node& config);
 };

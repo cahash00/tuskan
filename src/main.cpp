@@ -90,7 +90,6 @@ int main(int argc, char* argv[]){
   IO::logger->info("  done ({} seconds)",timer.time());
   IO::logger->info("Tagging boundaries");
   BC::bcTags bcTags = BC::tag_BCs(config,u.dims(1),u.dims(2));
-  // bcTags.Top.vel[0] = config.bcTop.velocity[0];
   IO::logger->info("  done");
 
   // ... initialization
@@ -101,21 +100,19 @@ int main(int argc, char* argv[]){
   }
   timer.start();
   IO::logger->info("Initializing the domain");
-  rho.set_values(1.0e3);   // density
+  rho.set_values(1.0e3); // density
   double nu   = 1.0e-6;  // kinematic viscosity m^2/s
   double rdx  = 1.0/dx;  // reciprocal of dx
   double rdy  = 1.0/dy;  // reciprocal of dx
   IO::logger->info("  dx: {},dy: {}",dx,dy);
 
-  // initialize domain and calculate exact solution
-  initialize_solution(config.uinit,config.vinit,u,v,u2,v2,ustar,vstar,p);
-  // ... store the previous timestep
-  for (int j = jstr-1; j <= jend+1; j++) {
-    for (int i = istr-1; i <= iend+1; i++) {
-      u_old(i,j) = u(i,j);
-      v_old(i,j) = v(i,j);
-    }
-  }
+  // initialize domain
+  initialize_solution(config,
+                      u,v,
+                      u2,v2,
+                      u_old,v_old,
+                      ustar,vstar,
+                      p);
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   

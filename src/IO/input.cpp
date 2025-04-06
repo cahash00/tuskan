@@ -67,6 +67,7 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& iconfig) {
   }
   ideck.uinit = iconfig["initial conditions"]["u"].as<double>();
   ideck.vinit = iconfig["initial conditions"]["v"].as<double>();
+  ideck.pinit = iconfig["initial conditions"]["p"].as<double>();
   return ideck;
 }
 

@@ -8,31 +8,28 @@ domain:
     x: 80
     y: 80
 boundary conditions:
-  # left: 
-  #   type: noslip wall
-  # right: 
-  #   type: noslip wall
-  # bottom: 
-  #   type: noslip wall
-  # top: 
-  #   type: moving wall
-  #   velocity:
-  #     u: 0.007
-  #     v: 0.0
-  left: noslip
-  right: noslip
-  bottom: noslip
-  top: noslip
+  left: 
+    type: noslip wall
+  right: 
+    type: noslip wall
+  bottom: 
+    type: noslip wall
+  top: 
+    type: moving wall
+    velocity:
+      u: 0.007
+      v: 0.0
 initial conditions:
   u: 0.000
   v: 0.000
+  p: 0.0
 solver:
-  iterations: 50000
+  iterations: 10000
   pressure solver:
     method: SOR
     omega: 1.7
 dynamic CFL:
-  cfli: 0.01
+  cfli: 0.1
   cflf: 0.5
 convergence:
   residual: 1.0e-6
