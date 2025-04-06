@@ -16,9 +16,9 @@ namespace BC {
 struct boundarySpecs {
   mtr::FMatrix<int> bvals;
   std::vector<double> vel = std::vector<double>(2,0.0);
-  double pressure;
+  double pressure = 0.0;
   // constructor
-  boundarySpecs(int dim) : bvals(dim) {}
+  explicit boundarySpecs(int dim) : bvals(dim) {}
 };
 
 struct bcTags {

@@ -36,9 +36,9 @@ bcTags tag_BCs(IO::ConfigData config,
                const int ny);
 
 void update_BCs(bcTags tags, 
-    mtr::FMatrix<double>& u,
-    mtr::FMatrix<double>& v,
-    mtr::FMatrix<double>& p);
+                mtr::FMatrix<double>& u,
+                mtr::FMatrix<double>& v,
+                mtr::FMatrix<double>& p);
 
 
 } // end namespace BC

@@ -12,14 +12,14 @@ double getAdvecU(const int& i,
                  const int& j,
                  const double rdx,
                  const double rdy,
-                 mtr::FMatrix<double>& u,
-                 mtr::FMatrix<double>& v);
+                 const mtr::FMatrix<double>& u,
+                 const mtr::FMatrix<double>& v);
 double getAdvecV(const int& i,
                  const int& j,
                  const double rdx,
                  const double rdy,
-                 mtr::FMatrix<double>& u,
-                 mtr::FMatrix<double>& v);
+                 const mtr::FMatrix<double>& u,
+                 const mtr::FMatrix<double>& v);
 
 /*******************************************************************************
  * @brief get the diffusion contribution
@@ -28,20 +28,20 @@ double getDiffU(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
-                mtr::FMatrix<double>& u,
-                mtr::FMatrix<double>& v);
+                const mtr::FMatrix<double>& u,
+                const mtr::FMatrix<double>& v);
 double getDiffV(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
-                mtr::FMatrix<double>& u,
-                mtr::FMatrix<double>& v);
+                const mtr::FMatrix<double>& u,
+                const mtr::FMatrix<double>& v);
 
 /*******************************************************************************
  * @brief get the L2NORM between two arrays
  ******************************************************************************/
-double L2NORM(mtr::FMatrix<double>& m1, 
-              mtr::FMatrix<double>& m2);
+double L2NORM(const mtr::FMatrix<double>& m1, 
+              const mtr::FMatrix<double>& m2);
 
 /*******************************************************************************
  * @brief get the global minimum timestep
@@ -49,8 +49,8 @@ double L2NORM(mtr::FMatrix<double>& m1,
 double get_min_dt(const double& cfl, 
                   const double& dx,
                   const double& dy,
-                  mtr::FMatrix<double>& u,
-                  mtr::FMatrix<double>& v,
+                  const mtr::FMatrix<double>& u,
+                  const mtr::FMatrix<double>& v,
                   const double& nu);
 
 /*******************************************************************************

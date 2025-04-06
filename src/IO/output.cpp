@@ -42,13 +42,13 @@ void check_directories(const string& foutDir) {
  * @param[in] yn matrix of y nodal values
  */
 static void vtk_output_2D_node_IMPL(const string& caseName,
-                               const string& foutDir,
-                               const bool ghost,
-                               const mtr::FMatrix<double>& u,
-                               const mtr::FMatrix<double>& v,
-                               const mtr::FMatrix<double>& p,
-                               const mtr::FMatrix<double>& xc,
-                               const mtr::FMatrix<double>& yc) {
+                                    const string& foutDir,
+                                    const bool ghost,
+                                    const mtr::FMatrix<double>& u,
+                                    const mtr::FMatrix<double>& v,
+                                    const mtr::FMatrix<double>& p,
+                                    const mtr::FMatrix<double>& xc,
+                                    const mtr::FMatrix<double>& yc) {
   /**
    * get cell-centered solution variables
    * pressure is already cell-centered

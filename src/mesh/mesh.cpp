@@ -23,7 +23,6 @@ void mesher2D(const double& lx, const double& ly,
   dy = ly/static_cast<double>(ny);
   
   // calculate cell center values
-  int i,j;
   for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
     for (int i = istr-nghosts; i <= iend+nghosts; i++) {
       xc(i,j) = (i-(1+nghosts))*dx + dx*0.5;

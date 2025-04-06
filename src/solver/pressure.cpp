@@ -10,19 +10,6 @@ using namespace std;
 
 namespace psolve {
 
-void update_wall(mtr::FMatrix<double>& p) {
-  for (int i = istr-1; i <= iend+1; i++) {
-    p(i,jend) = p(i,jend-1);
-    p(i,jstr-1) = p(i,jstr);
-    // p(i,jstr-1) = 1.0;
-    // p(i,jend) = 1.0 + -0.3*0.00066*(ny);
-    // p(i,jend+1) = 1.0 + -0.3*0.00066*(ny);
-  }
-  for (int j = jstr-1; j <= jend+1; j++) {
-    p(istr-1,j) = p(istr,j);
-    p(iend,j) = p(iend-1,j);
-  }
-}
 void SOR(const double& omega,
          mtr::FMatrix<double>& p,
          mtr::FMatrix<double>& ustar,
@@ -32,7 +19,7 @@ void SOR(const double& omega,
          const double& dt,
          mtr::FMatrix<double>& rho,
          BC::bcTags bcTags) {
-  pprint::PrettyPrinter printer;
+  
   // ... initialize pressure array
   const double dx2 = dx*dx;
   const double dy2 = dy*dy;

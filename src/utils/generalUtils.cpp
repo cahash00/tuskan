@@ -62,12 +62,3 @@ std::unique_ptr<spdlog::custom_flag_formatter> customSPDLOG::clone() const {
     return std::make_unique<customSPDLOG>();
 }
 
-/******************************************************************************/
-void print_field(FMatrix<double>& q) {
-  DO_LOOP(j,jstr-nghosts,jend+nghosts,{
-    DO_LOOP(i,istr-nghosts,iend+nghosts,{
-      cout << q(i,j) << " ";
-    });
-    cout << endl;
-  });
-}
