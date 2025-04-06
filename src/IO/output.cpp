@@ -66,20 +66,19 @@ static void vtk_output_2D_node_IMPL(const string& caseName,
     }
   }
   fprintf(out,"POINT_DATA %d\n",(nx+3)*(ny+3));
-  fprintf(out,"SCALARS u float 1\n");
-  fprintf(out,"LOOKUP_TABLE default\n");
+  fprintf(out,"VECTORS velocity float \n");
   for (int j = jstr-1; j <= jend+1; j++) {
     for (int i = istr-1; i <= iend+1; i++) {
-      fprintf(out,"%f\n",u(i,j));
+      fprintf(out,"%f %f %f\n",u(i,j),v(i,j),0.0);
     }
   }
-  fprintf(out,"SCALARS v float 1\n");
-  fprintf(out,"LOOKUP_TABLE default\n");
-  for (int j = jstr-1; j <= jend+1; j++) {
-    for (int i = istr-1; i <= iend+1; i++) {
-      fprintf(out,"%f\n",v(i,j));
-    }
-  }
+  // fprintf(out,"SCALARS v float 1\n");
+  // fprintf(out,"LOOKUP_TABLE default\n");
+  // for (int j = jstr-1; j <= jend+1; j++) {
+  //   for (int i = istr-1; i <= iend+1; i++) {
+  //     fprintf(out,"%f\n",v(i,j));
+  //   }
+  // }
   fprintf(out,"SCALARS p float 1\n");
   fprintf(out,"LOOKUP_TABLE default\n");
   for (int j = jstr-1; j <= jend+1; j++) {

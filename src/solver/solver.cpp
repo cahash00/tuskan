@@ -174,13 +174,27 @@ double get_min_dt(const double& cfl,
                   const double& dx,
                   const double& dy,
                   mtr::FMatrix<double>& u,
-                  mtr::FMatrix<double>& v) {
-  double dt=1.0e5;
+                  mtr::FMatrix<double>& v,
+                  const double& nu) {
+  double umax,vmax = 0.0;
   for (int j = jstr; j <= jend; j++) {
     for (int i = istr; i <= iend; i++) {
-      dt = min(abs(cfl*dy/(v(i,j)+1.0e-15)),abs(cfl*dx/(u(i,j)+1.0e-15)));
+      umax = max(umax,abs(u(i,j)));
+      vmax = max(vmax,abs(v(i,j)));
     }
   }
+  // find timestep limit due to advection
+  double dt1 = 1e5;
+  if (umax > 0.0 && vmax > 0.0) {
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
+        dt1 = cfl*min(dx/umax,dy/vmax);
+      }
+    }
+  }
+  double dt2 = 0.5*dx*dx*dy*dy/(nu*(dx*dx+dy*dy));
+  double dt = min(dt1,dt2);
+  
   return dt;
 }
 /******************************************************************************/
@@ -199,7 +213,7 @@ void initialize_solution(const double& uinit,
   v2.set_values(vinit);
   ustar.set_values(uinit);
   vstar.set_values(vinit);
-  p.set_values(0.0);
+  p.set_values(1.0);
 }
 /******************************************************************************/
 double dynamic_cfl(const int ii,

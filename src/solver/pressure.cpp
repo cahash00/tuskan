@@ -12,11 +12,11 @@ namespace psolve {
 
 void update_wall(mtr::FMatrix<double>& p) {
   for (int i = istr-1; i <= iend+1; i++) {
-    // p(i,jend) = p(i,jend-1);
-    // p(i,jstr-1) = p(i,jstr);
-    p(i,jstr-1) = 1.0;
-    p(i,jend) = 1.0 + -0.3*0.00066*(ny);
-    p(i,jend+1) = 1.0 + -0.3*0.00066*(ny);
+    p(i,jend) = p(i,jend-1);
+    p(i,jstr-1) = p(i,jstr);
+    // p(i,jstr-1) = 1.0;
+    // p(i,jend) = 1.0 + -0.3*0.00066*(ny);
+    // p(i,jend+1) = 1.0 + -0.3*0.00066*(ny);
   }
   for (int j = jstr-1; j <= jend+1; j++) {
     p(istr-1,j) = p(istr,j);
@@ -30,7 +30,8 @@ void SOR(const double& omega,
          const double& dx,
          const double& dy,
          const double& dt,
-         mtr::FMatrix<double>& rho) {
+         mtr::FMatrix<double>& rho,
+         BC::bcTags bcTags) {
   pprint::PrettyPrinter printer;
   // ... initialize pressure array
   const double dx2 = dx*dx;
@@ -40,6 +41,9 @@ void SOR(const double& omega,
   mtr::FMatrix<double> p1(p.dims(1),p.dims(2));
   mtr::FMatrix<double> p2(p.dims(1),p.dims(2));
 
+
+  // ... set pressure gradient boundary conditions
+  BC::update_BCs(bcTags,ustar,vstar,p);
   // ... start the jacobi iterations
   int jiter = 2000;
   for (int j = jstr-1; j <= jend+1; j++) {
@@ -50,12 +54,8 @@ void SOR(const double& omega,
   }
 
   // ... set pressure gradient boundary conditions
-  update_wall(p1);
-  update_wall(p2);
-
-  // ... set pressure gradient boundary conditions
   for (int n = 0; n <= jiter; n++) {
-    update_wall(p1);
+    BC::update_BCs(bcTags,ustar,vstar,p1);
     
     // ... loop over the domain
     for (int j = jstr; j <= jend-1; j++) {
@@ -72,7 +72,7 @@ void SOR(const double& omega,
 
       } // end i-loop
     } // end j-loop
-    update_wall(p2);
+    BC::update_BCs(bcTags,ustar,vstar,p2);
 
     for (int j = jstr-1; j <= jend; j++) {
       for (int i = istr-1; i <= iend; i++) {

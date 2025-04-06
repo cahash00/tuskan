@@ -115,6 +115,13 @@ int main(int argc, char* argv[]){
 
   // initialize domain and calculate exact solution
   initialize_solution(config.uinit,config.vinit,u,v,u2,v2,ustar,vstar,p);
+  // ... store the previous timestep
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
+      u_old(i,j) = u(i,j);
+      v_old(i,j) = v(i,j);
+    }
+  }
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   
@@ -131,11 +138,10 @@ int main(int argc, char* argv[]){
   IO::logger->info("Starting Main Solver");
   for (int ii = 0; ii < config.iter; ii++) {
     // ... update boundary conditions
-    BC::update_BCs(bcTags,u);
-    BC::update_BCs(bcTags,v);
+    BC::update_BCs(bcTags,u,v,p);
 
     // ... get the minimum dt in the domain for current iteration
-    dt = get_min_dt(cfl,dx,dy,u,v);
+    dt = get_min_dt(cfl,dx,dy,u,v,nu);
 
     // ... loop over domain for predictor step
     for (int j = jstr; j <= jend; j++) {
@@ -158,12 +164,12 @@ int main(int argc, char* argv[]){
         // predictor step - explicit
         ustar(i,j) = u(i,j) + dt*(-ab2[0] + nu*diffu[0]);
         vstar(i,j) = v(i,j) + dt*(-ab2[1] + nu*diffu[1]);
-        // if (i==15 && j==30) printer.print(v(i,j),ab2[1],diffu[1]);
       }
     }
+    BC::update_BCs(bcTags,ustar,vstar,p);
 
     // ... solve for the pressure
-    psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho);
+    psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho,bcTags);
     
     // ... apply the pressure correctior
     for (int j = jstr; j <= jend; j++) {
@@ -174,14 +180,7 @@ int main(int argc, char* argv[]){
         v2(i,j) = vstar(i,j) - 1.0/rho(i,j)*dt*dpdy;
       }
     }
-    BC::update_BCs(bcTags,u2);
-    BC::update_BCs(bcTags,v2);
-    // printer.print("u",u(15,30));
-    // printer.print("v",v(15,30));
-    // printer.print("vstar",vstar(15,30));
-    // printer.print("p",p(15,30));
-    // printer.print("v2",v2(15,30));
-    // printer.print("-----");
+    BC::update_BCs(bcTags,u2,v2,p);
 
     // ... output intermediate flowviz
     if (config.fvflag) {
