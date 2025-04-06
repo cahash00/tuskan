@@ -12,7 +12,7 @@ void SOR(const double& omega,
          const double& dx,
          const double& dy,
          const double& dt,
-         const double& rho);
+         mtr::FMatrix<double>& rho);
 
 }
 #endif // end PRESSURE_H

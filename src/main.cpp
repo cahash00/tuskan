@@ -66,10 +66,13 @@ int main(int argc, char* argv[]){
   fmatD xc(ndims[0],ndims[1]),yc(ndims[0],ndims[1]),
         xn(ndims[0]+1,ndims[1]+1),yn(ndims[0]+1,ndims[1]+1);
   fmatD p(ndims[0]+1,ndims[1]+1);
+  fmatD rho(ndims[0]+1,ndims[1]+1);
   fmatD ustar(ndims[0]+1,ndims[1]+1);
   fmatD vstar(ndims[0]+1,ndims[1]+1);
   fmatD u(ndims[0]+1,ndims[1]+1);
   fmatD v(ndims[0]+1,ndims[1]+1);
+  fmatD u_old(ndims[0]+1,ndims[1]+1);
+  fmatD v_old(ndims[0]+1,ndims[1]+1);
   fmatD u2(ndims[0]+1,ndims[1]+1);
   fmatD v2(ndims[0]+1,ndims[1]+1);
   fmatD uexact(ndims[0]+1,ndims[1]+1);
@@ -98,10 +101,9 @@ int main(int argc, char* argv[]){
   }
   timer.start();
   IO::logger->info("Initializing the domain");
-  double rho  = 1.0e3;   // density
+  rho.set_values(1.0e3);   // density
   double rrho = 1.0e-3;  // reciprocal of density
   double nu   = 1.0e-6;  // kinematic viscosity m^2/s
-  double mu   = nu*rho;  // dynamic viscosity
   double rdx  = 1.0/dx;  // reciprocal of dx
   double rdy  = 1.0/dy;  // reciprocal of dx
   double dt   = 0.0;     // initialize dt
@@ -137,16 +139,23 @@ int main(int argc, char* argv[]){
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         std::vector<double> advec(2,0.0);
+        std::vector<double> advec_old(2,0.0);
         std::vector<double> diffu(2,0.0);
+        std::vector<double> ab2(2,0.0);
         // get the advection term
         advec[0] = getAdvecU(i,j,rdx,rdy,u,v);
         advec[1] = getAdvecV(i,j,rdx,rdy,u,v);
         // get the diffusion term
         diffu[0] = getDiffU(i,j,rdx,rdy,u,v);
         diffu[1] = getDiffV(i,j,rdx,rdy,u,v);
+        // AB2 method for convection
+        advec_old[0] = getAdvecU(i,j,rdx,rdy,u_old,v_old);
+        advec_old[1] = getAdvecV(i,j,rdx,rdy,u_old,v_old);
+        ab2[0] = 1.5*advec[0]-0.5*advec_old[0];
+        ab2[1] = 1.5*advec[1]-0.5*advec_old[1];
         // predictor step - explicit
-        ustar(i,j) = u(i,j) + dt*(-advec[0] + nu*diffu[0]);
-        vstar(i,j) = v(i,j) + dt*(-advec[1] + nu*diffu[1]);
+        ustar(i,j) = u(i,j) + dt*(-ab2[0] + nu*diffu[0]);
+        vstar(i,j) = v(i,j) + dt*(-ab2[1] + nu*diffu[1]);
       }
     }
 
@@ -158,8 +167,8 @@ int main(int argc, char* argv[]){
       for (int i = istr; i <= iend; i++) {
         dpdx = (p(i,j) - p(i-1,j)) / (dx);
         dpdy = (p(i,j) - p(i,j-1)) / (dy);
-        u2(i,j) = ustar(i,j) - rrho*dt*dpdx;
-        v2(i,j) = vstar(i,j) - rrho*dt*dpdy;
+        u2(i,j) = ustar(i,j) - 1.0/rho(i,j)*dt*dpdx;
+        v2(i,j) = vstar(i,j) - 1.0/rho(i,j)*dt*dpdy;
       }
     }
     BC::update_BCs(bcTags,u2);
@@ -186,6 +195,13 @@ int main(int argc, char* argv[]){
     }
     cfl = max(cfl,cflb);
     cfl = min(config.cflf,max(cfl,config.cfli)); 
+    // ... store the previous timestep
+    for (int j = jstr-1; j <= jend+1; j++) {
+      for (int i = istr-1; i <= iend+1; i++) {
+        u_old(i,j) = u(i,j);
+        v_old(i,j) = v(i,j);
+      }
+    }
     
     // ... update the u array with the updated solution array
     for (int j = jstr-1; j <= jend+1; j++) {

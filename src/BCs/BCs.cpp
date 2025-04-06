@@ -51,15 +51,16 @@ bcTags tag_BCs(const std::vector<std::string>& bc_tags,
 }
 
 void update_BCs(bcTags tags, mtr::FMatrix<double>& q) {
+  double ub=0.0;
   // update the left boundary
   for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
     if (tags.Left(j)==0) {
-      q(istr-1,j) = -q(istr,j);
+      q(istr-1,j) = ub-q(istr,j);
     } else if (tags.Left(j)==7) {
       q(istr-1,j) = q(iend,j);
     }
     if (tags.Right(j)==0) {
-      q(iend+1,j) = -q(iend,j);
+      q(iend+1,j) = ub-q(iend,j);
     } else if (tags.Right(j)==7) {
       q(iend+1,j) = q(istr,j);
     }
@@ -67,12 +68,12 @@ void update_BCs(bcTags tags, mtr::FMatrix<double>& q) {
 
   for (int i = istr-nghosts; i <= iend+nghosts; i++) {
     if (tags.Bottom(i)==0) {
-      q(i,jstr-1) = -q(i,jstr);
+      q(i,jstr-1) = ub-q(i,jstr);
     } else if (tags.Bottom(i)==7) {
       q(i,jstr-1) = q(i,jend);
     }
     if (tags.Top(i)==0) {
-      q(i,jend+1) = -q(i,jend);
+      q(i,jend+1) = 0.0-q(i,jend);
     } else if (tags.Top(i)==7) {
       q(i,jend+1) = q(i,jstr);
     }
