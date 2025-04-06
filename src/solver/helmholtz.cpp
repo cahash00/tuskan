@@ -25,7 +25,16 @@ void helmholtz_eigen(const double& omega,
     const double denom = 2.0*(1.0/dx2+1.0/dy2) + coeff;
     int nx1 = nx+3;
     int ny1 = ny+3;
-    Eigen::SparseMatrix<double> A(nx1 * ny1, nx1 * ny1);
+    Eigen::SparseMatrix<double> A(ustar.dims(1), ustar.dims(2));
+    Eigen::SparseMatrix<double> B(ustar.dims(1), ustar.dims(2));
+    Eigen::SparseMatrix<double> C(ustar.dims(1), ustar.dims(2));
+    Eigen::SparseMatrix<double> D(ustar.dims(1), ustar.dims(2));
+    for (int j = jstr-1; j <= jend+1; j++) {
+      for (int i = istr-1; i <= iend+1; i++) {
+        B(i-1,j-1) = rhs(i,j);
+      }
+    }
+    
     // Diagonal entries (the "1 + 2alpha" part)
     std::vector<Eigen::Triplet<double>> tripletList;
     tripletList.reserve(nx * ny * 5); // Pre-allocate space
