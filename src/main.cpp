@@ -8,6 +8,7 @@
 
 #include <mesh.h>
 #include <output.h>               // output library
+#include <args.h>
 #include <input.h>                // input deck reader
 #include <matar.h>                // MATAR headers
 #include <Kokkos_Core.hpp>        // Kokkos for initialization
@@ -88,11 +89,8 @@ int main(int argc, char* argv[]){
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   IO::logger->info("Tagging boundaries");
-  vector<string> bcList = {config.bcLeft,
-                           config.bcRight,
-                           config.bcBottom,
-                           config.bcTop};
-  BC::bcTags bcTags = BC::tag_BCs(bcList,u.dims(1),u.dims(2));
+  BC::bcTags bcTags = BC::tag_BCs(config,u.dims(1),u.dims(2));
+  // bcTags.Top.vel[0] = config.bcTop.velocity[0];
   IO::logger->info("  done");
 
   // ... initialization

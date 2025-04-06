@@ -157,7 +157,6 @@ double L2NORM(mtr::FMatrix<double>& m1,
   assert(m1.order() == m2.order());
   
   double l2norm = 0.0;
-  double lsum = 0.0;
   double total = 0.0;
   for (int j = jstr; j <= jend; j++) {
     for (int i = istr; i <= iend; i++) {
@@ -176,9 +175,11 @@ double get_min_dt(const double& cfl,
                   mtr::FMatrix<double>& u,
                   mtr::FMatrix<double>& v,
                   const double& nu) {
-  double umax,vmax = 0.0;
-  for (int j = jstr; j <= jend; j++) {
-    for (int i = istr; i <= iend; i++) {
+  // double umax,vmax = 0.0;
+  double umax = 0.0;
+  double vmax = 0.0;
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
       umax = max(umax,abs(u(i,j)));
       vmax = max(vmax,abs(v(i,j)));
     }
@@ -186,8 +187,8 @@ double get_min_dt(const double& cfl,
   // find timestep limit due to advection
   double dt1 = 1e5;
   if (umax > 0.0 && vmax > 0.0) {
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    for (int j = jstr-1; j <= jend+1; j++) {
+      for (int i = istr-1; i <= iend+1; i++) {
         dt1 = cfl*min(dx/umax,dy/vmax);
       }
     }

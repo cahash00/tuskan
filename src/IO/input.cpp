@@ -7,9 +7,8 @@
  */
 
 #include <input.h>
+#include <iostream>
 #include <yaml-cpp/yaml.h>
-#include <pprint.hpp>
-#include <argparse/argparse.hpp>
 
 YAML::Node config;
 
@@ -46,18 +45,32 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& config) {
   ideck.foutDir = config["output"]["flowviz"]["directory"].as<string>();
   ideck.ghost = config["output"]["flowviz"]["ghost cells"].as<bool>();
   // BC parameters
-  ideck.bcLeft = config["boundary conditions"]["left"].as<string>();
-  ideck.bcRight = config["boundary conditions"]["right"].as<string>();
-  ideck.bcBottom = config["boundary conditions"]["bottom"].as<string>();
-  ideck.bcTop = config["boundary conditions"]["top"].as<string>();
+  ideck.bcLeft.type = config["boundary conditions"]["left"]["type"].as<string>();
+  if (ideck.bcLeft.type=="moving wall" || ideck.bcLeft.type=="inlet") {
+    ideck.bcLeft.velocity[0] = config["boundary conditions"]["left"]["velocity"]["u"].as<double>();
+    ideck.bcLeft.velocity[1] = config["boundary conditions"]["left"]["velocity"]["v"].as<double>();
+  }
+  ideck.bcRight.type = config["boundary conditions"]["right"]["type"].as<string>();
+  if (ideck.bcRight.type=="moving wall" || ideck.bcRight.type=="inlet") {
+    ideck.bcRight.velocity[0] = config["boundary conditions"]["right"]["velocity"]["u"].as<double>();
+    ideck.bcRight.velocity[1] = config["boundary conditions"]["right"]["velocity"]["v"].as<double>();
+  }
+  ideck.bcBottom.type = config["boundary conditions"]["bottom"]["type"].as<string>();
+  if (ideck.bcBottom.type=="moving wall" || ideck.bcBottom.type=="inlet") {
+    ideck.bcBottom.velocity[0] = config["boundary conditions"]["bottom"]["velocity"]["u"].as<double>();
+    ideck.bcBottom.velocity[1] = config["boundary conditions"]["bottom"]["velocity"]["v"].as<double>();
+  }
+  ideck.bcTop.type = config["boundary conditions"]["top"]["type"].as<string>();
+  if (ideck.bcTop.type=="moving wall" || ideck.bcTop.type=="inlet") {
+    ideck.bcTop.velocity[0] = config["boundary conditions"]["top"]["velocity"]["u"].as<double>();
+    ideck.bcTop.velocity[1] = config["boundary conditions"]["top"]["velocity"]["v"].as<double>();
+  }
   ideck.uinit = config["initial conditions"]["u"].as<double>();
   ideck.vinit = config["initial conditions"]["v"].as<double>();
   return ideck;
 }
 
 ConfigData parseInputDeck(const string& inFile){
-  // power up the printer
-  pprint::PrettyPrinter printer;
 
   // ... create struct for the yaml node
   try {
@@ -69,24 +82,5 @@ ConfigData parseInputDeck(const string& inFile){
   }
 
 } // end function parseInputDeck
-
-/**
- * Arugment parser
- */
-void getUserInput(int argc, char* argv[], argparse::ArgumentParser& program) {
-  // add arguments to the program
-  program.add_argument("-i","--input")
-         .required()
-         .default_value("in2d.yaml")
-         .help("Input deck for the calculation.");
-  // try to parse the arguments - error out if it fails
-  try {
-    program.parse_args(argc,argv);
-  } catch (const exception& err) {
-    cerr << err.what() << endl;
-    cerr << program << endl;
-    throw runtime_error("ERROR: Could not process CLI inputs.");
-  }
-} // end function getUserInput
 
 } // end namespace IO
