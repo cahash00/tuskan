@@ -44,6 +44,7 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& config) {
   ideck.cflf  = config["dynamic CFL"]["cflf"].as<double>();
   // IO parameters
   ideck.foutDir = config["output"]["flowviz"]["directory"].as<string>();
+  ideck.ghost = config["output"]["flowviz"]["ghost cells"].as<bool>();
   // BC parameters
   ideck.bcLeft = config["boundary conditions"]["left"].as<string>();
   ideck.bcRight = config["boundary conditions"]["right"].as<string>();

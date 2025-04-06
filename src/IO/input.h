@@ -31,6 +31,7 @@ struct ConfigData {
   bool   dcfl;
   // IO parameters
   string foutDir;
+  bool ghost;
   // BCs
   string bcLeft;
   string bcRight;

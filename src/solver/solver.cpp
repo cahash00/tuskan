@@ -213,31 +213,6 @@ void initialize_solution(const double& uinit,
   v2.set_values(vinit);
   ustar.set_values(uinit);
   vstar.set_values(vinit);
-  p.set_values(1.0);
+  p.set_values(0.0);
 }
 /******************************************************************************/
-double dynamic_cfl(const int ii,
-                   double cfl,
-                   double ires,
-                   double res0,
-                   double res1,
-                   double resmax,
-                   double cfli,
-                   double cflf,
-                   const int nx,
-                   const int ny) {
-  double cfl0,cflnew; 
-  if (ii > 0) res1 = ires;
-  resmax = max(resmax,ires);
-  if (ii==0) {
-    res0 = ires;
-    res1 = ires;
-  }
-  if (ires == resmax) cfl0 = cfl; // if res is higher, keep
-  if (ires < res1 && ires < res0) {
-    cflnew = cfl0*resmax/ires; // if res is lower, increase CFL
-  }
-  cflnew = max(cflnew,cfl);
-  cflnew = min(cflf,max(cflnew,cfli));
-  return cflnew;
-} // end dynamic_cfl

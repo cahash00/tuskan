@@ -185,36 +185,38 @@ int main(int argc, char* argv[]){
     // ... output intermediate flowviz
     if (config.fvflag) {
       if (ii % config.fvfreq == 0) {
-        IO::vtk_output_2D_node(ii,config.foutDir,u,v,p,xn,yn);
+        IO::vtk_output_2D_node(ii,config.foutDir,config.ghost,u,v,p,xc,yc);
       }
     } 
+
     // ... Dyanmic CFL
-    if (ii > 0) res1 = ires;
-    double cflb = cfl; // store current cfl
+    if (ii > 0) 
+      res1 = ires;
+    double cflb = cfl;
     ires = max(L2NORM(u,u2),L2NORM(v,v2));
-    // printer.print(L2NORM(u,u2),L2NORM(v,v2),dt);
     resmax = max(resmax,ires);
     if (ii==0) {
       res0 = ires;
       res1 = ires;
     }
-    if (ires == resmax) cfl0 = cfl; // if res is higher, keep
-    if (ires < res1 && ires < res0) {
-      cfl = cfl0*resmax/ires; // if res is lower, increase CFL
-    }
+    if (ires == resmax) 
+      cfl0 = cfl; // if res is higher, keep
+    if (ires < res1 && ires < res0) 
+      cfl = cfl0*resmax/ires;
     cfl = max(cfl,cflb);
     cfl = min(config.cflf,max(cfl,config.cfli)); 
+
     // ... store the previous timestep
-    for (int j = jstr-1; j <= jend+1; j++) {
-      for (int i = istr-1; i <= iend+1; i++) {
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
         u_old(i,j) = u(i,j);
         v_old(i,j) = v(i,j);
       }
     }
     
     // ... update the u array with the updated solution array
-    for (int j = jstr-1; j <= jend+1; j++) {
-      for (int i = istr-1; i <= iend+1; i++) {
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
         u(i,j) = u2(i,j);
         v(i,j) = v2(i,j);
       }
@@ -229,7 +231,7 @@ int main(int argc, char* argv[]){
       }
     }
 
-    // exit if converged
+    // ... check steady state convergence
     if (ires/res0 < config.toler && ii > 1000) {
       finalIter=ii;
       break;
@@ -247,7 +249,7 @@ int main(int argc, char* argv[]){
    */
   if (config.fvflag) {
     IO::logger->info("Outputting final flow solution");
-    IO::vtk_output_2D_node(string("final"),config.foutDir,u,v,p,xn,yn);
+    IO::vtk_output_2D_node(string("final"),config.foutDir,config.ghost,u,v,p,xc,yc);
   } else {
     IO::logger->warn("Output was disabled.");
   }
