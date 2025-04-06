@@ -38,8 +38,6 @@ double getAdvecU(const int& i,const int& j,
   // duv/dy using 1st-order upwind
   double vn = 0.5*(v(i,j)   + v(i+1,j));
   double vs = 0.5*(v(i,j-1) + v(i+1,j-1));
-  double un = 0.5*(u(i,j+1) + u(i,j));
-  double us = 0.5*(u(i,j-1) + u(i,j));
   if (vn >= 0) {
     unvn = vn * u(i,j);
   } else {
@@ -80,8 +78,6 @@ double getAdvecV(const int& i,const int& j,
   }
 
   // duv/dx using 1st-order upwind
-  double ue = 0.5*(u(i,j+1) + u(i,j));
-  double uw = 0.5*(u(i-1,j+1) + u(i-1,j));
   double ve = 0.5*(v(i,j) + v(i+1,j));
   double vw = 0.5*(v(i,j) + v(i-1,j));
   if (ve >= 0) {

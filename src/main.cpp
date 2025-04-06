@@ -105,9 +105,6 @@ int main(int argc, char* argv[]){
   double nu   = 1.0e-6;  // kinematic viscosity m^2/s
   double rdx  = 1.0/dx;  // reciprocal of dx
   double rdy  = 1.0/dy;  // reciprocal of dx
-  double dt   = 0.0;     // initialize dt
-  double dpdx = 0.0;     // analytical solution for dpdx
-  double dpdy = 0.0;     // analytical solution for dpdx
   IO::logger->info("  dx: {},dy: {}",dx,dy);
 
   // initialize domain and calculate exact solution
@@ -128,7 +125,7 @@ int main(int argc, char* argv[]){
   // ... initialize doubles
   double ires,res0,res1,cfl0,resmax = 0.0;
   double cfl = config.cfli;
-  int finalIter;
+  int finalIter = 0;
 
   // ... start solver & timer
   timer.start();
@@ -138,7 +135,7 @@ int main(int argc, char* argv[]){
     BC::update_BCs(bcTags,u,v,p);
 
     // ... get the minimum dt in the domain for current iteration
-    dt = get_min_dt(cfl,dx,dy,u,v,nu);
+    double dt = get_min_dt(cfl,dx,dy,u,v,nu);
 
     // ... loop over domain for predictor step
     for (int j = jstr; j <= jend; j++) {
@@ -171,8 +168,8 @@ int main(int argc, char* argv[]){
     // ... apply the pressure correctior
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
-        dpdx = (p(i,j) - p(i-1,j)) / (dx);
-        dpdy = (p(i,j) - p(i,j-1)) / (dy);
+        double dpdx = (p(i,j) - p(i-1,j)) / (dx);
+        double dpdy = (p(i,j) - p(i,j-1)) / (dy);
         u2(i,j) = ustar(i,j) - 1.0/rho(i,j)*dt*dpdx;
         v2(i,j) = vstar(i,j) - 1.0/rho(i,j)*dt*dpdy;
       }
