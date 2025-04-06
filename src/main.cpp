@@ -225,7 +225,7 @@ int main(int argc, char* argv[]){
     logFile << ii << " " << ires << "\n";
     if (config.resflag) {
       if (ii % config.resfreq == 0) {
-        IO::logger->info("  iter {:04}, cfl: {:5e}, res: {:5e}",ii,cfl,ires/res0);
+        IO::logger->info("  iter {:04}, cfl: {:5e},dt: {:5e}, res: {:5e}",ii,cfl,dt,ires/res0);
         logFile.flush();
       }
     }
