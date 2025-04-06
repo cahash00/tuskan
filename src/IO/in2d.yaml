@@ -3,28 +3,39 @@ domain:
   type: rectilinear
   lengths:
     x: 0.02
-    y: 0.04
+    y: 0.02
   dimensions:
-    x: 30
-    y: 60
+    x: 80
+    y: 80
 boundary conditions:
+  # left: 
+  #   type: noslip wall
+  # right: 
+  #   type: noslip wall
+  # bottom: 
+  #   type: noslip wall
+  # top: 
+  #   type: moving wall
+  #   velocity:
+  #     u: 0.007
+  #     v: 0.0
   left: noslip
   right: noslip
-  bottom: periodic
-  top: periodic
+  bottom: noslip
+  top: noslip
 initial conditions:
   u: 0.000
-  v: 0.007
+  v: 0.000
 solver:
-  iterations: 100000
+  iterations: 50000
   pressure solver:
     method: SOR
-    omega: 1.3
+    omega: 1.7
 dynamic CFL:
-  cfli: 0.001
-  cflf: 0.002
+  cfli: 0.01
+  cflf: 0.5
 convergence:
-  residual: 5.0e-6
+  residual: 1.0e-6
 output:
   residuals:
     enabled: true
@@ -32,5 +43,6 @@ output:
     file: resid.log
   flowviz:
     enabled: true
-    frequency: 1000
+    frequency: 100
     directory: output
+    ghost cells: true

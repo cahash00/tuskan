@@ -11,19 +11,27 @@
 #include <matar.h>
 #include <params.h>
 #include <vector>
+#include <input.h>
 
 namespace BC {
 
 
+struct boundarySpecs {
+  mtr::FMatrix<int> bvals;
+  std::vector<double> vel;
+  double pressure;
+  // constructor
+  boundarySpecs(int dim);
+};
 struct bcTags {
-  mtr::FMatrix<int> Left;
-  mtr::FMatrix<int> Right;
-  mtr::FMatrix<int> Bottom;
-  mtr::FMatrix<int> Top;
+  boundarySpecs Left;
+  boundarySpecs Right;
+  boundarySpecs Bottom;
+  boundarySpecs Top;
   bcTags(int nx, int ny);
 };
 
-bcTags tag_BCs(const std::vector<std::string>& bc_tags,
+bcTags tag_BCs(IO::ConfigData config,
                const int nx,
                const int ny);
 

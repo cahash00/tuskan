@@ -2,11 +2,18 @@
 #define INPUT_H
 
 #include <yaml-cpp/yaml.h>
-#include <argparse/argparse.hpp>
 
 using namespace std;
 
 namespace IO {
+
+extern YAML::Node config;
+
+struct boundary {
+  std::vector<double> velocity = std::vector<double>(2,0.0);
+  double pressure;
+  string type;
+};
 
 struct ConfigData {
   // domain settings
@@ -33,22 +40,18 @@ struct ConfigData {
   string foutDir;
   bool ghost;
   // BCs
-  string bcLeft;
-  string bcRight;
-  string bcBottom;
-  string bcTop;
+  boundary bcLeft;
+  boundary bcRight;
+  boundary bcBottom;
+  boundary bcTop;
   // initial conditions
   double uinit;
   double vinit;
 
-
   static ConfigData fromYAMLConfig(const YAML::Node& config);
 };
 
-extern ConfigData parseInputDeck(const string& inFile);
-
-void getUserInput(int argc, char* argv[],
-                  argparse::ArgumentParser& program);
+ConfigData parseInputDeck(const string& inFile);
 
 }
 

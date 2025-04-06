@@ -39,3 +39,5 @@ yaml-cpp/build
 yaml-cpp/install
 
 *.swp
+cppcheck*
+foo
