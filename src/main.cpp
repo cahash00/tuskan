@@ -104,7 +104,6 @@ int main(int argc, char* argv[]){
   timer.start();
   IO::logger->info("Initializing the domain");
   rho.set_values(1.0e3);   // density
-  double rrho = 1.0e-3;  // reciprocal of density
   double nu   = 1.0e-6;  // kinematic viscosity m^2/s
   double rdx  = 1.0/dx;  // reciprocal of dx
   double rdy  = 1.0/dy;  // reciprocal of dx
