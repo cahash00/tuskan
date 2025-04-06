@@ -11,10 +11,12 @@
 using namespace std;
 
 /******************************************************************************/
-double getAdvecU(const int& i,const int& j,
-                 const double rdx,const double rdy,
-                 mtr::FMatrix<double>& u,
-                 mtr::FMatrix<double>& v) {
+double getAdvecU(const int& i,
+                 const int& j,
+                 const double rdx,
+                 const double rdy,
+                 const mtr::FMatrix<double>& u,
+                 const mtr::FMatrix<double>& v) {
   double advec = 0.0;
   double ue2   = 0.0;
   double uw2   = 0.0;
@@ -55,8 +57,8 @@ double getAdvecU(const int& i,const int& j,
 /******************************************************************************/
 double getAdvecV(const int& i,const int& j,
                  const double rdx,const double rdy,
-                 mtr::FMatrix<double>& u,
-                 mtr::FMatrix<double>& v) {
+                 const mtr::FMatrix<double>& u,
+                 const mtr::FMatrix<double>& v) {
   double advec = 0.0;
   double vn2   = 0.0;
   double vs2   = 0.0;
@@ -99,8 +101,8 @@ double getDiffU(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
-                mtr::FMatrix<double>& u,
-                mtr::FMatrix<double>& v) {
+                const mtr::FMatrix<double>& u,
+                const mtr::FMatrix<double>& v) {
   double diffu;
   diffu = ( u(i+1,j) - 2.0*u(i,j) + u(i-1,j))*rdx*rdx + 
           ( u(i,j+1) - 2.0*u(i,j) + u(i,j-1))*rdy*rdy;
@@ -111,16 +113,16 @@ double getDiffV(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
-                mtr::FMatrix<double>& u,
-                mtr::FMatrix<double>& v) {
+                const mtr::FMatrix<double>& u,
+                const mtr::FMatrix<double>& v) {
   double diffv;
   diffv = ( v(i+1,j) - 2.0*v(i,j) + v(i-1,j))*rdx*rdx + 
           ( v(i,j+1) - 2.0*v(i,j) + v(i,j-1))*rdy*rdy;
   return diffv;
 }
 /******************************************************************************/
-double L2NORM(mtr::FMatrix<double>& m1, 
-              mtr::FMatrix<double>& m2) {
+double L2NORM(const mtr::FMatrix<double>& m1, 
+              const mtr::FMatrix<double>& m2) {
   // assert that the matrices must be equal in rank
   assert(m1.order() == m2.order());
   
@@ -140,8 +142,8 @@ double L2NORM(mtr::FMatrix<double>& m1,
 double get_min_dt(const double& cfl, 
                   const double& dx,
                   const double& dy,
-                  mtr::FMatrix<double>& u,
-                  mtr::FMatrix<double>& v,
+                  const mtr::FMatrix<double>& u,
+                  const mtr::FMatrix<double>& v,
                   const double& nu) {
   // double umax,vmax = 0.0;
   double umax = 0.0;
