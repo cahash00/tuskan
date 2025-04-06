@@ -175,7 +175,6 @@ int main(int argc, char* argv[]){
     if (ii > 0) res1 = ires;
     double cflb = cfl; // store current cfl
     ires = max(L2NORM(u,u2),L2NORM(v,v2));
-    if (ii % config.resfreq==0) printer.print(L2NORM(u,u2),L2NORM(v,v2),dt);
     resmax = max(resmax,ires);
     if (ii==0) {
       res0 = ires;
