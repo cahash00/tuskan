@@ -50,7 +50,8 @@ double get_min_dt(const double& cfl,
                   const double& dx,
                   const double& dy,
                   mtr::FMatrix<double>& u,
-                  mtr::FMatrix<double>& v);
+                  mtr::FMatrix<double>& v,
+                  const double& nu);
 
 /*******************************************************************************
  * @brief initialize the domain and arrays

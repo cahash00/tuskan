@@ -55,6 +55,8 @@ int main(int argc, char* argv[]){
   
   // ... parse the YAML input deck
   IO::ConfigData config = IO::parseInputDeck(inFile);
+  // check to see if the output directory exists
+  IO::check_directories(config.foutDir);
   
   // ... get domain stats
   getDomainIndices(config.nx,config.ny);
@@ -66,10 +68,13 @@ int main(int argc, char* argv[]){
   fmatD xc(ndims[0],ndims[1]),yc(ndims[0],ndims[1]),
         xn(ndims[0]+1,ndims[1]+1),yn(ndims[0]+1,ndims[1]+1);
   fmatD p(ndims[0]+1,ndims[1]+1);
+  fmatD rho(ndims[0]+1,ndims[1]+1);
   fmatD ustar(ndims[0]+1,ndims[1]+1);
   fmatD vstar(ndims[0]+1,ndims[1]+1);
   fmatD u(ndims[0]+1,ndims[1]+1);
   fmatD v(ndims[0]+1,ndims[1]+1);
+  fmatD u_old(ndims[0]+1,ndims[1]+1);
+  fmatD v_old(ndims[0]+1,ndims[1]+1);
   fmatD u2(ndims[0]+1,ndims[1]+1);
   fmatD v2(ndims[0]+1,ndims[1]+1);
   fmatD uexact(ndims[0]+1,ndims[1]+1);
@@ -98,10 +103,8 @@ int main(int argc, char* argv[]){
   }
   timer.start();
   IO::logger->info("Initializing the domain");
-  double rho  = 1.0e3;   // density
-  double rrho = 1.0e-3;  // reciprocal of density
+  rho.set_values(1.0e3);   // density
   double nu   = 1.0e-6;  // kinematic viscosity m^2/s
-  double mu   = nu*rho;  // dynamic viscosity
   double rdx  = 1.0/dx;  // reciprocal of dx
   double rdy  = 1.0/dy;  // reciprocal of dx
   double dt   = 0.0;     // initialize dt
@@ -111,6 +114,13 @@ int main(int argc, char* argv[]){
 
   // initialize domain and calculate exact solution
   initialize_solution(config.uinit,config.vinit,u,v,u2,v2,ustar,vstar,p);
+  // ... store the previous timestep
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
+      u_old(i,j) = u(i,j);
+      v_old(i,j) = v(i,j);
+    }
+  }
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   
@@ -127,70 +137,85 @@ int main(int argc, char* argv[]){
   IO::logger->info("Starting Main Solver");
   for (int ii = 0; ii < config.iter; ii++) {
     // ... update boundary conditions
-    BC::update_BCs(bcTags,u);
-    BC::update_BCs(bcTags,v);
+    BC::update_BCs(bcTags,u,v,p);
 
     // ... get the minimum dt in the domain for current iteration
-    dt = get_min_dt(cfl,dx,dy,u,v);
+    dt = get_min_dt(cfl,dx,dy,u,v,nu);
 
     // ... loop over domain for predictor step
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         std::vector<double> advec(2,0.0);
+        std::vector<double> advec_old(2,0.0);
         std::vector<double> diffu(2,0.0);
+        std::vector<double> ab2(2,0.0);
         // get the advection term
         advec[0] = getAdvecU(i,j,rdx,rdy,u,v);
         advec[1] = getAdvecV(i,j,rdx,rdy,u,v);
         // get the diffusion term
         diffu[0] = getDiffU(i,j,rdx,rdy,u,v);
         diffu[1] = getDiffV(i,j,rdx,rdy,u,v);
+        // AB2 method for convection
+        advec_old[0] = getAdvecU(i,j,rdx,rdy,u_old,v_old);
+        advec_old[1] = getAdvecV(i,j,rdx,rdy,u_old,v_old);
+        ab2[0] = 1.5*advec[0]-0.5*advec_old[0];
+        ab2[1] = 1.5*advec[1]-0.5*advec_old[1];
         // predictor step - explicit
-        ustar(i,j) = u(i,j) + dt*(-advec[0] + nu*diffu[0]);
-        vstar(i,j) = v(i,j) + dt*(-advec[1] + nu*diffu[1]);
+        ustar(i,j) = u(i,j) + dt*(-ab2[0] + nu*diffu[0]);
+        vstar(i,j) = v(i,j) + dt*(-ab2[1] + nu*diffu[1]);
       }
     }
+    BC::update_BCs(bcTags,ustar,vstar,p);
 
     // ... solve for the pressure
-    psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho);
+    psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho,bcTags);
     
     // ... apply the pressure correctior
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         dpdx = (p(i,j) - p(i-1,j)) / (dx);
         dpdy = (p(i,j) - p(i,j-1)) / (dy);
-        u2(i,j) = ustar(i,j) - rrho*dt*dpdx;
-        v2(i,j) = vstar(i,j) - rrho*dt*dpdy;
+        u2(i,j) = ustar(i,j) - 1.0/rho(i,j)*dt*dpdx;
+        v2(i,j) = vstar(i,j) - 1.0/rho(i,j)*dt*dpdy;
       }
     }
-    BC::update_BCs(bcTags,u2);
-    BC::update_BCs(bcTags,v2);
+    BC::update_BCs(bcTags,u2,v2,p);
 
     // ... output intermediate flowviz
     if (config.fvflag) {
       if (ii % config.fvfreq == 0) {
-        IO::vtk_output_2D_node(ii,config.foutDir,u,v,p,xn,yn);
+        IO::vtk_output_2D_node(ii,config.foutDir,config.ghost,u,v,p,xc,yc);
       }
     } 
+
     // ... Dyanmic CFL
-    if (ii > 0) res1 = ires;
-    double cflb = cfl; // store current cfl
+    if (ii > 0) 
+      res1 = ires;
+    double cflb = cfl;
     ires = max(L2NORM(u,u2),L2NORM(v,v2));
-    if (ii % config.resfreq==0) printer.print(L2NORM(u,u2),L2NORM(v,v2),dt);
     resmax = max(resmax,ires);
     if (ii==0) {
       res0 = ires;
       res1 = ires;
     }
-    if (ires == resmax) cfl0 = cfl; // if res is higher, keep
-    if (ires < res1 && ires < res0) {
-      cfl = cfl0*resmax/ires; // if res is lower, increase CFL
-    }
+    if (ires == resmax) 
+      cfl0 = cfl; // if res is higher, keep
+    if (ires < res1 && ires < res0) 
+      cfl = cfl0*resmax/ires;
     cfl = max(cfl,cflb);
     cfl = min(config.cflf,max(cfl,config.cfli)); 
+
+    // ... store the previous timestep
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
+        u_old(i,j) = u(i,j);
+        v_old(i,j) = v(i,j);
+      }
+    }
     
     // ... update the u array with the updated solution array
-    for (int j = jstr-1; j <= jend+1; j++) {
-      for (int i = istr-1; i <= iend+1; i++) {
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
         u(i,j) = u2(i,j);
         v(i,j) = v2(i,j);
       }
@@ -205,7 +230,7 @@ int main(int argc, char* argv[]){
       }
     }
 
-    // exit if converged
+    // ... check steady state convergence
     if (ires/res0 < config.toler && ii > 1000) {
       finalIter=ii;
       break;
@@ -223,7 +248,7 @@ int main(int argc, char* argv[]){
    */
   if (config.fvflag) {
     IO::logger->info("Outputting final flow solution");
-    IO::vtk_output_2D_node(string("final"),config.foutDir,u,v,p,xn,yn);
+    IO::vtk_output_2D_node(string("final"),config.foutDir,config.ghost,u,v,p,xc,yc);
   } else {
     IO::logger->warn("Output was disabled.");
   }

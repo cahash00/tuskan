@@ -11,6 +11,78 @@
 using namespace std;
 
 /******************************************************************************/
+// double getAdvecU(const int& i,const int& j,
+//     const double rdx,const double rdy,
+//     mtr::FMatrix<double>& u,
+//     mtr::FMatrix<double>& v) {
+//   double advec;
+//   double ue2, uw2, unvn, usvs;
+
+//   // ∂(u²)/∂x using 1st-order upwind
+//   double ue = 0.5*(u(i+1,j) + u(i,j));
+//   double uw = 0.5*(u(i-1,j) + u(i,j));
+//   if (ue >= 0)
+//     ue2 = u(i,j) * ue;
+//   else
+//     ue2 = u(i+1,j) * ue;
+//   if (uw >= 0)
+//     uw2 = u(i-1,j) * uw;
+//   else
+//     uw2 = u(i,j) * uw;
+
+//   // ∂(uv)/∂y using 1st-order upwind
+//   double vn = 0.5*(v(i,j)   + v(i+1,j));     // v at (i+1/2,j+1/2)
+//   double vs = 0.5*(v(i,j-1) + v(i+1,j-1));   // v at (i+1/2,j-1/2)
+//   double un = 0.5*(u(i,j+1) + u(i,j));
+//   double us = 0.5*(u(i,j-1) + u(i,j));
+//   if (vn >= 0)
+//     unvn = vn * u(i,j);
+//   else
+//     unvn = vn * u(i,j+1);
+//   if (vs >= 0)
+//     usvs = vs * u(i,j-1);
+//   else
+//     usvs = vs * u(i,j);
+
+//   advec = rdx*(ue2 - uw2) + rdy*(unvn - usvs);
+//   return advec;
+// }
+// double getAdvecV(const int& i,const int& j,
+//                         const double rdx,const double rdy,
+//                         mtr::FMatrix<double>& u,
+//                         mtr::FMatrix<double>& v) {
+//   double advec;
+//   double vn2, vs2, veue, vwuw;
+
+//   // ∂(v²)/∂y with upwind
+//   double vn = 0.5*(v(i,j+1) + v(i,j));
+//   double vs = 0.5*(v(i,j-1) + v(i,j));
+//   if (vn >= 0)
+//     vn2 = v(i,j) * vn;
+//   else
+//     vn2 = v(i,j+1) * vn;
+//   if (vs >= 0)
+//     vs2 = v(i,j-1) * vs;
+//   else
+//     vs2 = v(i,j) * vs;
+
+//   // ∂(uv)/∂x with upwind
+//   double ue = 0.5*(u(i,j+1) + u(i,j));
+//   double uw = 0.5*(u(i-1,j+1) + u(i-1,j));
+//   double ve = 0.5*(v(i,j) + v(i+1,j));
+//   double vw = 0.5*(v(i,j) + v(i-1,j));
+//   if (ve >= 0)
+//     veue = ve * u(i-1,j+1);
+//   else
+//     veue = ve * u(i,j+1);
+//   if (vw >= 0)
+//     vwuw = vw * u(i-2,j+1);  // watch indexing — may need bounds check!
+//   else
+//     vwuw = vw * u(i-1,j+1);
+
+//   advec = rdy*(vn2 - vs2) + rdx*(veue - vwuw);
+//   return advec;
+// }
 double getAdvecU(const int& i,const int& j,
                        const double rdx,const double rdy,
                        mtr::FMatrix<double>& u,
@@ -102,13 +174,27 @@ double get_min_dt(const double& cfl,
                   const double& dx,
                   const double& dy,
                   mtr::FMatrix<double>& u,
-                  mtr::FMatrix<double>& v) {
-  double dt=1.0e5;
+                  mtr::FMatrix<double>& v,
+                  const double& nu) {
+  double umax,vmax = 0.0;
   for (int j = jstr; j <= jend; j++) {
     for (int i = istr; i <= iend; i++) {
-      dt = min(abs(cfl*dy/(v(i,j)+1.0e-15)),abs(cfl*dx/(u(i,j)+1.0e-15)));
+      umax = max(umax,abs(u(i,j)));
+      vmax = max(vmax,abs(v(i,j)));
     }
   }
+  // find timestep limit due to advection
+  double dt1 = 1e5;
+  if (umax > 0.0 && vmax > 0.0) {
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
+        dt1 = cfl*min(dx/umax,dy/vmax);
+      }
+    }
+  }
+  double dt2 = 0.5*dx*dx*dy*dy/(nu*(dx*dx+dy*dy));
+  double dt = min(dt1,dt2);
+  
   return dt;
 }
 /******************************************************************************/
@@ -125,33 +211,8 @@ void initialize_solution(const double& uinit,
   v.set_values(vinit);
   u2.set_values(uinit);
   v2.set_values(vinit);
-  ustar.set_values(0.0);
-  vstar.set_values(0.0);
+  ustar.set_values(uinit);
+  vstar.set_values(vinit);
   p.set_values(0.0);
 }
 /******************************************************************************/
-double dynamic_cfl(const int ii,
-                   double cfl,
-                   double ires,
-                   double res0,
-                   double res1,
-                   double resmax,
-                   double cfli,
-                   double cflf,
-                   const int nx,
-                   const int ny) {
-  double cfl0,cflnew; 
-  if (ii > 0) res1 = ires;
-  resmax = max(resmax,ires);
-  if (ii==0) {
-    res0 = ires;
-    res1 = ires;
-  }
-  if (ires == resmax) cfl0 = cfl; // if res is higher, keep
-  if (ires < res1 && ires < res0) {
-    cflnew = cfl0*resmax/ires; // if res is lower, increase CFL
-  }
-  cflnew = max(cflnew,cfl);
-  cflnew = min(cflf,max(cflnew,cfli));
-  return cflnew;
-} // end dynamic_cfl

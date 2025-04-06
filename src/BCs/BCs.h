@@ -27,7 +27,10 @@ bcTags tag_BCs(const std::vector<std::string>& bc_tags,
                const int nx,
                const int ny);
 
-void update_BCs(bcTags tags, mtr::FMatrix<double>& q);
+void update_BCs(bcTags tags, 
+    mtr::FMatrix<double>& u,
+    mtr::FMatrix<double>& v,
+    mtr::FMatrix<double>& p);
 
 
 } // end namespace BC
