@@ -55,6 +55,10 @@ bcTags tag_BCs(IO::ConfigData config,
     tags.Bottom.vel[i] = config.bcBottom.velocity[i];
     tags.Top.vel[i] = config.bcTop.velocity[i];
   }
+  tags.Top.pressure = config.bcTop.pressure;
+  tags.Bottom.pressure = config.bcBottom.pressure;
+  tags.Right.pressure = config.bcRight.pressure;
+  tags.Left.pressure = config.bcLeft.pressure;
 
   // check to make sure periodics align
   if (config.bcLeft.type=="periodic") {
@@ -85,6 +89,7 @@ void update_BCs(bcTags tags,
       // periodic
       u(istr-1,j) = u(iend,j);
       v(istr-1,j) = v(iend,j);
+      p(istr-1,j) = tags.Left.pressure;
     }
     if (tags.Right.bvals(j)==0) {
       // noslip 
@@ -100,6 +105,7 @@ void update_BCs(bcTags tags,
       // periodic
       u(iend+1,j) = u(istr,j);
       v(iend+1,j) = v(istr,j);
+      p(iend,j) = tags.Right.pressure;
     }
   }
 
@@ -119,6 +125,7 @@ void update_BCs(bcTags tags,
       // periodic
       u(i,jstr-1) = u(i,jend);
       v(i,jstr-1) = v(i,jend);
+      p(i,jstr-1) = tags.Bottom.pressure;
     }
     if (tags.Top.bvals(i)==0) {
       // noslip 
@@ -134,6 +141,7 @@ void update_BCs(bcTags tags,
       // periodic
       u(i,jend+1) = u(i,jstr);
       v(i,jend+1) = v(i,jstr);
+      p(i,jend) = tags.Top.pressure;
     }
   }
   

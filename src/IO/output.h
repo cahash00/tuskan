@@ -17,19 +17,21 @@ void check_directories(const string& foutDir);
 void vtk_output_2D_node(const int& ii,
                         const string& foutDir,
                         const bool ghost,
+                        const mtr::FMatrix<double>& xc,
+                        const mtr::FMatrix<double>& yc,
                         const mtr::FMatrix<double>& u,
                         const mtr::FMatrix<double>& v,
                         const mtr::FMatrix<double>& p,
-                        const mtr::FMatrix<double>& xc,
-                        const mtr::FMatrix<double>& yc);
+                        const mtr::FMatrix<double>& phi);
 void vtk_output_2D_node(const string& caseName, 
                         const string& foutDir,
                         const bool ghost,
+                        const mtr::FMatrix<double>& xc,
+                        const mtr::FMatrix<double>& yc,
                         const mtr::FMatrix<double>& u,
                         const mtr::FMatrix<double>& v,
                         const mtr::FMatrix<double>& p,
-                        const mtr::FMatrix<double>& xc,
-                        const mtr::FMatrix<double>& yc);
+                        const mtr::FMatrix<double>& phi);
 /******************************************************************************/
 } // end namespace IO
 #endif // OUTPUT_H

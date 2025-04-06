@@ -9,6 +9,18 @@ namespace IO {
 
 extern YAML::Node config;
 
+struct droplet {
+  double r;
+  double M;
+  double x;
+  double y;
+};
+struct fluid {
+  double u;
+  double v;
+  double p;
+  double rho;
+};
 struct boundary {
   std::vector<double> velocity = std::vector<double>(2,0.0);
   double pressure;
@@ -45,9 +57,10 @@ struct ConfigData {
   boundary bcBottom;
   boundary bcTop;
   // initial conditions
-  double uinit;
-  double vinit;
-  double pinit;
+  fluid igas;
+  fluid iliq;
+  // droplet
+  droplet drop;
 
   static ConfigData fromYAMLConfig(const YAML::Node& config);
 };

@@ -58,6 +58,7 @@ int main(int argc, char* argv[]){
   IO::ConfigData config = IO::parseInputDeck(inFile);
   // check to see if the output directory exists
   IO::check_directories(config.foutDir);
+
   
   // ... get domain stats
   getDomainIndices(config.nx,config.ny);
@@ -69,6 +70,8 @@ int main(int argc, char* argv[]){
   fmatD xc(ndims[0],ndims[1]),yc(ndims[0],ndims[1]),
         xn(ndims[0]+1,ndims[1]+1),yn(ndims[0]+1,ndims[1]+1);
   fmatD p(ndims[0]+1,ndims[1]+1);
+  fmatD phi(ndims[0],ndims[1]);
+  fmatD mark(ndims[0],ndims[1]);
   fmatD rho(ndims[0]+1,ndims[1]+1);
   fmatD ustar(ndims[0]+1,ndims[1]+1);
   fmatD vstar(ndims[0]+1,ndims[1]+1);
@@ -113,6 +116,8 @@ int main(int argc, char* argv[]){
                       u_old,v_old,
                       ustar,vstar,
                       p);
+  BC::update_BCs(bcTags,u,v,p);
+  
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   
@@ -176,7 +181,7 @@ int main(int argc, char* argv[]){
     // ... output intermediate flowviz
     if (config.fvflag) {
       if (ii % config.fvfreq == 0) {
-        IO::vtk_output_2D_node(ii,config.foutDir,config.ghost,u,v,p,xc,yc);
+        IO::vtk_output_2D_node(ii,config.foutDir,config.ghost,xc,yc,u,v,p,phi);
       }
     } 
 
@@ -240,7 +245,7 @@ int main(int argc, char* argv[]){
    */
   if (config.fvflag) {
     IO::logger->info("Outputting final flow solution");
-    IO::vtk_output_2D_node(string("final"),config.foutDir,config.ghost,u,v,p,xc,yc);
+    IO::vtk_output_2D_node(string("final"),config.foutDir,config.ghost,xc,yc,u,v,p,phi);
   } else {
     IO::logger->warn("Output was disabled.");
   }

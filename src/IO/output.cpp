@@ -44,11 +44,12 @@ void check_directories(const string& foutDir) {
 static void vtk_output_2D_node_IMPL(const string& caseName,
                                     const string& foutDir,
                                     const bool ghost,
+                                    const mtr::FMatrix<double>& xc,
+                                    const mtr::FMatrix<double>& yc,
                                     const mtr::FMatrix<double>& u,
                                     const mtr::FMatrix<double>& v,
                                     const mtr::FMatrix<double>& p,
-                                    const mtr::FMatrix<double>& xc,
-                                    const mtr::FMatrix<double>& yc) {
+                                    const mtr::FMatrix<double>& phi) {
   /**
    * get cell-centered solution variables
    * pressure is already cell-centered
@@ -117,6 +118,13 @@ static void vtk_output_2D_node_IMPL(const string& caseName,
       fprintf(out,"%f\n",p(i,j));
     }
   }
+  fprintf(out,"SCALARS phi float 1\n");
+  fprintf(out,"LOOKUP_TABLE default\n");
+  for (int j = ystr; j <= yend; j++) {
+    for (int i = xstr; i <= xend; i++) {
+      fprintf(out,"%f\n",phi(i,j));
+    }
+  }
   fclose(out);
 }
 /**
@@ -125,25 +133,27 @@ static void vtk_output_2D_node_IMPL(const string& caseName,
 void vtk_output_2D_node(const int& ii,
                    const string& foutDir,
                    const bool ghost,
+                   const mtr::FMatrix<double>& xc,
+                   const mtr::FMatrix<double>& yc,
                    const mtr::FMatrix<double>& u,
                    const mtr::FMatrix<double>& v,
                    const mtr::FMatrix<double>& p,
-                   const mtr::FMatrix<double>& xn,
-                   const mtr::FMatrix<double>& yn) {
+                   const mtr::FMatrix<double>& phi) {
   std::ostringstream foutss;
   foutss << setw(5) << std::setfill('0') << ii;
   string caseName = foutss.str();
-  vtk_output_2D_node_IMPL(caseName,foutDir,ghost,u,v,p,xn,yn);
+  vtk_output_2D_node_IMPL(caseName,foutDir,ghost,xc,yc,u,v,p,phi);
 }
 void vtk_output_2D_node(const string& caseName,
                    const string& foutDir,
                    const bool ghost,
+                   const mtr::FMatrix<double>& xc,
+                   const mtr::FMatrix<double>& yc,
                    const mtr::FMatrix<double>& u,
                    const mtr::FMatrix<double>& v,
                    const mtr::FMatrix<double>& p,
-                   const mtr::FMatrix<double>& xn,
-                   const mtr::FMatrix<double>& yn) {
-  vtk_output_2D_node_IMPL(caseName,foutDir,ghost,u,v,p,xn,yn);
+                   const mtr::FMatrix<double>& phi) {
+  vtk_output_2D_node_IMPL(caseName,foutDir,ghost,xc,yc,u,v,p,phi);
 }
 
 } // end namepsace IO

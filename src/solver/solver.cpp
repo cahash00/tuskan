@@ -180,15 +180,20 @@ void initialize_solution(IO::ConfigData& config,
                          mtr::FMatrix<double>& ustar,
                          mtr::FMatrix<double>& vstar,
                          mtr::FMatrix<double>& p) {
-  const double uinit = config.uinit;
-  const double vinit = config.vinit;
-  const double pinit = config.pinit;
-  u.set_values(uinit); // average u
-  v.set_values(vinit);
-  u2.set_values(uinit);
-  v2.set_values(vinit);
-  ustar.set_values(uinit);
-  vstar.set_values(vinit);
-  p.set_values(0.0);
+  const double uinit = config.igas.u;
+  const double vinit = config.igas.v;
+  const double pinit = config.igas.p;
+  const double rhoinit = config.igas.rho;
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
+      u(i,j) = uinit; // average u
+      v(i,j) = vinit;
+      u2(i,j) = uinit;
+      v2(i,j) = vinit;
+      ustar(i,j) = uinit;
+      vstar(i,j) = vinit;
+      p(i,j) = pinit;
+    }
+  }
 }
 /******************************************************************************/

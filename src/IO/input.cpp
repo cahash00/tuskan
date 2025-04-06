@@ -17,12 +17,12 @@ namespace IO {
 ConfigData ConfigData::fromYAMLConfig(const YAML::Node& iconfig) {
   ConfigData ideck;
 
-  // domain settings
+  // ... domain settings
   ideck.lx = iconfig["domain"]["lengths"]["x"].as<double>();
   ideck.ly = iconfig["domain"]["lengths"]["y"].as<double>();
   ideck.nx = iconfig["domain"]["dimensions"]["x"].as<int>();
   ideck.ny = iconfig["domain"]["dimensions"]["y"].as<int>();
-  // solver settings
+  // ... solver settings
   ideck.iter    = iconfig["solver"]["iterations"].as<int>();
   ideck.fvflag  = iconfig["output"]["flowviz"]["enabled"].as<bool>();
   ideck.fvfreq  = iconfig["output"]["flowviz"]["frequency"].as<int>();
@@ -37,37 +37,60 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& iconfig) {
       throw runtime_error("ERROR: INPUT DECK: SOR solver requires \"omega\".");
     }
   }
-  // convergence criteria
+  // ... convergence criteria
   ideck.toler = iconfig["convergence"]["residual"].as<double>();
   ideck.cfli  = iconfig["dynamic CFL"]["cfli"].as<double>();
   ideck.cflf  = iconfig["dynamic CFL"]["cflf"].as<double>();
-  // IO parameters
+
+  // ... IO parameters
   ideck.foutDir = iconfig["output"]["flowviz"]["directory"].as<string>();
   ideck.ghost = iconfig["output"]["flowviz"]["ghost cells"].as<bool>();
-  // BC parameters
+
+  // ... BC parameters
   ideck.bcLeft.type = iconfig["boundary conditions"]["left"]["type"].as<string>();
   if (ideck.bcLeft.type=="moving wall" || ideck.bcLeft.type=="inlet") {
     ideck.bcLeft.velocity[0] = iconfig["boundary conditions"]["left"]["velocity"]["u"].as<double>();
     ideck.bcLeft.velocity[1] = iconfig["boundary conditions"]["left"]["velocity"]["v"].as<double>();
+  } else if (ideck.bcLeft.type=="periodic") {
+    ideck.bcLeft.pressure = iconfig["boundary conditions"]["left"]["pressure"].as<double>();
   }
   ideck.bcRight.type = iconfig["boundary conditions"]["right"]["type"].as<string>();
   if (ideck.bcRight.type=="moving wall" || ideck.bcRight.type=="inlet") {
     ideck.bcRight.velocity[0] = iconfig["boundary conditions"]["right"]["velocity"]["u"].as<double>();
     ideck.bcRight.velocity[1] = iconfig["boundary conditions"]["right"]["velocity"]["v"].as<double>();
+  } else if (ideck.bcRight.type=="periodic") {
+    ideck.bcRight.pressure = iconfig["boundary conditions"]["right"]["pressure"].as<double>();
   }
   ideck.bcBottom.type = iconfig["boundary conditions"]["bottom"]["type"].as<string>();
   if (ideck.bcBottom.type=="moving wall" || ideck.bcBottom.type=="inlet") {
     ideck.bcBottom.velocity[0] = iconfig["boundary conditions"]["bottom"]["velocity"]["u"].as<double>();
     ideck.bcBottom.velocity[1] = iconfig["boundary conditions"]["bottom"]["velocity"]["v"].as<double>();
+  } else if (ideck.bcBottom.type=="periodic") {
+    ideck.bcBottom.pressure = iconfig["boundary conditions"]["top"]["pressure"].as<double>();
   }
   ideck.bcTop.type = iconfig["boundary conditions"]["top"]["type"].as<string>();
   if (ideck.bcTop.type=="moving wall" || ideck.bcTop.type=="inlet") {
     ideck.bcTop.velocity[0] = iconfig["boundary conditions"]["top"]["velocity"]["u"].as<double>();
     ideck.bcTop.velocity[1] = iconfig["boundary conditions"]["top"]["velocity"]["v"].as<double>();
+  } else if (ideck.bcTop.type=="periodic") {
+    ideck.bcTop.pressure = iconfig["boundary conditions"]["bottom"]["pressure"].as<double>();
   }
-  ideck.uinit = iconfig["initial conditions"]["u"].as<double>();
-  ideck.vinit = iconfig["initial conditions"]["v"].as<double>();
-  ideck.pinit = iconfig["initial conditions"]["p"].as<double>();
+
+  // ... initial conditions
+  ideck.igas.u = iconfig["initial conditions"]["gas"]["u"].as<double>();
+  ideck.igas.v = iconfig["initial conditions"]["gas"]["v"].as<double>();
+  ideck.igas.p = iconfig["initial conditions"]["gas"]["p"].as<double>();
+  ideck.igas.rho = iconfig["initial conditions"]["gas"]["rho"].as<double>();
+  ideck.iliq.u = iconfig["initial conditions"]["liquid"]["u"].as<double>();
+  ideck.iliq.v = iconfig["initial conditions"]["liquid"]["v"].as<double>();
+  ideck.iliq.p = iconfig["initial conditions"]["liquid"]["p"].as<double>();
+  ideck.iliq.rho = iconfig["initial conditions"]["liquid"]["rho"].as<double>();
+
+  // droplets
+  ideck.drop.r = iconfig["droplet"]["diameter"].as<double>() *0.5;
+  ideck.drop.M = iconfig["droplet"]["M"].as<double>();
+  ideck.drop.x = iconfig["droplet"]["center"]["x"].as<double>();
+  ideck.drop.y = iconfig["droplet"]["center"]["y"].as<double>();
   return ideck;
 }
 
