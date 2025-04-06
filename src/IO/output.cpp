@@ -21,6 +21,18 @@ using namespace std;
 
 namespace IO {
 
+void check_directories(const string& foutDir) {
+  if (fs::exists(foutDir)) {
+    // clear it
+    for (const auto& entry : fs::directory_iterator(foutDir)) {
+      fs::remove_all(entry.path());
+    }
+    IO::logger->info("  {} has been cleared.",foutDir);
+  } else {
+    fs::create_directories(foutDir);
+    IO::logger->info("  {} has been created.",foutDir);
+  }
+} // end check_directories
 /**
  * @brief VTK output for a 2D mesh
  * @param[in] nx number of cells in y-direction
@@ -46,32 +58,32 @@ static void vtk_output_2D_node_IMPL(const string& caseName,
   fprintf(out,"TUSKAN 2D Flow Solution File.\n");
   fprintf(out,"ASCII\n");
   fprintf(out,"DATASET STRUCTURED_GRID\n");
-  fprintf(out,"DIMENSIONS %d %d %d\n",nx+2,ny+2,1);
-  fprintf(out,"POINTS %d float\n",(nx+2)*(ny+2));
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
+  fprintf(out,"DIMENSIONS %d %d %d\n",nx+3,ny+3,1);
+  fprintf(out,"POINTS %d float\n",(nx+3)*(ny+3));
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
       fprintf(out,"%f %f %f\n",xn(i,j),yn(i,j),0.0);
     }
   }
-  fprintf(out,"POINT_DATA %d\n",(nx+2)*(ny+2));
+  fprintf(out,"POINT_DATA %d\n",(nx+3)*(ny+3));
   fprintf(out,"SCALARS u float 1\n");
   fprintf(out,"LOOKUP_TABLE default\n");
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
       fprintf(out,"%f\n",u(i,j));
     }
   }
   fprintf(out,"SCALARS v float 1\n");
   fprintf(out,"LOOKUP_TABLE default\n");
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
       fprintf(out,"%f\n",v(i,j));
     }
   }
   fprintf(out,"SCALARS p float 1\n");
   fprintf(out,"LOOKUP_TABLE default\n");
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
       fprintf(out,"%f\n",p(i,j));
     }
   }

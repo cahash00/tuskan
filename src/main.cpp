@@ -55,6 +55,8 @@ int main(int argc, char* argv[]){
   
   // ... parse the YAML input deck
   IO::ConfigData config = IO::parseInputDeck(inFile);
+  // check to see if the output directory exists
+  IO::check_directories(config.foutDir);
   
   // ... get domain stats
   getDomainIndices(config.nx,config.ny);
@@ -156,6 +158,7 @@ int main(int argc, char* argv[]){
         // predictor step - explicit
         ustar(i,j) = u(i,j) + dt*(-ab2[0] + nu*diffu[0]);
         vstar(i,j) = v(i,j) + dt*(-ab2[1] + nu*diffu[1]);
+        // if (i==15 && j==30) printer.print(v(i,j),ab2[1],diffu[1]);
       }
     }
 
@@ -173,6 +176,12 @@ int main(int argc, char* argv[]){
     }
     BC::update_BCs(bcTags,u2);
     BC::update_BCs(bcTags,v2);
+    // printer.print("u",u(15,30));
+    // printer.print("v",v(15,30));
+    // printer.print("vstar",vstar(15,30));
+    // printer.print("p",p(15,30));
+    // printer.print("v2",v2(15,30));
+    // printer.print("-----");
 
     // ... output intermediate flowviz
     if (config.fvflag) {
@@ -184,6 +193,7 @@ int main(int argc, char* argv[]){
     if (ii > 0) res1 = ires;
     double cflb = cfl; // store current cfl
     ires = max(L2NORM(u,u2),L2NORM(v,v2));
+    // printer.print(L2NORM(u,u2),L2NORM(v,v2),dt);
     resmax = max(resmax,ires);
     if (ii==0) {
       res0 = ires;

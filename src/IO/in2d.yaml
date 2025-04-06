@@ -2,37 +2,35 @@
 domain:
   type: rectilinear
   lengths:
-    x: 0.04
-    y: 0.02
+    x: 0.02
+    y: 0.04
   dimensions:
     x: 30
-    y: 15
+    y: 60
 boundary conditions:
-  left: periodic
-  right: periodic
-  bottom: noslip
-  top: noslip
+  left: noslip
+  right: noslip
+  bottom: periodic
+  top: periodic
 initial conditions:
-  u: 0.007
-  v: 0.00
+  u: 0.000
+  v: 0.007
 solver:
-  iterations: 2000
+  iterations: 100000
   pressure solver:
     method: SOR
-    iterations: 1000
-    SOR weight: 1.3
+    omega: 1.3
 dynamic CFL:
-  enabled: true
   cfli: 0.001
-  cflf: 0.1
+  cflf: 0.002
 convergence:
-  residual: 0.000001
+  residual: 5.0e-6
 output:
   residuals:
     enabled: true
-    frequency: 1
-    file: resid.30.dat
+    frequency: 10
+    file: resid.log
   flowviz:
     enabled: true
-    frequency: 10000
+    frequency: 1000
     directory: output

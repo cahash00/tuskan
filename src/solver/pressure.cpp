@@ -15,7 +15,8 @@ void update_wall(mtr::FMatrix<double>& p) {
     // p(i,jend) = p(i,jend-1);
     // p(i,jstr-1) = p(i,jstr);
     p(i,jstr-1) = 1.0;
-    p(i,jend) = 1.0 + -0.3*0006666666666666666*(ny);
+    p(i,jend) = 1.0 + -0.3*0.00066*(ny);
+    p(i,jend+1) = 1.0 + -0.3*0.00066*(ny);
   }
   for (int j = jstr-1; j <= jend+1; j++) {
     p(istr-1,j) = p(istr,j);
@@ -32,8 +33,9 @@ void SOR(const double& omega,
          mtr::FMatrix<double>& rho) {
   pprint::PrettyPrinter printer;
   // ... initialize pressure array
-  double dx2 = dx*dx;
-  double dy2 = dy*dy;
+  const double dx2 = dx*dx;
+  const double dy2 = dy*dy;
+  const double coeff = 2.0*(1.0/dx2+1.0/dy2);
 
   mtr::FMatrix<double> p1(p.dims(1),p.dims(2));
   mtr::FMatrix<double> p2(p.dims(1),p.dims(2));
@@ -53,6 +55,7 @@ void SOR(const double& omega,
 
   // ... set pressure gradient boundary conditions
   for (int n = 0; n <= jiter; n++) {
+    update_wall(p1);
     
     // ... loop over the domain
     for (int j = jstr; j <= jend-1; j++) {
@@ -61,29 +64,22 @@ void SOR(const double& omega,
         double term2 = rho(i,j) / dt * ((ustar(i+1,j)-ustar(i,j))/dx
                                       + (vstar(i,j+1)-vstar(i,j))/dy);
 
-        double term1 = (p1(i+1,j) + p2(i-1,j))*dx2 
-                     + (p1(i,j+1) + p2(i,j-1))*dy2;
+        double term1 = (p1(i+1,j) + p2(i-1,j))/dx2 
+                     + (p1(i,j+1) + p2(i,j-1))/dy2;
 
-        p2(i,j) = (1.0-omega)*p1(i,j) + omega/(2.0*(dy2+dx2))*(term1 - dx2*dy2*term2);
+        p2(i,j) = (1.0-omega)*p1(i,j) 
+                + omega/coeff*(term1 - term2);
+
       } // end i-loop
     } // end j-loop
     update_wall(p2);
-    // for (int j = jstr-1; j <= jend+1; j++) {
-    //   p2(istr-1,j) = 1.0;
-    //   p2(iend,j) = 1.0 + -0.3*dx*(nx);
-    // }
-    // for (int i = istr-1; i <= iend+1; i++) {
-    //   p2(i,jend) = p2(i,jend-1);
-    //   p2(i,jstr-1) = p2(i,jstr);
-    // }
 
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    for (int j = jstr-1; j <= jend; j++) {
+      for (int i = istr-1; i <= iend; i++) {
         p1(i,j) = p2(i,j);
       }
     }
 
-    // FIXME :: better to set p2 pressure BCs here? 
 
     double res = L2NORM(p1,p2);
 

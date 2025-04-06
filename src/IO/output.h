@@ -2,11 +2,18 @@
 #define OUTPUT_H
 
 #include <matar.h>
+#include <iostream>
+#include <filesystem>
+#include <string>
+#include <logger.h>
 
 using namespace std;
+namespace fs = std::filesystem;
 
 namespace IO {
 /******************************************************************************/
+void check_directories(const string& foutDir);
+
 void vtk_output_2D_node(const int& ii,
                         const string& foutDir,
                         const mtr::FMatrix<double>& u,
