@@ -38,6 +38,7 @@ set(spdlog_headers "${includes}/spdlog/include")
 
 # ... ensure MPI is used
 find_package(MPI REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(Kokkos REQUIRED PATHS 
              ${CMAKE_SOURCE_DIR}/includes/matar/install/kokkos)
 find_package(yaml-cpp REQUIRED PATHS
@@ -93,6 +94,7 @@ target_link_libraries(tuskan PRIVATE Kokkos::kokkos
                                      generalUtils
                                      solvers
                                      BCs
+                                     Eigen3::Eigen
 )
 
 # ... Install so that you can use anywhere

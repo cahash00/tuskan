@@ -150,27 +150,36 @@ int main(int argc, char* argv[]){
       for (int i = istr; i <= iend; i++) {
         std::vector<double> advec(2,0.0);
         std::vector<double> advec_old(2,0.0);
+
         // get the advection term
         advec[0] = getAdvecU(i,j,rdx,rdy,u,v);
         // advec[1] = getAdvecV(i,j,rdx,rdy,u,v);
+
         // get advection for the old timestep
         advec_old[0] = getAdvecU(i,j,rdx,rdy,u_old,v_old);
         // advec_old[1] = getAdvecV(i,j,rdx,rdy,u_old,v_old);
+
         // get the diffusion term
         diffu(i,j) = getDiffU(i,j,rdx,rdy,u,v);
         // diffv(i,j) = getDiffV(i,j,rdx,rdy,u,v);
+
         // build RHS of Helmholtz equation to solve
         double ab2u = 1.5*advec[0]-0.5*advec_old[0];
-        rhsU(i,j) = u(i,j) + dt*(-ab2u-(p(i,j)-p(i-1,j))*0.5+0.5*nu*diffu(i,j));
-        // rhsV(i,j) = v(i,j) + dt*(-1.5*advec[1]+0.5*advec_old[1]+diffv(i,j));
-        // rhsU(i,j) = 1.5*dt*advec[0]-0.5*dt*advec_old[0]-diffu(i,j)-2.0*nu/dt*u(i,j);
-        // rhsV(i,j) = 1.5*dt*advec[1]-0.5*dt*advec_old[1]-diffv(i,j)-2.0*nu/dt*v(i,j);
+        // double ab2v = 1.5*advec[1]-0.5*advec_old[1];
+        // double ab2u = 1.5*advec[0]-0.5*advec[0];
+        // double ab2v = 1.5*advec[1]-0.5*advec[1];
+
+        // rhsU(i,j) = u(i,j) + dt*(ab2u - diffu(i,j));
+        // rhsV(i,j) = v(i,j) + dt*(ab2v - diffv(i,j));
+        rhsU(i,j) = dt*ab2u - diffu(i,j) - 2.0*nu/dt*u(i,j);
+        // rhsV(i,j) = dt*ab2v - diffv(i,j) - 2.0*nu/dt*v(i,j);
       }
     }
 
     // ... solve the Helmholtz equation using SOR to get u* and v*
-    SOR::helmholtz(config.sorOmega,ustar,rhsU,bcTags,dx,dy,dt,nu);
+    SOR::helmholtz_eigen(config.sorOmega,ustar,rhsU,bcTags,dx,dy,dt,nu);
     // SOR::helmholtz(config.sorOmega,vstar,rhsV,bcTags,dx,dy,dt,nu);
+    cout << ustar(20,10) << endl;
     BC::update_BCs(bcTags,ustar);
     // BC::update_BCs(bcTags,vstar);
 
@@ -182,19 +191,13 @@ int main(int argc, char* argv[]){
       for (int i = istr; i <= iend; i++) {
         dpdx = (p(i,j) - p(i-1,j)) / dx;
         dpdy = (p(i,j) - p(i,j-1)) / dy;
-        u2(i,j) = ustar(i,j) - dt*dpdx;
-        // v2(i,j) = vstar(i,j) - dt*dpdy;
+        u2(i,j) = ustar(i,j) - dt*(dpdx);
+        // v2(i,j) = vstar(i,j) - dt*(dpdy);
       }
     }
     BC::update_BCs(bcTags,u2);
     BC::update_BCs(bcTags,v2);
 
-    // ... output intermediate flowviz
-    if (config.fvflag) {
-      if (ii % config.fvfreq == 0) {
-        IO::vtk_output_2D_node(ii,config.foutDir,u,v,p,xn,yn);
-      }
-    } 
     // ... Dyanmic CFL
     if (ii > 0) res1 = ires;
     double cflb = cfl; // store current cfl
@@ -225,6 +228,12 @@ int main(int argc, char* argv[]){
         // v(i,j) = v2(i,j);
       }
     }
+
+    if (config.fvflag) {
+      if (ii % config.fvfreq == 0) {
+        IO::vtk_output_2D_node(ii,config.foutDir,u,v,p,xn,yn);
+      }
+    } 
     
     // ... calculate residuals
     logFile << ii << " " << ires << "\n";
@@ -232,6 +241,12 @@ int main(int argc, char* argv[]){
       if (ii % config.resfreq == 0) {
         IO::logger->info("  iter {:04}, cfl: {:5e}, res: {:5e}",ii,cfl,ires/res0);
         logFile.flush();
+        IO::logger->info("    middle u: {:5}",u_old(20,10));
+        IO::logger->info("    middle u2: {:5}",u2(20,10));
+        IO::logger->info("    middle ustar: {:5}",ustar(20,10));
+        IO::logger->info("    middle rhs: {:5}",rhsU(20,10));
+        IO::logger->info("    middle p: {:5}",p(20,10));
+        IO::logger->info("    middle dpdx: {:5}",p(20,10)-p(19,10));
       }
     }
 
