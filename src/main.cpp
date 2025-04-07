@@ -192,7 +192,7 @@ int main(int argc, char* argv[]){
     double cflb = cfl;
     ires = max(L2NORM(u,u2),L2NORM(v,v2));
     resmax = max(resmax,ires);
-    if (ii==0) {
+    if (ii==0 || ii==1) {
       res0 = ires;
       res1 = ires;
     }

@@ -174,8 +174,8 @@ double get_min_dt(const double& cfl,
   double eps = 1.0e-10;
   double umax = 0.0;
   double vmax = 0.0;
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
       umax = max(umax,abs(u(i,j)));
       vmax = max(vmax,abs(v(i,j)));
     }
