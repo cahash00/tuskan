@@ -23,7 +23,7 @@ void SOR(const double& omega,
   // ... initialize pressure array
   const double dx2 = dx*dx;
   const double dy2 = dy*dy;
-  const double coeff = 2.0*(1.0/dx2+1.0/dy2);
+  // const double coeff = 2.0*(1.0/dx2+1.0/dy2);
 
   mtr::FMatrix<double> p1(p.dims(1),p.dims(2));
   mtr::FMatrix<double> p2(p.dims(1),p.dims(2));
@@ -32,9 +32,9 @@ void SOR(const double& omega,
   // ... set pressure gradient boundary conditions
   BC::update_BCs(bcTags,ustar,vstar,p);
   // ... start the jacobi iterations
-  int jiter = 2000;
-  for (int j = jstr-1; j <= jend+1; j++) {
-    for (int i = istr-1; i <= iend+1; i++) {
+  int jiter = 5000;
+  for (int j = jstr-1; j <= jend; j++) {
+    for (int i = istr-1; i <= iend; i++) {
       p1(i,j) = p(i,j);
       p2(i,j) = p(i,j);
     }
@@ -47,12 +47,25 @@ void SOR(const double& omega,
     // ... loop over the domain
     for (int j = jstr; j <= jend-1; j++) {
       for (int i = istr; i <= iend-1; i++) {
+        // Compute average densities at cell faces
+        // - this is using harmonic averaging
+        double rho_e = 2.0 * rho(i,j) * rho(i+1,j) / (rho(i,j) + rho(i+1,j));
+        double rho_w = 2.0 * rho(i,j) * rho(i-1,j) / (rho(i,j) + rho(i-1,j));
+        double rho_n = 2.0 * rho(i,j) * rho(i,j+1) / (rho(i,j) + rho(i,j+1));
+        double rho_s = 2.0 * rho(i,j) * rho(i,j-1) / (rho(i,j) + rho(i,j-1));
+        
         // ... variable dx and dy
-        double term2 = rho(i,j) / dt * ((ustar(i+1,j)-ustar(i,j))/dx
-                                      + (vstar(i,j+1)-vstar(i,j))/dy);
+        double term2 = 1.0 / dt * ((ustar(i+1,j)-ustar(i,j))/dx
+                                 + (vstar(i,j+1)-vstar(i,j))/dy);
 
-        double term1 = (p1(i+1,j) + p2(i-1,j))/dx2 
-                     + (p1(i,j+1) + p2(i,j-1))/dy2;
+        double term1 = (1.0 / (rho_e * dx2)) * p1(i+1, j)
+                     + (1.0 / (rho_w * dx2)) * p2(i-1, j)
+                     + (1.0 / (rho_n * dy2)) * p1(i, j+1)
+                     + (1.0 / (rho_s * dy2)) * p2(i, j-1);
+        double coeff = (1.0 / (rho_e * dx2))
+                     + (1.0 / (rho_w * dx2))
+                     + (1.0 / (rho_n * dy2))
+                     + (1.0 / (rho_s * dy2));
 
         p2(i,j) = (1.0-omega)*p1(i,j) 
                 + omega/coeff*(term1 - term2);

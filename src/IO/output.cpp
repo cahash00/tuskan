@@ -16,6 +16,7 @@
 #include <iostream>
 #include <params.h>
 #include <input.h>
+#include <fstream>
 
 using namespace std;
 
@@ -34,116 +35,5 @@ void check_directories(const string& foutDir) {
   }
 } // end check_directories
 
-/**
- * @brief VTK output for a 2D mesh
- * @param[in] nx number of cells in y-direction
- * @param[in] ny number of cells in y-direction
- * @param[in] xn matrix of x nodal values
- * @param[in] yn matrix of y nodal values
- */
-static void vtk_output_2D_node_IMPL(const string& caseName,
-                                    const string& foutDir,
-                                    const bool ghost,
-                                    const mtr::FMatrix<double>& u,
-                                    const mtr::FMatrix<double>& v,
-                                    const mtr::FMatrix<double>& p,
-                                    const mtr::FMatrix<double>& xc,
-                                    const mtr::FMatrix<double>& yc) {
-  /**
-   * get cell-centered solution variables
-   * pressure is already cell-centered
-   */
-  int xstr,xend,ystr,yend,dnx,dny;
-  mtr::FMatrix<double> uc(p.dims(1),p.dims(2));
-  mtr::FMatrix<double> vc(p.dims(1),p.dims(2));
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
-      uc(i,j) = 0.5*(u(i,j) + u(i+1,j));
-    }
-  }
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
-      vc(i,j) = 0.5*(v(i,j)+v(i,j+1));
-    }
-  }
-  
-  if (ghost) {
-    xstr = istr-1;
-    xend = iend;
-    ystr = jstr-1;
-    yend = jend;
-    dnx = nx+2;
-    dny = ny+2;
-  } else {
-    xstr = istr;
-    xend = iend-1;
-    ystr = jstr;
-    yend = jend-1;
-    dnx = nx;
-    dny = ny;
-  }
-  
-
-  /**
-   * file output
-   */
-  FILE *out;
-  std::ostringstream foutss;
-  foutss << foutDir << "/flow." << caseName << ".vtk";
-  string fout = foutss.str();
-  out = fopen(fout.c_str(),"w");
-  fprintf(out,"# vtk DataFile Version 3.0\n");
-  fprintf(out,"TUSKAN 2D Flow Solution File.\n");
-  fprintf(out,"ASCII\n");
-  fprintf(out,"DATASET STRUCTURED_GRID\n");
-  fprintf(out,"DIMENSIONS %d %d %d\n",dnx,dny,1);
-  fprintf(out,"POINTS %d float\n",(dnx)*(dny));
-  for (int j = ystr; j <= yend; j++) {
-    for (int i = xstr; i <= xend; i++) {
-      fprintf(out,"%f %f %f\n",xc(i,j),yc(i,j),0.0);
-    }
-  }
-  fprintf(out,"POINT_DATA %d\n",(dnx)*(dny));
-  fprintf(out,"VECTORS velocity float \n");
-  for (int j = ystr; j <= yend; j++) {
-    for (int i = xstr; i <= xend; i++) {
-      fprintf(out,"%f %f %f\n",uc(i,j),vc(i,j),0.0);
-    }
-  }
-  fprintf(out,"SCALARS p float 1\n");
-  fprintf(out,"LOOKUP_TABLE default\n");
-  for (int j = ystr; j <= yend; j++) {
-    for (int i = xstr; i <= xend; i++) {
-      fprintf(out,"%f\n",p(i,j));
-    }
-  }
-  fclose(out);
-}
-/**
- * overloaded vtk node output functions
- */
-void vtk_output_2D_node(const int& ii,
-                   const string& foutDir,
-                   const bool ghost,
-                   const mtr::FMatrix<double>& u,
-                   const mtr::FMatrix<double>& v,
-                   const mtr::FMatrix<double>& p,
-                   const mtr::FMatrix<double>& xn,
-                   const mtr::FMatrix<double>& yn) {
-  std::ostringstream foutss;
-  foutss << setw(5) << std::setfill('0') << ii;
-  string caseName = foutss.str();
-  vtk_output_2D_node_IMPL(caseName,foutDir,ghost,u,v,p,xn,yn);
-}
-void vtk_output_2D_node(const string& caseName,
-                   const string& foutDir,
-                   const bool ghost,
-                   const mtr::FMatrix<double>& u,
-                   const mtr::FMatrix<double>& v,
-                   const mtr::FMatrix<double>& p,
-                   const mtr::FMatrix<double>& xn,
-                   const mtr::FMatrix<double>& yn) {
-  vtk_output_2D_node_IMPL(caseName,foutDir,ghost,u,v,p,xn,yn);
-}
 
 } // end namepsace IO

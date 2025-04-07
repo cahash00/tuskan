@@ -1,6 +1,7 @@
 #ifndef SOLVER_H
 #define SOLVER_H
 
+#include <input.h>
 #include <matar.h>
 
 using namespace std;
@@ -28,12 +29,14 @@ double getDiffU(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
+                const mtr::FMatrix<double>& nu,
                 const mtr::FMatrix<double>& u,
                 const mtr::FMatrix<double>& v);
 double getDiffV(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
+                const mtr::FMatrix<double>& nu,
                 const mtr::FMatrix<double>& u,
                 const mtr::FMatrix<double>& v);
 
@@ -56,12 +59,13 @@ double get_min_dt(const double& cfl,
 /*******************************************************************************
  * @brief initialize the domain and arrays
  ******************************************************************************/
-void initialize_solution(const double& uinit,
-                         const double& vinit,
+void initialize_solution(IO::ConfigData& config,
                          mtr::FMatrix<double>& u, 
                          mtr::FMatrix<double>& v,
                          mtr::FMatrix<double>& u2,
                          mtr::FMatrix<double>& v2,
+                         mtr::FMatrix<double>& u_old,
+                         mtr::FMatrix<double>& v_old,
                          mtr::FMatrix<double>& ustar,
                          mtr::FMatrix<double>& vstar,
                          mtr::FMatrix<double>& p);

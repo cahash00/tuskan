@@ -17,8 +17,10 @@
 #include <params.h>
 #include <generalUtils.h>
 #include <solver.h>
+#include <levset.h>
 #include <pressure.h>
 #include <logger.h>
+#include <restart.h>
 #include <cmath>
 #include <BCs.h>
 #include <fstream>
@@ -57,10 +59,11 @@ int main(int argc, char* argv[]){
   // ... parse the YAML input deck
   IO::ConfigData config = IO::parseInputDeck(inFile);
   // check to see if the output directory exists
-  IO::check_directories(config.foutDir);
+  IO::check_directories(config.fv.dir);
+
   
   // ... get domain stats
-  getDomainIndices(config.nx,config.ny);
+  getDomainIndices(config.mesh.nx,config.mesh.ny);
   vector<int> ndims(2,0);
   ndims[0] = nx+nghosts*2;
   ndims[1] = ny+nghosts*2;
@@ -69,7 +72,10 @@ int main(int argc, char* argv[]){
   fmatD xc(ndims[0],ndims[1]),yc(ndims[0],ndims[1]),
         xn(ndims[0]+1,ndims[1]+1),yn(ndims[0]+1,ndims[1]+1);
   fmatD p(ndims[0]+1,ndims[1]+1);
+  fmatD phi(ndims[0],ndims[1]);
+  fmatD heavi(ndims[0],ndims[1]);
   fmatD rho(ndims[0]+1,ndims[1]+1);
+  fmatD nu(ndims[0]+1,ndims[1]+1);
   fmatD ustar(ndims[0]+1,ndims[1]+1);
   fmatD vstar(ndims[0]+1,ndims[1]+1);
   fmatD u(ndims[0]+1,ndims[1]+1);
@@ -84,38 +90,61 @@ int main(int argc, char* argv[]){
   Timer timer;
   timer.start();
   IO::logger->info("Generating 2D mesh");
-  double dx,dy = 0.0;
-  mesh::mesher2D(config.lx,config.ly,xc,yc,xn,yn,dx,dy);
+  double dx = 0.0;
+  double dy = 0.0;
+  mesh::mesher2D(config.mesh.lx,config.mesh.ly,xc,yc,xn,yn,dx,dy);
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   IO::logger->info("Tagging boundaries");
   BC::bcTags bcTags = BC::tag_BCs(config,u.dims(1),u.dims(2));
-  // bcTags.Top.vel[0] = config.bcTop.velocity[0];
   IO::logger->info("  done");
 
   // ... initialization
-  ofstream logFile(config.resFile, ios::out);
+  ofstream logFile(config.res.file, ios::out);
   if (!logFile) {
       std::cerr << "Error opening log file!\n";
       return -1;
   }
   timer.start();
   IO::logger->info("Initializing the domain");
-  rho.set_values(1.0e3);   // density
-  double nu   = 1.0e-6;  // kinematic viscosity m^2/s
   double rdx  = 1.0/dx;  // reciprocal of dx
   double rdy  = 1.0/dy;  // reciprocal of dx
   IO::logger->info("  dx: {},dy: {}",dx,dy);
 
-  // initialize domain and calculate exact solution
-  initialize_solution(config.uinit,config.vinit,u,v,u2,v2,ustar,vstar,p);
-  // ... store the previous timestep
+  // initialize domain
+  initialize_solution(config,
+                      u,v,
+                      u2,v2,
+                      u_old,v_old,
+                      ustar,vstar,
+                      p);
+  if (config.restart.load) {
+    restart::load("u.200.converged",u);
+    restart::load("v.200.converged",v);
+    restart::load("p.200.converged",p);
+  }
+  BC::update_BCs(bcTags,u,v,p);
+  // initialize phi
+  levset::get_phi(phi,xc,yc,config.drop.x,config.drop.y,config.drop.r);
+  // use phi to initialize rho and nu
+  const double rhol = config.iliq.rho;
+  const double rhog = config.igas.rho;
+  const double nul = config.iliq.mu / rhol;
+  const double nug = config.igas.mu / rhog;
+  printer.print(rhol,rhog,nul,nug);
+  levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
   for (int j = jstr-1; j <= jend+1; j++) {
     for (int i = istr-1; i <= iend+1; i++) {
-      u_old(i,j) = u(i,j);
-      v_old(i,j) = v(i,j);
+      rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
+      // rho(i,j) = 1.0e3;
+      nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
+      // nu(i,j) = 1.0e-6;
     }
   }
+  
+
+
+  
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   
@@ -124,46 +153,53 @@ int main(int argc, char* argv[]){
    *******************/
   // ... initialize doubles
   double ires,res0,res1,cfl0,resmax = 0.0;
-  double cfl = config.cfli;
+  double cfl = config.solver.cfli;
   int finalIter = 0;
+  const double dtau = 0.5*min(dx,dy);
 
   // ... start solver & timer
   timer.start();
   IO::logger->info("Starting Main Solver");
-  for (int ii = 0; ii < config.iter; ii++) {
+  for (int ii = 0; ii < config.solver.iter; ii++) {
     // ... update boundary conditions
     BC::update_BCs(bcTags,u,v,p);
 
     // ... get the minimum dt in the domain for current iteration
-    double dt = get_min_dt(cfl,dx,dy,u,v,nu);
+    double dt = get_min_dt(cfl,dx,dy,u,v,max(nug,nul));
+
 
     // ... loop over domain for predictor step
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    for (int j = jstr; j <= jend-1; j++) {
+      for (int i = istr; i <= iend-1; i++) {
         std::vector<double> advec(2,0.0);
         std::vector<double> advec_old(2,0.0);
         std::vector<double> diffu(2,0.0);
         std::vector<double> ab2(2,0.0);
+
         // get the advection term
         advec[0] = getAdvecU(i,j,rdx,rdy,u,v);
         advec[1] = getAdvecV(i,j,rdx,rdy,u,v);
+        
         // get the diffusion term
-        diffu[0] = getDiffU(i,j,rdx,rdy,u,v);
-        diffu[1] = getDiffV(i,j,rdx,rdy,u,v);
+        diffu[0] = getDiffU(i,j,rdx,rdy,nu,u,v);
+        diffu[1] = getDiffV(i,j,rdx,rdy,nu,u,v);
+
         // AB2 method for convection
         advec_old[0] = getAdvecU(i,j,rdx,rdy,u_old,v_old);
         advec_old[1] = getAdvecV(i,j,rdx,rdy,u_old,v_old);
         ab2[0] = 1.5*advec[0]-0.5*advec_old[0];
         ab2[1] = 1.5*advec[1]-0.5*advec_old[1];
+
         // predictor step - explicit
-        ustar(i,j) = u(i,j) + dt*(-ab2[0] + nu*diffu[0]);
-        vstar(i,j) = v(i,j) + dt*(-ab2[1] + nu*diffu[1]);
+        ustar(i,j) = u(i,j) + dt*(-ab2[0] + diffu[0]);
+        vstar(i,j) = v(i,j) + dt*(-ab2[1] + diffu[1]);
       }
     }
-    BC::update_BCs(bcTags,ustar,vstar,p);
 
     // ... solve for the pressure
-    psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho,bcTags);
+    psolve::SOR(config.solver.omega,p,ustar,vstar,dx,dy,dt,rho,bcTags);
+    BC::update_BCs(bcTags,ustar,vstar,p);
+
     
     // ... apply the pressure correctior
     for (int j = jstr; j <= jend; j++) {
@@ -174,12 +210,36 @@ int main(int argc, char* argv[]){
         v2(i,j) = vstar(i,j) - 1.0/rho(i,j)*dt*dpdy;
       }
     }
+    BC::update_BCs_phi(bcTags,rho);
+    BC::update_BCs_phi(bcTags,nu);
     BC::update_BCs(bcTags,u2,v2,p);
+    // ... solve advection eq for phi
+    levset::weno(bcTags,dx,dy,dt,u2,v2,phi);
+    if (config.levset.reinit) {
+      levset::reinitialize(bcTags,dx,dy,dtau,config.levset.ireinit,phi);
+    }
+    levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
+
+    for (int j = jstr-1; j <= jend; j++) {
+      for (int i = istr-1; i <= iend; i++) {
+        rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
+        nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
+      }
+    }
 
     // ... output intermediate flowviz
-    if (config.fvflag) {
-      if (ii % config.fvfreq == 0) {
-        IO::vtk_output_2D_node(ii,config.foutDir,config.ghost,u,v,p,xc,yc);
+    if (config.fv.enabled) {
+      if (ii % config.fv.freq == 0) {
+        std::ostringstream foutss;
+        foutss << setw(5) << std::setfill('0') << ii;
+        string caseName = foutss.str();
+        IO::vtk_output_2D_node(caseName,config.fv.dir,config.fv.ghost,
+                               xn,yn,u,v,
+                               "p",p,
+                               "rho",rho,
+                               "nu",nu,
+                               "phi",phi,
+                               "heavi",heavi);
       }
     } 
 
@@ -198,19 +258,13 @@ int main(int argc, char* argv[]){
     if (ires < res1 && ires < res0) 
       cfl = cfl0*resmax/ires;
     cfl = max(cfl,cflb);
-    cfl = min(config.cflf,max(cfl,config.cfli)); 
+    cfl = min(config.solver.cflf,max(cfl,config.solver.cfli)); 
 
-    // ... store the previous timestep
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    // ... store the previous timestep and update
+    for (int j = jstr-1; j <= jend; j++) {
+      for (int i = istr-1; i <= iend; i++) {
         u_old(i,j) = u(i,j);
         v_old(i,j) = v(i,j);
-      }
-    }
-    
-    // ... update the u array with the updated solution array
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
         u(i,j) = u2(i,j);
         v(i,j) = v2(i,j);
       }
@@ -218,15 +272,15 @@ int main(int argc, char* argv[]){
     
     // ... calculate residuals
     logFile << ii << " " << ires << "\n";
-    if (config.resflag) {
-      if (ii % config.resfreq == 0) {
+    if (config.res.enabled) {
+      if (ii % config.res.freq == 0) {
         IO::logger->info("  iter {:04}, cfl: {:5e},dt: {:5e}, res: {:5e}",ii,cfl,dt,ires/res0);
         logFile.flush();
       }
     }
 
     // ... check steady state convergence
-    if (ires/res0 < config.toler && ii > 1000) {
+    if (ires/res0 < config.solver.toler && ii > 1000) {
       finalIter=ii;
       break;
     } else if (ires/res0 > 1.0e20) {
@@ -241,12 +295,28 @@ int main(int argc, char* argv[]){
   /**
    * output section
    */
-  if (config.fvflag) {
+  if (config.fv.enabled) {
     IO::logger->info("Outputting final flow solution");
-    IO::vtk_output_2D_node(string("final"),config.foutDir,config.ghost,u,v,p,xc,yc);
+    IO::vtk_output_2D_node("final",config.fv.dir,config.fv.ghost,
+                           xn,yn,u,v,
+                           "p",p,
+                           "rho",rho,
+                           "nu",nu,
+                           "phi",phi,
+                           "heavi",heavi);
   } else {
     IO::logger->warn("Output was disabled.");
   }
+
+  /**
+   * output restart file
+   */
+  if (config.restart.save) {
+    restart::save("u.restart",u);
+    restart::save("v.restart",v);
+    restart::save("p.restart",p);
+  }
+
 
   /**
    * Final run summary output here
