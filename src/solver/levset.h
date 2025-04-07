@@ -30,6 +30,14 @@ void weno(BC::bcTags bcTags,
           mtr::FMatrix<double>& phi);
 
 /******************************************************************************/
+void reinitialize(BC::bcTags bcTags,
+                  const double& dx,
+                  const double& dy,
+                  const double& dtau,
+                  const int isteps,
+                  mtr::FMatrix<double>& phi);
+
+  /******************************************************************************/
 double curvature(const int i, const int j,
                  const double dx, const double dy,
                  const mtr::FMatrix<double>& phi);

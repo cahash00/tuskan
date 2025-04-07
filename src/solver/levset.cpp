@@ -183,5 +183,53 @@ double curvature(const int i, const int j,
     return curvature;
 }
 
+void reinitialize(BC::bcTags bcTags,
+                  const double& dx,
+                  const double& dy,
+                  const double& dtau,
+                  const int isteps,
+                  mtr::FMatrix<double>& phi) {
+  double eps = 1.0e-15; // small number to avoid division by zero
+  mtr::FMatrix<double> phi2(phi.dims(1),phi.dims(2));
+  for (int j = jstr-1; j <= jend; j++) {
+    for (int i = istr-1; i <= iend; i++) {
+      phi2(i,j) = phi(i,j);
+    }
+  }
+  
+
+  // update the phi matrix
+  for (int n = 0; n < isteps; n++) {
+    for (int j = jstr; j <= jend-1; j++) {
+      for (int i = istr; i <= iend-1; i++) {
+        double a = (phi(i,j)-phi(i-1,j))/dx;
+        double b = (phi(i+1,j)-phi(i,j))/dx;
+        double c = (phi(i,j)-phi(i,j-1))/dy;
+        double d = (phi(i,j+1)-phi(i,j))/dy;
+        double sign = phi(i,j) / sqrt(phi(i,j)*phi(i,j) 
+                    + sqrt(pow(a-b,2)+pow(c-d,2)));
+        double ap = max(a,0.0);
+        double am = min(a,0.0);
+        double bp = max(b,0.0);
+        double bm = min(b,0.0);
+        double cp = max(c,0.0);
+        double cm = min(c,0.0);
+        double dp = max(d,0.0);
+        double dm = min(d,0.0);
+        double sp = max(sign,0.0);
+        double sm = min(sign,0.0);
+        double H = sp*(sqrt(max(ap*ap,bm*bm) + max(cp*cp,dm*dm))-1.0)
+                 + sm*(sqrt(max(am*am,bp*bp) + max(cm*cm,dp*dp))-1.0);
+        phi2(i,j) = phi(i,j) - dtau*H;
+      }
+    }
+    // BC::update_BCs_phi(bcTags,phi2);
+    for (int j = jstr; j <= jend-1; j++) {
+      for (int i = istr; i <= iend-1; i++) {
+        phi(i,j) = phi2(i,j);
+      }
+    }
+  }
+} // end reinitialize
 
 } // end namespace levset

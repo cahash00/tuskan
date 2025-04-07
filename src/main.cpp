@@ -152,6 +152,7 @@ int main(int argc, char* argv[]){
   double ires,res0,res1,cfl0,resmax = 0.0;
   double cfl = config.cfli;
   int finalIter = 0;
+  const double dtau = 0.5*min(dx,dy);
 
   // ... start solver & timer
   timer.start();
@@ -209,6 +210,9 @@ int main(int argc, char* argv[]){
     BC::update_BCs(bcTags,u2,v2,p);
     // ... solve advection eq for phi
     levset::weno(bcTags,dx,dy,dt,u2,v2,phi);
+    if (config.levset.reinit) {
+      levset::reinitialize(bcTags,dx,dy,dtau,config.levset.reinitIter,phi);
+    }
     levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
 
     for (int j = jstr-1; j <= jend; j++) {
