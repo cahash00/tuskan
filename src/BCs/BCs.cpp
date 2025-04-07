@@ -75,35 +75,37 @@ void update_BCs(bcTags tags,
                 mtr::FMatrix<double>& p) {
   // update the left + right boundaries
   for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
-    if (tags.Left.bvals(j)==0) {
-      // noslip 
-      u(istr-1,j) = -u(istr,j);
-      v(istr-1,j) = -v(istr,j);
-      p(istr-1,j) = p(istr,j);
-    } else if (tags.Left.bvals(j)==1) {
-      // moving wall
-      u(istr-1,j) = 2.0*tags.Left.vel[0]-u(istr,j);
-      v(istr-1,j) = 2.0*tags.Left.vel[1]-v(istr,j);
-      p(istr-1,j) = p(istr,j);
-    } else if (tags.Left.bvals(j)==7) {
+    // if (tags.Left.bvals(j)==0) {
+    //   // noslip 
+    //   u(istr-1,j) = 0.0;
+    //   v(istr-1,j) = -v(istr,j);
+    //   p(istr-1,j) = p(istr,j);
+    // } else if (tags.Left.bvals(j)==1) {
+    //   // moving wall
+    //   u(istr-1,j) = 2.0*tags.Left.vel[0]-u(istr,j);
+    //   v(istr-1,j) = 2.0*tags.Left.vel[1]-v(istr,j);
+    //   p(istr-1,j) = p(istr,j);
+    // } else 
+    if (tags.Left.bvals(j)==7) {
       // periodic
-      u(istr-1,j) = u(iend,j);
+      u(istr-1,j) = u(iend-1,j);
       v(istr-1,j) = v(iend,j);
       p(istr-1,j) = tags.Left.pressure;
     }
-    if (tags.Right.bvals(j)==0) {
-      // noslip 
-      u(iend+1,j) = -u(iend,j);
-      v(iend+1,j) = -v(iend,j);
-      p(iend,j) = p(iend-1,j);
-    } else if (tags.Right.bvals(j)==1) {
-      // moving wall
-      u(iend+1,j) = 2.0*tags.Right.vel[0]-u(iend,j);
-      v(iend+1,j) = 2.0*tags.Right.vel[1]-v(iend,j);
-      p(iend,j) = p(iend-1,j);
-    } else if (tags.Right.bvals(j)==7) {
+    // if (tags.Right.bvals(j)==0) {
+    //   // noslip 
+    //   u(iend+1,j) = 0.0;
+    //   v(iend+1,j) = -v(iend,j);
+    //   p(iend,j) = p(iend-1,j);
+    // } else if (tags.Right.bvals(j)==1) {
+    //   // moving wall
+    //   u(iend+1,j) = 2.0*tags.Right.vel[0]-u(iend,j);
+    //   v(iend+1,j) = 2.0*tags.Right.vel[1]-v(iend,j);
+    //   p(iend,j) = p(iend-1,j);
+    // } else 
+    if (tags.Right.bvals(j)==7) {
       // periodic
-      u(iend+1,j) = u(istr,j);
+      u(iend,j) = u(istr,j);
       v(iend+1,j) = v(istr,j);
       p(iend,j) = tags.Right.pressure;
     }
@@ -114,34 +116,34 @@ void update_BCs(bcTags tags,
     if (tags.Bottom.bvals(i)==0) {
       // noslip wall 
       u(i,jstr-1) = -u(i,jstr);
-      v(i,jstr-1) = -v(i,jstr);
+      v(i,jstr-1) = 0.0;
       p(i,jstr-1) = p(i,jstr);
-    } else if (tags.Bottom.bvals(i)==1) {
-      // moving wall
-      u(i,jstr-1) = -u(i,jstr);
-      v(i,jstr-1) = -v(i,jstr);
-      p(i,jstr-1) = p(i,jstr);
-    } else if (tags.Bottom.bvals(i)==7) {
-      // periodic
-      u(i,jstr-1) = u(i,jend);
-      v(i,jstr-1) = v(i,jend);
-      p(i,jstr-1) = tags.Bottom.pressure;
+    // } else if (tags.Bottom.bvals(i)==1) {
+    //   // moving wall
+    //   u(i,jstr-1) = -u(i,jstr);
+    //   v(i,jstr-1) = 0.0;
+    //   p(i,jstr-1) = p(i,jstr);
+    // } else if (tags.Bottom.bvals(i)==7) {
+    //   // periodic
+    //   u(i,jstr-1) = u(i,jend);
+    //   v(i,jstr-1) = v(i,jend);
+    //   p(i,jstr-1) = tags.Bottom.pressure;
     }
     if (tags.Top.bvals(i)==0) {
       // noslip 
       u(i,jend+1) = -u(i,jend);
-      v(i,jend+1) = -v(i,jend);
+      v(i,jend) = 0.0;
       p(i,jend) = p(i,jend-1);
-    } else if (tags.Top.bvals(i)==1) {
-      // moving wall
-      u(i,jend+1) = 2.0*tags.Top.vel[0]-u(i,jend);
-      v(i,jend+1) = 2.0*tags.Top.vel[1]-v(i,jend);
-      p(i,jend) = p(i,jend-1);
-    } else if (tags.Top.bvals(i)==7) {
-      // periodic
-      u(i,jend+1) = u(i,jstr);
-      v(i,jend+1) = v(i,jstr);
-      p(i,jend) = tags.Top.pressure;
+    // } else if (tags.Top.bvals(i)==1) {
+    //   // moving wall
+    //   u(i,jend+1) = 2.0*tags.Top.vel[0]-u(i,jend);
+    //   v(i,jend+1) = 2.0*tags.Top.vel[1]-v(i,jend);
+    //   p(i,jend) = p(i,jend-1);
+    // } else if (tags.Top.bvals(i)==7) {
+    //   // periodic
+    //   u(i,jend+1) = u(i,jstr);
+    //   v(i,jend+1) = v(i,jstr);
+    //   p(i,jend) = tags.Top.pressure;
     }
   }
   

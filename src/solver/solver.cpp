@@ -158,11 +158,11 @@ double get_min_dt(const double& cfl,
   // find timestep limit due to advection
   double dt1 = 1e5;
   if (umax > 0.0 && vmax > 0.0) {
-    for (int j = jstr-1; j <= jend+1; j++) {
-      for (int i = istr-1; i <= iend+1; i++) {
-        dt1 = cfl*min(dx/umax,dy/vmax);
-      }
-    }
+    dt1 = cfl*min(dx/umax,dy/vmax);
+  } else if (umax > 0.0) {
+    dt1 = cfl*dx/umax;
+  } else if (vmax > 0.0) {
+    dt1 = cfl*dy/vmax;
   }
   double dt2 = 0.5*dx*dx*dy*dy/(nu*(dx*dx+dy*dy));
   double dt = min(dt1,dt2);
@@ -184,8 +184,8 @@ void initialize_solution(IO::ConfigData& config,
   const double vinit = config.igas.v;
   const double pinit = config.igas.p;
   const double rhoinit = config.igas.rho;
-  for (int j = jstr; j <= jend; j++) {
-    for (int i = istr; i <= iend; i++) {
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
       u(i,j) = uinit; // average u
       v(i,j) = vinit;
       u2(i,j) = uinit;

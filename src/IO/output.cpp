@@ -70,11 +70,11 @@ static void vtk_output_2D_node_IMPL(const string& caseName,
   
   if (ghost) {
     xstr = istr-1;
-    xend = iend;
+    xend = iend+1;
     ystr = jstr-1;
-    yend = jend;
-    dnx = nx+2;
-    dny = ny+2;
+    yend = jend+1;
+    dnx = nx+3;
+    dny = ny+3;
   } else {
     xstr = istr;
     xend = iend-1;
@@ -108,7 +108,7 @@ static void vtk_output_2D_node_IMPL(const string& caseName,
   fprintf(out,"VECTORS velocity float \n");
   for (int j = ystr; j <= yend; j++) {
     for (int i = xstr; i <= xend; i++) {
-      fprintf(out,"%f %f %f\n",uc(i,j),vc(i,j),0.0);
+      fprintf(out,"%f %f %f\n",u(i,j),v(i,j),0.0);
     }
   }
   fprintf(out,"SCALARS p float 1\n");

@@ -148,18 +148,18 @@ int main(int argc, char* argv[]){
         std::vector<double> ab2(2,0.0);
         // get the advection term
         advec[0] = getAdvecU(i,j,rdx,rdy,u,v);
-        advec[1] = getAdvecV(i,j,rdx,rdy,u,v);
+        // advec[1] = getAdvecV(i,j,rdx,rdy,u,v);
         // get the diffusion term
         diffu[0] = getDiffU(i,j,rdx,rdy,u,v);
-        diffu[1] = getDiffV(i,j,rdx,rdy,u,v);
+        // diffu[1] = getDiffV(i,j,rdx,rdy,u,v);
         // AB2 method for convection
         advec_old[0] = getAdvecU(i,j,rdx,rdy,u_old,v_old);
-        advec_old[1] = getAdvecV(i,j,rdx,rdy,u_old,v_old);
+        // advec_old[1] = getAdvecV(i,j,rdx,rdy,u_old,v_old);
         ab2[0] = 1.5*advec[0]-0.5*advec_old[0];
-        ab2[1] = 1.5*advec[1]-0.5*advec_old[1];
+        // ab2[1] = 1.5*advec[1]-0.5*advec_old[1];
         // predictor step - explicit
         ustar(i,j) = u(i,j) + dt*(-ab2[0] + nu*diffu[0]);
-        vstar(i,j) = v(i,j) + dt*(-ab2[1] + nu*diffu[1]);
+        // vstar(i,j) = v(i,j) + dt*(-ab2[1] + nu*diffu[1]);
       }
     }
     BC::update_BCs(bcTags,ustar,vstar,p);
@@ -173,7 +173,7 @@ int main(int argc, char* argv[]){
         double dpdx = (p(i,j) - p(i-1,j)) / (dx);
         double dpdy = (p(i,j) - p(i,j-1)) / (dy);
         u2(i,j) = ustar(i,j) - 1.0/rho(i,j)*dt*dpdx;
-        v2(i,j) = vstar(i,j) - 1.0/rho(i,j)*dt*dpdy;
+        // v2(i,j) = vstar(i,j) - 1.0/rho(i,j)*dt*dpdy;
       }
     }
     BC::update_BCs(bcTags,u2,v2,p);
@@ -181,7 +181,7 @@ int main(int argc, char* argv[]){
     // ... output intermediate flowviz
     if (config.fvflag) {
       if (ii % config.fvfreq == 0) {
-        IO::vtk_output_2D_node(ii,config.foutDir,config.ghost,xc,yc,u,v,p,phi);
+        IO::vtk_output_2D_node(ii,config.foutDir,config.ghost,xn,yn,u,v,p,phi);
       }
     } 
 
@@ -203,10 +203,10 @@ int main(int argc, char* argv[]){
     cfl = min(config.cflf,max(cfl,config.cfli)); 
 
     // ... store the previous timestep
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    for (int j = jstr-1; j <= jend+1; j++) {
+      for (int i = istr-1; i <= iend+1; i++) {
         u_old(i,j) = u(i,j);
-        v_old(i,j) = v(i,j);
+        // v_old(i,j) = v(i,j);
       }
     }
     
@@ -214,7 +214,7 @@ int main(int argc, char* argv[]){
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
         u(i,j) = u2(i,j);
-        v(i,j) = v2(i,j);
+        // v(i,j) = v2(i,j);
       }
     }
     
@@ -245,7 +245,7 @@ int main(int argc, char* argv[]){
    */
   if (config.fvflag) {
     IO::logger->info("Outputting final flow solution");
-    IO::vtk_output_2D_node(string("final"),config.foutDir,config.ghost,xc,yc,u,v,p,phi);
+    IO::vtk_output_2D_node(string("final"),config.foutDir,config.ghost,xn,yn,u,v,p,phi);
   } else {
     IO::logger->warn("Output was disabled.");
   }

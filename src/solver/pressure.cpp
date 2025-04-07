@@ -33,8 +33,8 @@ void SOR(const double& omega,
   BC::update_BCs(bcTags,ustar,vstar,p);
   // ... start the jacobi iterations
   int jiter = 2000;
-  for (int j = jstr-1; j <= jend+1; j++) {
-    for (int i = istr-1; i <= iend+1; i++) {
+  for (int j = jstr-1; j <= jend; j++) {
+    for (int i = istr-1; i <= iend; i++) {
       p1(i,j) = p(i,j);
       p2(i,j) = p(i,j);
     }
