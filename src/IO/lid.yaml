@@ -3,24 +3,25 @@ domain:
   type: rectilinear
   lengths:
     x: 0.04
-    y: 0.02
+    y: 0.04
   dimensions:
-    x: 60
-    y: 30
+    x: 80
+    y: 80
 boundary conditions:
   left: 
-    type: periodic
-    pressure: 1.0
+    type: noslip
   right: 
-    type: periodic
-    pressure: 0.9876
+    type: noslip
   bottom: 
     type: noslip
   top: 
-    type: noslip
+    type: moving wall
+    velocity:
+      u: 0.007
+      v: 0.0
 initial conditions:
   gas:
-    u: 0.007
+    u: 0.000
     v: 0.000
     p: 0.0
     rho: 1000
