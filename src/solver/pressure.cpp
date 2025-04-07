@@ -58,14 +58,14 @@ void SOR(const double& omega,
         double term2 = 1.0 / dt * ((ustar(i+1,j)-ustar(i,j))/dx
                                  + (vstar(i,j+1)-vstar(i,j))/dy);
 
-        double term1 = (1.0 / (rho_e * dx * dx)) * p1(i+1, j)
-                     + (1.0 / (rho_w * dx * dx)) * p2(i-1, j)
-                     + (1.0 / (rho_n * dy * dy)) * p1(i, j+1)
-                     + (1.0 / (rho_s * dy * dy)) * p2(i, j-1);
-        double coeff = (1.0 / (rho_e * dx * dx))
-                     + (1.0 / (rho_w * dx * dx))
-                     + (1.0 / (rho_n * dy * dy))
-                     + (1.0 / (rho_s * dy * dy));
+        double term1 = (1.0 / (rho_e * dx2)) * p1(i+1, j)
+                     + (1.0 / (rho_w * dx2)) * p2(i-1, j)
+                     + (1.0 / (rho_n * dy2)) * p1(i, j+1)
+                     + (1.0 / (rho_s * dy2)) * p2(i, j-1);
+        double coeff = (1.0 / (rho_e * dx2))
+                     + (1.0 / (rho_w * dx2))
+                     + (1.0 / (rho_n * dy2))
+                     + (1.0 / (rho_s * dy2));
 
         p2(i,j) = (1.0-omega)*p1(i,j) 
                 + omega/coeff*(term1 - term2);

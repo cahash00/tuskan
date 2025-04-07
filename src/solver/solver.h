@@ -29,12 +29,14 @@ double getDiffU(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
+                const mtr::FMatrix<double>& nu,
                 const mtr::FMatrix<double>& u,
                 const mtr::FMatrix<double>& v);
 double getDiffV(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
+                const mtr::FMatrix<double>& nu,
                 const mtr::FMatrix<double>& u,
                 const mtr::FMatrix<double>& v);
 

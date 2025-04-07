@@ -26,14 +26,23 @@ void load_restart(const std::string& filename,
     const mtr::FMatrix<double>& u);
 
 /******************************************************************************/
-inline void add_array(FILE* out) {};
+inline void add_array(FILE* out,const bool ghost) {};
 
 template <typename T, typename... Args>
-void add_array(FILE* out,const string& label,T&& array, Args&&... args) {
-  double xstr = istr-1;
-  double xend = iend;
-  double ystr = jstr-1;
-  double yend = jend;
+void add_array(FILE* out,const bool ghost,const string& label,T&& array, Args&&... args) {
+  double xstr,ystr,xend,yend;
+  if (ghost) {
+    xstr = istr-1;
+    xend = iend+1;
+    ystr = jstr-1;
+    yend = jend+1;
+  } else {
+    xstr = istr;
+    xend = iend-1;
+    ystr = jstr;
+    yend = jend-1;
+  }
+
   fprintf(out,"SCALARS %s float 1\n",label.c_str());
   fprintf(out,"LOOKUP_TABLE default\n");
   for (int j = ystr; j <= yend; j++) {
@@ -42,7 +51,7 @@ void add_array(FILE* out,const string& label,T&& array, Args&&... args) {
     }
   }
 
-  add_array(out,forward<Args>(args)...);
+  add_array(out,ghost,forward<Args>(args)...);
 };
 
 template <typename... Args>
@@ -74,11 +83,11 @@ template <typename... Args>
 
     if (ghost) {
       xstr = istr-1;
-      xend = iend;
+      xend = iend+1;
       ystr = jstr-1;
-      yend = jend;
-      dnx = nx+2;
-      dny = ny+2;
+      yend = jend+1;
+      dnx = nx+3;
+      dny = ny+3;
     } else {
       xstr = istr;
       xend = iend-1;
@@ -110,10 +119,10 @@ template <typename... Args>
     fprintf(out,"VECTORS velocity float \n");
     for (int j = ystr; j <= yend; j++) {
       for (int i = xstr; i <= xend; i++) {
-        fprintf(out,"%f %f %f\n",uc(i,j),vc(i,j),0.0);
+        fprintf(out,"%f %f %f\n",u(i,j),v(i,j),0.0);
       }
     }
-    add_array(out,forward<Args>(args)...);
+    add_array(out,ghost,forward<Args>(args)...);
     fclose(out);
 };
 /******************************************************************************/

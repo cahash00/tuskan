@@ -126,11 +126,25 @@ double getDiffU(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
+                const mtr::FMatrix<double>& nu,
                 const mtr::FMatrix<double>& u,
                 const mtr::FMatrix<double>& v) {
   double diffu;
-  diffu = ( u(i+1,j) - 2.0*u(i,j) + u(i-1,j))*rdx*rdx + 
-          ( u(i,j+1) - 2.0*u(i,j) + u(i,j-1))*rdy*rdy;
+  // diffu = ( u(i+1,j) - 2.0*u(i,j) + u(i-1,j))*rdx*rdx + 
+  //         ( u(i,j+1) - 2.0*u(i,j) + u(i,j-1))*rdy*rdy;
+  // Interpolate nu to the faces for the u-component
+  // double nu_e = 0.5 * (nu(i,j) + nu(i+1,j));
+  // double nu_w = 0.5 * (nu(i,j) + nu(i-1,j));
+  // double nu_n = 0.5 * (nu(i,j) + nu(i,j+1));
+  // double nu_s = 0.5 * (nu(i,j) + nu(i,j-1));
+  double nu_e = 2.0 * nu(i,j) * nu(i+1,j) / (nu(i,j) + nu(i+1,j));
+  double nu_w = 2.0 * nu(i,j) * nu(i-1,j) / (nu(i,j) + nu(i-1,j));
+  double nu_n = 2.0 * nu(i,j) * nu(i,j+1) / (nu(i,j) + nu(i,j+1));
+  double nu_s = 2.0 * nu(i,j) * nu(i,j-1) / (nu(i,j) + nu(i,j-1));
+
+  diffu = (nu_e * (u(i+1,j) - u(i,j)) - nu_w * (u(i,j) - u(i-1,j))) * rdx * rdx
+        + (nu_n * (u(i,j+1) - u(i,j)) - nu_s * (u(i,j) - u(i,j-1))) * rdy * rdy;
+
   return diffu;
 }
 /******************************************************************************/
@@ -138,11 +152,25 @@ double getDiffV(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
+                const mtr::FMatrix<double>& nu,
                 const mtr::FMatrix<double>& u,
                 const mtr::FMatrix<double>& v) {
   double diffv;
-  diffv = ( v(i+1,j) - 2.0*v(i,j) + v(i-1,j))*rdx*rdx + 
-          ( v(i,j+1) - 2.0*v(i,j) + v(i,j-1))*rdy*rdy;
+  // diffv = ( v(i+1,j) - 2.0*v(i,j) + v(i-1,j))*rdx*rdx + 
+  //         ( v(i,j+1) - 2.0*v(i,j) + v(i,j-1))*rdy*rdy;
+  // Interpolate nu to the faces for the v-component
+  // double nu_e = 0.5 * (nu(i,j) + nu(i+1,j));
+  // double nu_w = 0.5 * (nu(i,j) + nu(i-1,j));
+  // double nu_n = 0.5 * (nu(i,j) + nu(i,j+1));
+  // double nu_s = 0.5 * (nu(i,j) + nu(i,j-1));
+  double nu_e = 2.0 * nu(i,j) * nu(i+1,j) / (nu(i,j) + nu(i+1,j));
+  double nu_w = 2.0 * nu(i,j) * nu(i-1,j) / (nu(i,j) + nu(i-1,j));
+  double nu_n = 2.0 * nu(i,j) * nu(i,j+1) / (nu(i,j) + nu(i,j+1));
+  double nu_s = 2.0 * nu(i,j) * nu(i,j-1) / (nu(i,j) + nu(i,j-1));
+
+  diffv = (nu_e * (v(i+1,j) - v(i,j)) - nu_w * (v(i,j) - v(i-1,j))) * rdx * rdx
+        + (nu_n * (v(i,j+1) - v(i,j)) - nu_s * (v(i,j) - v(i,j-1))) * rdy * rdy;
+
   return diffv;
 }
 /******************************************************************************/
@@ -208,7 +236,6 @@ void initialize_solution(IO::ConfigData& config,
   const double uinit = config.igas.u;
   const double vinit = config.igas.v;
   const double pinit = config.igas.p;
-  const double rhoinit = config.igas.rho;
   for (int j = jstr-1; j <= jend+1; j++) {
     for (int i = istr-1; i <= iend+1; i++) {
       u(i,j) = uinit; // average u
