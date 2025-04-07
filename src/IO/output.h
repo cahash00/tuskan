@@ -34,6 +34,12 @@ void vtk_output_2D_node(const string& caseName,
                         const mtr::FMatrix<double>& p,
                         const mtr::FMatrix<double>& phi,
                         const mtr::FMatrix<double>& mark);
+void save_restart(const std::string& filename, 
+    const mtr::FMatrix<double>& u);
+
+// Function to load the matrix from a binary file
+void load_restart(const std::string& filename,
+    const mtr::FMatrix<double>& u);
 /******************************************************************************/
 } // end namespace IO
 #endif // OUTPUT_H

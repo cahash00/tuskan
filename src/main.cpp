@@ -116,7 +116,11 @@ int main(int argc, char* argv[]){
                       u_old,v_old,
                       ustar,vstar,
                       p);
+  IO::load_restart("u.converged",u);
+  IO::load_restart("v.converged",v);
+  IO::load_restart("p.converged",p);
   BC::update_BCs(bcTags,u,v,p);
+  IO::vtk_output_2D_node("init",config.foutDir,config.ghost,xn,yn,u,v,p,phi,rho);
   // initialize phi
   levset::get_phi(phi,xc,yc,config.drop.x,config.drop.y,config.drop.r);
   // use phi to initialize rho and nu
@@ -126,8 +130,8 @@ int main(int argc, char* argv[]){
   const double nug = config.igas.mu / rhog;
   printer.print(rhol,rhog,nul,nug);
   levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
-  for (int j = jstr; j <= jend; j++) {
-    for (int i = istr; i <= iend; i++) {
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
       rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
       // rho(i,j) = 1.0e3;
       nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
@@ -159,6 +163,7 @@ int main(int argc, char* argv[]){
     // ... get the minimum dt in the domain for current iteration
     double dt = get_min_dt(cfl,dx,dy,u,v,max(nug,nul));
 
+
     // ... loop over domain for predictor step
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
@@ -177,14 +182,13 @@ int main(int argc, char* argv[]){
         advec_old[1] = getAdvecV(i,j,rdx,rdy,u_old,v_old);
         ab2[0] = 1.5*advec[0]-0.5*advec_old[0];
         ab2[1] = 1.5*advec[1]-0.5*advec_old[1];
+        // calculate surface tension force
+        // double kappa = levset::curvature(i,j,dx,dy,phi);
         // predictor step - explicit
         ustar(i,j) = u(i,j) + dt*(-ab2[0] + nu(i,j)*diffu[0]);
         vstar(i,j) = v(i,j) + dt*(-ab2[1] + nu(i,j)*diffu[1]);
       }
     }
-
-    // ... solve advection eq for phi
-    levset::weno(dx,dy,dt,u,v,phi);
 
     // ... solve for the pressure
     psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho,bcTags);
@@ -201,11 +205,20 @@ int main(int argc, char* argv[]){
       }
     }
     BC::update_BCs(bcTags,u2,v2,p);
+    // ... solve advection eq for phi
+    levset::weno(dx,dy,dt,u2,v2,phi);
+    levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
+    for (int j = jstr-1; j <= jend; j++) {
+      for (int i = istr-1; i <= iend; i++) {
+        rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
+        nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
+      }
+    }
 
     // ... output intermediate flowviz
     if (config.fvflag) {
       if (ii % config.fvfreq == 0) {
-        IO::vtk_output_2D_node(ii,config.foutDir,config.ghost,xn,yn,u,v,p,phi,rho);
+        IO::vtk_output_2D_node(ii,config.foutDir,config.ghost,xn,yn,u,v,p,phi,nu);
       }
     } 
 
@@ -215,7 +228,7 @@ int main(int argc, char* argv[]){
     double cflb = cfl;
     ires = max(L2NORM(u,u2),L2NORM(v,v2));
     resmax = max(resmax,ires);
-    if (ii==0 || ii==1) {
+    if (ii==0) {
       res0 = ires;
       res1 = ires;
     }
@@ -267,6 +280,14 @@ int main(int argc, char* argv[]){
   } else {
     IO::logger->warn("Output was disabled.");
   }
+
+  /**
+   * output restart file
+   */
+  // IO::save_restart("u.restart",u);
+  // IO::save_restart("v.restart",v);
+  // IO::save_restart("v.restart",p);
+
 
   /**
    * Final run summary output here
