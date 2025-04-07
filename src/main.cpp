@@ -120,7 +120,7 @@ int main(int argc, char* argv[]){
   IO::load_restart("v.converged",v);
   IO::load_restart("p.converged",p);
   BC::update_BCs(bcTags,u,v,p);
-  IO::vtk_output_2D_node("init",config.foutDir,config.ghost,xn,yn,u,v,p,phi,rho);
+  // IO::vtk_output_2D_node("init",config.foutDir,config.ghost,xn,yn,u,v,p,phi,rho);
   // initialize phi
   levset::get_phi(phi,xc,yc,config.drop.x,config.drop.y,config.drop.r);
   // use phi to initialize rho and nu
@@ -206,7 +206,7 @@ int main(int argc, char* argv[]){
     }
     BC::update_BCs(bcTags,u2,v2,p);
     // ... solve advection eq for phi
-    levset::weno(dx,dy,dt,u2,v2,phi);
+    levset::weno(bcTags,dx,dy,dt,u2,v2,phi);
     levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
 
     for (int j = jstr; j <= jend-1; j++) {
@@ -219,7 +219,16 @@ int main(int argc, char* argv[]){
     // ... output intermediate flowviz
     if (config.fvflag) {
       if (ii % config.fvfreq == 0) {
-        IO::vtk_output_2D_node(ii,config.foutDir,config.ghost,xn,yn,u,v,p,phi,heavi);
+        std::ostringstream foutss;
+        foutss << setw(5) << std::setfill('0') << ii;
+        string caseName = foutss.str();
+        IO::vtk_output_2D_node(caseName,config.foutDir,config.ghost,
+                               xn,yn,u,v,
+                               "p",p,
+                               "rho",rho,
+                               "nu",nu,
+                               "phi",phi,
+                               "heavi",heavi);
       }
     } 
 
@@ -277,7 +286,7 @@ int main(int argc, char* argv[]){
    */
   if (config.fvflag) {
     IO::logger->info("Outputting final flow solution");
-    IO::vtk_output_2D_node(string("final"),config.foutDir,config.ghost,xn,yn,u,v,p,phi,rho);
+    // IO::vtk_output_2D_node(string("final"),config.foutDir,config.ghost,xn,yn,u,v,p,phi,rho);
   } else {
     IO::logger->warn("Output was disabled.");
   }

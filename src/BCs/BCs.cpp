@@ -161,5 +161,71 @@ void update_BCs(bcTags tags,
   
 } // end update_BCs
 
+void update_BCs_phi(bcTags tags, 
+                    mtr::FMatrix<double>& phi) {
+  // update the left + right boundaries
+  for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
+    /**
+     * LEFT BOUNDARY
+     */
+    if (tags.Left.bvals(j)==0) {
+      // noslip 
+      phi(istr-1,j) = phi(istr,j);
+    } else if (tags.Left.bvals(j)==1) {
+      // moving wall
+      phi(istr-1,j) = phi(istr,j);
+    } else if (tags.Left.bvals(j)==7) {
+      // periodic
+      phi(istr-1,j) = phi(iend-1,j);
+    }
+    /**
+     * RIGHT BOUNDARY
+     */
+    if (tags.Right.bvals(j)==0) {
+      // noslip 
+      phi(iend,j) = phi(iend-1,j);
+    } else if (tags.Right.bvals(j)==1) {
+      // moving wall
+      phi(iend,j) = phi(iend-1,j);
+    } else 
+      if (tags.Right.bvals(j)==7) {
+        // periodic
+        phi(iend,j) = phi(istr,j);
+      }
+  }
+
+  // update top and bottom boundaries
+  for (int i = istr-nghosts; i <= iend+nghosts; i++) {
+    /**
+     * BOTTOM BOUNDARY
+     */
+    if (tags.Bottom.bvals(i)==0) {
+      // noslip wall 
+      phi(i,jstr-1) = phi(i,jstr);
+    } else if (tags.Bottom.bvals(i)==1) {
+      // moving wall
+      phi(i,jstr-1) = phi(i,jstr);
+    } else if (tags.Bottom.bvals(i)==7) {
+      // periodic
+      phi(i,jstr-1) = phi(i,jend-1);
+    }
+    /**
+     * TOP BOUNDARY
+     */
+    if (tags.Top.bvals(i)==0) {
+      // noslip 
+      phi(i,jend) = phi(i,jend-1);
+    } else if (tags.Top.bvals(i)==1) {
+      // moving wall
+      phi(i,jend) = phi(i,jend-1);
+    } else if (tags.Top.bvals(i)==7) {
+      // periodic
+      phi(i,jend) = phi(i,jstr);
+    }
+  }
+
+
+} // end update_BCs
+
 
 } // end namespace BC
