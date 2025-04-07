@@ -20,6 +20,7 @@ struct fluid {
   double v;
   double p;
   double rho;
+  double mu;
 };
 struct boundary {
   std::vector<double> velocity = std::vector<double>(2,0.0);

@@ -17,6 +17,7 @@
 #include <params.h>
 #include <generalUtils.h>
 #include <solver.h>
+#include <levset.h>
 #include <pressure.h>
 #include <logger.h>
 #include <cmath>
@@ -71,8 +72,9 @@ int main(int argc, char* argv[]){
         xn(ndims[0]+1,ndims[1]+1),yn(ndims[0]+1,ndims[1]+1);
   fmatD p(ndims[0]+1,ndims[1]+1);
   fmatD phi(ndims[0],ndims[1]);
-  fmatD mark(ndims[0],ndims[1]);
+  fmatD heavi(ndims[0],ndims[1]);
   fmatD rho(ndims[0]+1,ndims[1]+1);
+  fmatD nu(ndims[0]+1,ndims[1]+1);
   fmatD ustar(ndims[0]+1,ndims[1]+1);
   fmatD vstar(ndims[0]+1,ndims[1]+1);
   fmatD u(ndims[0]+1,ndims[1]+1);
@@ -103,8 +105,6 @@ int main(int argc, char* argv[]){
   }
   timer.start();
   IO::logger->info("Initializing the domain");
-  rho.set_values(1.0e3); // density
-  double nu   = 1.0e-6;  // kinematic viscosity m^2/s
   double rdx  = 1.0/dx;  // reciprocal of dx
   double rdy  = 1.0/dy;  // reciprocal of dx
   IO::logger->info("  dx: {},dy: {}",dx,dy);
@@ -117,6 +117,26 @@ int main(int argc, char* argv[]){
                       ustar,vstar,
                       p);
   BC::update_BCs(bcTags,u,v,p);
+  // initialize phi
+  levset::get_phi(phi,xc,yc,config.drop.x,config.drop.y,config.drop.r);
+  // use phi to initialize rho and nu
+  const double rhol = config.iliq.rho;
+  const double rhog = config.igas.rho;
+  const double nul = config.iliq.mu / rhol;
+  const double nug = config.igas.mu / rhog;
+  printer.print(rhol,rhog,nul,nug);
+  levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
+      rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
+      // rho(i,j) = 1.0e3;
+      nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
+      // nu(i,j) = 1.0e-6;
+    }
+  }
+  
+
+
   
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
@@ -137,7 +157,7 @@ int main(int argc, char* argv[]){
     BC::update_BCs(bcTags,u,v,p);
 
     // ... get the minimum dt in the domain for current iteration
-    double dt = get_min_dt(cfl,dx,dy,u,v,nu);
+    double dt = get_min_dt(cfl,dx,dy,u,v,max(nug,nul));
 
     // ... loop over domain for predictor step
     for (int j = jstr; j <= jend; j++) {
@@ -158,10 +178,13 @@ int main(int argc, char* argv[]){
         ab2[0] = 1.5*advec[0]-0.5*advec_old[0];
         ab2[1] = 1.5*advec[1]-0.5*advec_old[1];
         // predictor step - explicit
-        ustar(i,j) = u(i,j) + dt*(-ab2[0] + nu*diffu[0]);
-        vstar(i,j) = v(i,j) + dt*(-ab2[1] + nu*diffu[1]);
+        ustar(i,j) = u(i,j) + dt*(-ab2[0] + nu(i,j)*diffu[0]);
+        vstar(i,j) = v(i,j) + dt*(-ab2[1] + nu(i,j)*diffu[1]);
       }
     }
+
+    // ... solve advection eq for phi
+    levset::weno(dx,dy,dt,u,v,phi);
 
     // ... solve for the pressure
     psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho,bcTags);
@@ -182,7 +205,7 @@ int main(int argc, char* argv[]){
     // ... output intermediate flowviz
     if (config.fvflag) {
       if (ii % config.fvfreq == 0) {
-        IO::vtk_output_2D_node(ii,config.foutDir,config.ghost,xn,yn,u,v,p,phi);
+        IO::vtk_output_2D_node(ii,config.foutDir,config.ghost,xn,yn,u,v,p,phi,rho);
       }
     } 
 
@@ -240,7 +263,7 @@ int main(int argc, char* argv[]){
    */
   if (config.fvflag) {
     IO::logger->info("Outputting final flow solution");
-    IO::vtk_output_2D_node(string("final"),config.foutDir,config.ghost,xn,yn,u,v,p,phi);
+    IO::vtk_output_2D_node(string("final"),config.foutDir,config.ghost,xn,yn,u,v,p,phi,rho);
   } else {
     IO::logger->warn("Output was disabled.");
   }

@@ -81,10 +81,12 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& iconfig) {
   ideck.igas.v = iconfig["initial conditions"]["gas"]["v"].as<double>();
   ideck.igas.p = iconfig["initial conditions"]["gas"]["p"].as<double>();
   ideck.igas.rho = iconfig["initial conditions"]["gas"]["rho"].as<double>();
+  ideck.igas.mu = iconfig["initial conditions"]["gas"]["mu"].as<double>();
   ideck.iliq.u = iconfig["initial conditions"]["liquid"]["u"].as<double>();
   ideck.iliq.v = iconfig["initial conditions"]["liquid"]["v"].as<double>();
   ideck.iliq.p = iconfig["initial conditions"]["liquid"]["p"].as<double>();
   ideck.iliq.rho = iconfig["initial conditions"]["liquid"]["rho"].as<double>();
+  ideck.iliq.mu = iconfig["initial conditions"]["liquid"]["mu"].as<double>();
 
   // droplets
   ideck.drop.r = iconfig["droplet"]["diameter"].as<double>() *0.5;

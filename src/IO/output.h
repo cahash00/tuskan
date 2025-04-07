@@ -22,7 +22,8 @@ void vtk_output_2D_node(const int& ii,
                         const mtr::FMatrix<double>& u,
                         const mtr::FMatrix<double>& v,
                         const mtr::FMatrix<double>& p,
-                        const mtr::FMatrix<double>& phi);
+                        const mtr::FMatrix<double>& phi,
+                        const mtr::FMatrix<double>& mark);
 void vtk_output_2D_node(const string& caseName, 
                         const string& foutDir,
                         const bool ghost,
@@ -31,7 +32,8 @@ void vtk_output_2D_node(const string& caseName,
                         const mtr::FMatrix<double>& u,
                         const mtr::FMatrix<double>& v,
                         const mtr::FMatrix<double>& p,
-                        const mtr::FMatrix<double>& phi);
+                        const mtr::FMatrix<double>& phi,
+                        const mtr::FMatrix<double>& mark);
 /******************************************************************************/
 } // end namespace IO
 #endif // OUTPUT_H
