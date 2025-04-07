@@ -74,8 +74,10 @@ void update_BCs(bcTags tags,
                 mtr::FMatrix<double>& v,
                 mtr::FMatrix<double>& p) {
   // update the left + right boundaries
-  // LEFT BOUNDARY
   for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
+    /**
+     * LEFT BOUNDARY
+     */
     if (tags.Left.bvals(j)==0) {
       // noslip 
       u(istr-1,j) = 0.0;
@@ -92,6 +94,9 @@ void update_BCs(bcTags tags,
       v(istr-1,j) = v(iend,j);
       p(istr-1,j) = tags.Left.pressure;
     }
+    /**
+     * RIGHT BOUNDARY
+     */
     if (tags.Right.bvals(j)==0) {
       // noslip 
       u(iend,j) = 0.0;
@@ -113,6 +118,9 @@ void update_BCs(bcTags tags,
 
   // update top and bottom boundaries
   for (int i = istr-nghosts; i <= iend+nghosts; i++) {
+    /**
+     * BOTTOM BOUNDARY
+     */
     if (tags.Bottom.bvals(i)==0) {
       // noslip wall 
       u(i,jstr-1) = -u(i,jstr);
@@ -129,6 +137,9 @@ void update_BCs(bcTags tags,
       v(i,jstr-1) = v(i,jend-1);
       p(i,jstr-1) = tags.Bottom.pressure;
     }
+    /**
+     * TOP BOUNDARY
+     */
     if (tags.Top.bvals(i)==0) {
       // noslip 
       u(i,jend+1) = -u(i,jend);

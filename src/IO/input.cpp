@@ -66,14 +66,14 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& iconfig) {
     ideck.bcBottom.velocity[0] = iconfig["boundary conditions"]["bottom"]["velocity"]["u"].as<double>();
     ideck.bcBottom.velocity[1] = iconfig["boundary conditions"]["bottom"]["velocity"]["v"].as<double>();
   } else if (ideck.bcBottom.type=="periodic") {
-    ideck.bcBottom.pressure = iconfig["boundary conditions"]["top"]["pressure"].as<double>();
+    ideck.bcBottom.pressure = iconfig["boundary conditions"]["bottom"]["pressure"].as<double>();
   }
   ideck.bcTop.type = iconfig["boundary conditions"]["top"]["type"].as<string>();
   if (ideck.bcTop.type=="moving wall" || ideck.bcTop.type=="inlet") {
     ideck.bcTop.velocity[0] = iconfig["boundary conditions"]["top"]["velocity"]["u"].as<double>();
     ideck.bcTop.velocity[1] = iconfig["boundary conditions"]["top"]["velocity"]["v"].as<double>();
   } else if (ideck.bcTop.type=="periodic") {
-    ideck.bcTop.pressure = iconfig["boundary conditions"]["bottom"]["pressure"].as<double>();
+    ideck.bcTop.pressure = iconfig["boundary conditions"]["top"]["pressure"].as<double>();
   }
 
   // ... initial conditions
