@@ -9,6 +9,10 @@ namespace IO {
 
 extern YAML::Node config;
 
+struct levelset {
+  bool reinit;
+  int ireinit;
+};
 struct droplet {
   double r;
   double M;
@@ -27,31 +31,43 @@ struct boundary {
   double pressure;
   string type;
 };
-
-struct ConfigData {
-  // domain settings
-  double lx;
-  double ly;
-  int    nx;
-  int    ny;
-  // solver settings
-  int    iter;
-  double cfl;
-  bool   fvflag;
-  int    fvfreq;
-  bool   resflag;
-  int    resfreq;
-  string resFile;
-  string pMethod;
-  double sorOmega; 
-  // convergence criteria
+struct Restart {
+  bool save;
+  bool load;
+};
+struct Solver {
+  int iter;
   double toler;
   double cfli;
   double cflf;
-  bool   dcfl;
-  // IO parameters
-  string foutDir;
+  double omega;
+};
+struct Fv {
+  bool enabled;
+  int freq;
+  string dir;
   bool ghost;
+};
+struct Mesh {
+  double lx;
+  double ly;
+  int nx;
+  int ny;
+};
+struct Res {
+  bool enabled;
+  int freq;
+  string file;
+};
+struct ConfigData {
+  // domain settings
+  Mesh mesh;
+  // solver settings
+  Restart restart;
+  Solver solver;
+  // IO parameters
+  Fv fv;
+  Res res;
   // BCs
   boundary bcLeft;
   boundary bcRight;
@@ -62,6 +78,9 @@ struct ConfigData {
   fluid iliq;
   // droplet
   droplet drop;
+
+  // level-set settings
+  levelset levset;
 
   static ConfigData fromYAMLConfig(const YAML::Node& config);
 };

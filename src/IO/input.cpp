@@ -18,33 +18,27 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& iconfig) {
   ConfigData ideck;
 
   // ... domain settings
-  ideck.lx = iconfig["domain"]["lengths"]["x"].as<double>();
-  ideck.ly = iconfig["domain"]["lengths"]["y"].as<double>();
-  ideck.nx = iconfig["domain"]["dimensions"]["x"].as<int>();
-  ideck.ny = iconfig["domain"]["dimensions"]["y"].as<int>();
+  ideck.mesh.lx = iconfig["domain"]["lengths"]["x"].as<double>();
+  ideck.mesh.ly = iconfig["domain"]["lengths"]["y"].as<double>();
+  ideck.mesh.nx = iconfig["domain"]["dimensions"]["x"].as<int>();
+  ideck.mesh.ny = iconfig["domain"]["dimensions"]["y"].as<int>();
   // ... solver settings
-  ideck.iter    = iconfig["solver"]["iterations"].as<int>();
-  ideck.fvflag  = iconfig["output"]["flowviz"]["enabled"].as<bool>();
-  ideck.fvfreq  = iconfig["output"]["flowviz"]["frequency"].as<int>();
-  ideck.resflag = iconfig["output"]["residuals"]["enabled"].as<bool>();
-  ideck.resfreq = iconfig["output"]["residuals"]["frequency"].as<int>();
-  ideck.resFile = iconfig["output"]["residuals"]["file"].as<string>();
-  ideck.pMethod = iconfig["solver"]["pressure solver"]["method"].as<string>();
-  if (ideck.pMethod == "SOR") {
-    if (iconfig["solver"]["pressure solver"]["omega"]) {
-      ideck.sorOmega = iconfig["solver"]["pressure solver"]["omega"].as<double>(); 
-    } else {
-      throw runtime_error("ERROR: INPUT DECK: SOR solver requires \"omega\".");
-    }
-  }
-  // ... convergence criteria
-  ideck.toler = iconfig["convergence"]["residual"].as<double>();
-  ideck.cfli  = iconfig["dynamic CFL"]["cfli"].as<double>();
-  ideck.cflf  = iconfig["dynamic CFL"]["cflf"].as<double>();
+  ideck.restart.load = iconfig["solver"]["restart"]["load"].as<bool>();
+  ideck.restart.save = iconfig["solver"]["restart"]["save"].as<bool>();
+  ideck.solver.iter    = iconfig["solver"]["iterations"].as<int>();
+  ideck.solver.omega = iconfig["solver"]["pressure solver"]["omega"].as<double>(); 
+  ideck.solver.toler = iconfig["convergence"]["residual"].as<double>();
+  ideck.solver.cfli  = iconfig["dynamic CFL"]["cfli"].as<double>();
+  ideck.solver.cflf  = iconfig["dynamic CFL"]["cflf"].as<double>();
 
   // ... IO parameters
-  ideck.foutDir = iconfig["output"]["flowviz"]["directory"].as<string>();
-  ideck.ghost = iconfig["output"]["flowviz"]["ghost cells"].as<bool>();
+  ideck.res.enabled = iconfig["output"]["residuals"]["enabled"].as<bool>();
+  ideck.res.freq = iconfig["output"]["residuals"]["frequency"].as<int>();
+  ideck.res.file = iconfig["output"]["residuals"]["file"].as<string>();
+  ideck.fv.enabled  = iconfig["output"]["flowviz"]["enabled"].as<bool>();
+  ideck.fv.freq  = iconfig["output"]["flowviz"]["frequency"].as<int>();
+  ideck.fv.dir = iconfig["output"]["flowviz"]["directory"].as<string>();
+  ideck.fv.ghost = iconfig["output"]["flowviz"]["ghost cells"].as<bool>();
 
   // ... BC parameters
   ideck.bcLeft.type = iconfig["boundary conditions"]["left"]["type"].as<string>();
@@ -93,6 +87,10 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& iconfig) {
   ideck.drop.M = iconfig["droplet"]["M"].as<double>();
   ideck.drop.x = iconfig["droplet"]["center"]["x"].as<double>();
   ideck.drop.y = iconfig["droplet"]["center"]["y"].as<double>();
+
+  // levelset options
+  ideck.levset.reinit = iconfig["level set"]["reinitialization"]["enabled"].as<bool>();
+  ideck.levset.ireinit = iconfig["level set"]["reinitialization"]["iterations"].as<int>();
   return ideck;
 }
 

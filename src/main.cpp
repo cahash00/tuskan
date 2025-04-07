@@ -59,11 +59,11 @@ int main(int argc, char* argv[]){
   // ... parse the YAML input deck
   IO::ConfigData config = IO::parseInputDeck(inFile);
   // check to see if the output directory exists
-  IO::check_directories(config.foutDir);
+  IO::check_directories(config.fv.dir);
 
   
   // ... get domain stats
-  getDomainIndices(config.nx,config.ny);
+  getDomainIndices(config.mesh.nx,config.mesh.ny);
   vector<int> ndims(2,0);
   ndims[0] = nx+nghosts*2;
   ndims[1] = ny+nghosts*2;
@@ -90,8 +90,9 @@ int main(int argc, char* argv[]){
   Timer timer;
   timer.start();
   IO::logger->info("Generating 2D mesh");
-  double dx,dy = 0.0;
-  mesh::mesher2D(config.lx,config.ly,xc,yc,xn,yn,dx,dy);
+  double dx = 0.0;
+  double dy = 0.0;
+  mesh::mesher2D(config.mesh.lx,config.mesh.ly,xc,yc,xn,yn,dx,dy);
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   IO::logger->info("Tagging boundaries");
@@ -99,7 +100,7 @@ int main(int argc, char* argv[]){
   IO::logger->info("  done");
 
   // ... initialization
-  ofstream logFile(config.resFile, ios::out);
+  ofstream logFile(config.res.file, ios::out);
   if (!logFile) {
       std::cerr << "Error opening log file!\n";
       return -1;
@@ -117,9 +118,11 @@ int main(int argc, char* argv[]){
                       u_old,v_old,
                       ustar,vstar,
                       p);
-  restart::load("u.200.converged",u);
-  restart::load("v.200.converged",v);
-  restart::load("p.200.converged",p);
+  if (config.restart.load) {
+    restart::load("u.200.converged",u);
+    restart::load("v.200.converged",v);
+    restart::load("p.200.converged",p);
+  }
   BC::update_BCs(bcTags,u,v,p);
   // initialize phi
   levset::get_phi(phi,xc,yc,config.drop.x,config.drop.y,config.drop.r);
@@ -150,14 +153,14 @@ int main(int argc, char* argv[]){
    *******************/
   // ... initialize doubles
   double ires,res0,res1,cfl0,resmax = 0.0;
-  double cfl = config.cfli;
+  double cfl = config.solver.cfli;
   int finalIter = 0;
   const double dtau = 0.5*min(dx,dy);
 
   // ... start solver & timer
   timer.start();
   IO::logger->info("Starting Main Solver");
-  for (int ii = 0; ii < config.iter; ii++) {
+  for (int ii = 0; ii < config.solver.iter; ii++) {
     // ... update boundary conditions
     BC::update_BCs(bcTags,u,v,p);
 
@@ -172,19 +175,21 @@ int main(int argc, char* argv[]){
         std::vector<double> advec_old(2,0.0);
         std::vector<double> diffu(2,0.0);
         std::vector<double> ab2(2,0.0);
+
         // get the advection term
         advec[0] = getAdvecU(i,j,rdx,rdy,u,v);
         advec[1] = getAdvecV(i,j,rdx,rdy,u,v);
+        
         // get the diffusion term
         diffu[0] = getDiffU(i,j,rdx,rdy,nu,u,v);
         diffu[1] = getDiffV(i,j,rdx,rdy,nu,u,v);
+
         // AB2 method for convection
         advec_old[0] = getAdvecU(i,j,rdx,rdy,u_old,v_old);
         advec_old[1] = getAdvecV(i,j,rdx,rdy,u_old,v_old);
         ab2[0] = 1.5*advec[0]-0.5*advec_old[0];
         ab2[1] = 1.5*advec[1]-0.5*advec_old[1];
-        // calculate surface tension force
-        // double kappa = levset::curvature(i,j,dx,dy,phi);
+
         // predictor step - explicit
         ustar(i,j) = u(i,j) + dt*(-ab2[0] + diffu[0]);
         vstar(i,j) = v(i,j) + dt*(-ab2[1] + diffu[1]);
@@ -192,7 +197,7 @@ int main(int argc, char* argv[]){
     }
 
     // ... solve for the pressure
-    psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho,bcTags);
+    psolve::SOR(config.solver.omega,p,ustar,vstar,dx,dy,dt,rho,bcTags);
     BC::update_BCs(bcTags,ustar,vstar,p);
 
     
@@ -211,7 +216,7 @@ int main(int argc, char* argv[]){
     // ... solve advection eq for phi
     levset::weno(bcTags,dx,dy,dt,u2,v2,phi);
     if (config.levset.reinit) {
-      levset::reinitialize(bcTags,dx,dy,dtau,config.levset.reinitIter,phi);
+      levset::reinitialize(bcTags,dx,dy,dtau,config.levset.ireinit,phi);
     }
     levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
 
@@ -223,12 +228,12 @@ int main(int argc, char* argv[]){
     }
 
     // ... output intermediate flowviz
-    if (config.fvflag) {
-      if (ii % config.fvfreq == 0) {
+    if (config.fv.enabled) {
+      if (ii % config.fv.freq == 0) {
         std::ostringstream foutss;
         foutss << setw(5) << std::setfill('0') << ii;
         string caseName = foutss.str();
-        IO::vtk_output_2D_node(caseName,config.foutDir,config.ghost,
+        IO::vtk_output_2D_node(caseName,config.fv.dir,config.fv.ghost,
                                xn,yn,u,v,
                                "p",p,
                                "rho",rho,
@@ -253,7 +258,7 @@ int main(int argc, char* argv[]){
     if (ires < res1 && ires < res0) 
       cfl = cfl0*resmax/ires;
     cfl = max(cfl,cflb);
-    cfl = min(config.cflf,max(cfl,config.cfli)); 
+    cfl = min(config.solver.cflf,max(cfl,config.solver.cfli)); 
 
     // ... store the previous timestep and update
     for (int j = jstr-1; j <= jend; j++) {
@@ -267,15 +272,15 @@ int main(int argc, char* argv[]){
     
     // ... calculate residuals
     logFile << ii << " " << ires << "\n";
-    if (config.resflag) {
-      if (ii % config.resfreq == 0) {
+    if (config.res.enabled) {
+      if (ii % config.res.freq == 0) {
         IO::logger->info("  iter {:04}, cfl: {:5e},dt: {:5e}, res: {:5e}",ii,cfl,dt,ires/res0);
         logFile.flush();
       }
     }
 
     // ... check steady state convergence
-    if (ires/res0 < config.toler && ii > 1000) {
+    if (ires/res0 < config.solver.toler && ii > 1000) {
       finalIter=ii;
       break;
     } else if (ires/res0 > 1.0e20) {
@@ -290,9 +295,9 @@ int main(int argc, char* argv[]){
   /**
    * output section
    */
-  if (config.fvflag) {
+  if (config.fv.enabled) {
     IO::logger->info("Outputting final flow solution");
-    IO::vtk_output_2D_node("final",config.foutDir,config.ghost,
+    IO::vtk_output_2D_node("final",config.fv.dir,config.fv.ghost,
                            xn,yn,u,v,
                            "p",p,
                            "rho",rho,
@@ -306,9 +311,11 @@ int main(int argc, char* argv[]){
   /**
    * output restart file
    */
-  restart::save("u.restart",u);
-  restart::save("v.restart",v);
-  restart::save("p.restart",p);
+  if (config.restart.save) {
+    restart::save("u.restart",u);
+    restart::save("v.restart",v);
+    restart::save("p.restart",p);
+  }
 
 
   /**
