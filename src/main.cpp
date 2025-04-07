@@ -162,10 +162,11 @@ int main(int argc, char* argv[]){
         vstar(i,j) = v(i,j) + dt*(-ab2[1] + nu*diffu[1]);
       }
     }
-    BC::update_BCs(bcTags,ustar,vstar,p);
 
     // ... solve for the pressure
     psolve::SOR(config.sorOmega,p,ustar,vstar,dx,dy,dt,rho,bcTags);
+    BC::update_BCs(bcTags,ustar,vstar,p);
+
     
     // ... apply the pressure correctior
     for (int j = jstr; j <= jend; j++) {
@@ -202,17 +203,11 @@ int main(int argc, char* argv[]){
     cfl = max(cfl,cflb);
     cfl = min(config.cflf,max(cfl,config.cfli)); 
 
-    // ... store the previous timestep
-    for (int j = jstr-1; j <= jend+1; j++) {
-      for (int i = istr-1; i <= iend+1; i++) {
+    // ... store the previous timestep and update
+    for (int j = jstr-1; j <= jend; j++) {
+      for (int i = istr-1; i <= iend; i++) {
         u_old(i,j) = u(i,j);
         v_old(i,j) = v(i,j);
-      }
-    }
-    
-    // ... update the u array with the updated solution array
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
         u(i,j) = u2(i,j);
         v(i,j) = v2(i,j);
       }

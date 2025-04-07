@@ -12,6 +12,30 @@
 using namespace std;
 
 /******************************************************************************/
+// double getAdvecU(const int& i,const int& j,
+//                  const double rdx,const double rdy,
+//                  const mtr::FMatrix<double>& u,
+//                  const mtr::FMatrix<double>& v) {
+//   double advec;
+//   advec = rdx*pow((u(i+1,j)+u(i,j))*0.5,2)
+//         - rdx*pow((u(i,j)+u(i-1,j))*0.5,2)
+//         + rdy*(u(i,j)+u(i,j+1))*0.5 * (v(i+1,j)+v(i,j))*0.5
+//         - rdy*(u(i,j)+u(i,j-1))*0.5 * (v(i+1,j-1)+v(i,j-1))*0.5;
+//   return advec;
+// }
+// /******************************************************************************/
+// double getAdvecV(const int& i,const int& j,
+//                  const double rdx,const double rdy,
+//                  const mtr::FMatrix<double>& u,
+//                  const mtr::FMatrix<double>& v) {
+//   double advec;
+//   advec = rdy*pow((v(i,j)+v(i,j+1))*0.5,2)
+//         - rdy*pow((v(i,j)+v(i,j-1))*0.5,2)
+//         + rdx*(u(i,j)+u(i,j+1))*0.5 * (v(i,j)+v(i+1,j))*0.5
+//         - rdx*(u(i-1,j+1)+u(i-1,j))*0.5 * (v(i,j)+v(i-1,j))*0.5;
+//   return advec;
+// }
+
 double getAdvecU(const int& i,
                  const int& j,
                  const double rdx,
@@ -39,8 +63,8 @@ double getAdvecU(const int& i,
   }
 
   // duv/dy using 1st-order upwind
-  double vn = 0.5*(v(i,j)   + v(i+1,j));
-  double vs = 0.5*(v(i,j-1) + v(i+1,j-1));
+  double vn = 0.5*(v(i,j+1) + v(i,j));
+  double vs = 0.5*(v(i,j-1) + v(i,j));
   if (vn >= 0) {
     unvn = vn * u(i,j);
   } else {
@@ -84,14 +108,14 @@ double getAdvecV(const int& i,const int& j,
   double ve = 0.5*(v(i,j) + v(i+1,j));
   double vw = 0.5*(v(i,j) + v(i-1,j));
   if (ve >= 0) {
-    veue = ve * u(i-1,j+1);
+    veue = ve * u(i,j);
   } else {
-    veue = ve * u(i,j+1);
+    veue = ve * u(i+1,j);
   }
   if (vw >= 0) {
-    vwuw = vw * u(i-2,j+1);
+    vwuw = vw * u(i-1,j);
   } else {
-    vwuw = vw * u(i-1,j+1);
+    vwuw = vw * u(i,j);
   }
 
   advec = rdy*(vn2 - vs2) + rdx*(veue - vwuw);
@@ -129,8 +153,8 @@ double L2NORM(const mtr::FMatrix<double>& m1,
   
   double l2norm = 0.0;
   double total = 0.0;
-  for (int j = jstr; j <= jend; j++) {
-    for (int i = istr; i <= iend; i++) {
+  for (int j = jstr; j <= jend-1; j++) {
+    for (int i = istr; i <= iend-1; i++) {
       double d = m2(i,j) - m1(i,j) + 1.0e-15;
       l2norm += d*d;
       total += 1.0;
@@ -147,21 +171,22 @@ double get_min_dt(const double& cfl,
                   const mtr::FMatrix<double>& v,
                   const double& nu) {
   // double umax,vmax = 0.0;
+  double eps = 1.0e-10;
   double umax = 0.0;
   double vmax = 0.0;
-  for (int j = jstr-1; j <= jend+1; j++) {
-    for (int i = istr-1; i <= iend+1; i++) {
+  for (int j = jstr-1; j <= jend; j++) {
+    for (int i = istr-1; i <= iend; i++) {
       umax = max(umax,abs(u(i,j)));
       vmax = max(vmax,abs(v(i,j)));
     }
   }
   // find timestep limit due to advection
   double dt1 = 1e5;
-  if (umax > 0.0 && vmax > 0.0) {
+  if (umax > eps && vmax > eps) {
     dt1 = cfl*min(dx/umax,dy/vmax);
-  } else if (umax > 0.0) {
+  } else if (umax > eps) {
     dt1 = cfl*dx/umax;
-  } else if (vmax > 0.0) {
+  } else if (vmax > eps) {
     dt1 = cfl*dy/vmax;
   }
   double dt2 = 0.5*dx*dx*dy*dy/(nu*(dx*dx+dy*dy));
