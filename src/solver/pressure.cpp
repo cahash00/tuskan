@@ -48,10 +48,7 @@ void SOR(const double& omega,
     for (int j = jstr; j <= jend-1; j++) {
       for (int i = istr; i <= iend-1; i++) {
         // Compute average densities at cell faces
-        // double rho_e = 0.5 * (rho(i,j) + rho(i+1,j));
-        // double rho_w = 0.5 * (rho(i,j) + rho(i-1,j));
-        // double rho_n = 0.5 * (rho(i,j) + rho(i,j+1));
-        // double rho_s = 0.5 * (rho(i,j) + rho(i,j-1));
+        // - this is using harmonic averaging
         double rho_e = 2.0 * rho(i,j) * rho(i+1,j) / (rho(i,j) + rho(i+1,j));
         double rho_w = 2.0 * rho(i,j) * rho(i-1,j) / (rho(i,j) + rho(i-1,j));
         double rho_n = 2.0 * rho(i,j) * rho(i,j+1) / (rho(i,j) + rho(i,j+1));
@@ -61,8 +58,6 @@ void SOR(const double& omega,
         double term2 = 1.0 / dt * ((ustar(i+1,j)-ustar(i,j))/dx
                                  + (vstar(i,j+1)-vstar(i,j))/dy);
 
-        // double term1 = (p1(i+1,j) + p2(i-1,j))/dx2 
-        //              + (p1(i,j+1) + p2(i,j-1))/dy2;
         double term1 = (1.0 / (rho_e * dx * dx)) * p1(i+1, j)
                      + (1.0 / (rho_w * dx * dx)) * p2(i-1, j)
                      + (1.0 / (rho_n * dy * dy)) * p1(i, j+1)

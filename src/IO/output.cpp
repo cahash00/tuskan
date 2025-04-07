@@ -71,12 +71,12 @@ static void vtk_output_2D_node_IMPL(const string& caseName,
   }
   
   if (ghost) {
-    xstr = istr;
-    xend = iend-1;
-    ystr = jstr;
-    yend = jend-1;
-    dnx = nx;
-    dny = ny;
+    xstr = istr-1;
+    xend = iend;
+    ystr = jstr-1;
+    yend = jend;
+    dnx = nx+2;
+    dny = ny+2;
   } else {
     xstr = istr;
     xend = iend-1;

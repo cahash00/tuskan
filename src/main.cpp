@@ -208,8 +208,9 @@ int main(int argc, char* argv[]){
     // ... solve advection eq for phi
     levset::weno(dx,dy,dt,u2,v2,phi);
     levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
-    for (int j = jstr-1; j <= jend; j++) {
-      for (int i = istr-1; i <= iend; i++) {
+
+    for (int j = jstr; j <= jend-1; j++) {
+      for (int i = istr; i <= iend-1; i++) {
         rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
         nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
       }
@@ -218,7 +219,7 @@ int main(int argc, char* argv[]){
     // ... output intermediate flowviz
     if (config.fvflag) {
       if (ii % config.fvfreq == 0) {
-        IO::vtk_output_2D_node(ii,config.foutDir,config.ghost,xn,yn,u,v,p,phi,nu);
+        IO::vtk_output_2D_node(ii,config.foutDir,config.ghost,xn,yn,u,v,p,phi,heavi);
       }
     } 
 
