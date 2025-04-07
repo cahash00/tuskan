@@ -41,17 +41,6 @@ void heaviside(const double& M,
 } // end marker
 
 /******************************************************************************/
-double M_switch(const double a, 
-                const double b) {
-  if (abs(a) < abs(b)) {
-    return a;
-  } else {
-    return b;
-  }
-  return -1;
-} // end M_switch
-
-/******************************************************************************/
 std::vector<double> get_phiHalf(const int i,
                                 const int j,
                                 const mtr::FMatrix<double>& u,
@@ -158,15 +147,15 @@ void weno(const BC::bcTags bcTags,
     }
   }
 } // end weno
-double curvature(const int i, const int j,
-                 const double dx, const double dy,
-                 const mtr::FMatrix<double>& phi) {
+double surfaceTension(const int i, const int j,
+                      const double dx, const double dy,
+                      const mtr::FMatrix<double>& phi) {
     // Compute gradients of phi using central differences
     double dphidx = (phi(i+1, j) - phi(i-1, j)) / (2.0 * dx);
     double dphidy = (phi(i, j+1) - phi(i, j-1)) / (2.0 * dy);
 
     // Compute magnitude of the gradient
-    double grad_mag = std::sqrt(dphidx * dphidx + dphidy * dphidy + 1e-12); // Avoid division by zero
+    double grad_mag = std::sqrt(dphidx * dphidx + dphidy * dphidy + 1e-12);
 
     // Normalized components of the gradient
     double nx = dphidx / grad_mag;
@@ -175,10 +164,12 @@ double curvature(const int i, const int j,
     // Compute second derivatives using central differences
     double d2phidx2 = (phi(i+1, j) - 2.0 * phi(i, j) + phi(i-1, j)) / (dx * dx);
     double d2phidy2 = (phi(i, j+1) - 2.0 * phi(i, j) + phi(i, j-1)) / (dy * dy);
-    double d2phidxdy = (phi(i+1, j+1) - phi(i+1, j-1) - phi(i-1, j+1) + phi(i-1, j-1)) / (4.0 * dx * dy);
+    double d2phidxdy = (phi(i+1, j+1) - phi(i+1, j-1) 
+                      - phi(i-1, j+1) + phi(i-1, j-1)) / (4.0 * dx * dy);
 
     // Divergence of normalized gradient
-    double curvature = (d2phidx2 * ny * ny - 2.0 * d2phidxdy * nx * ny + d2phidy2 * nx * nx) / grad_mag;
+    double curvature = (d2phidx2 * ny * ny - 2.0 * d2phidxdy * nx * ny 
+                      + d2phidy2 * nx * nx) / grad_mag;
 
     return curvature;
 }
@@ -189,16 +180,22 @@ void reinitialize(BC::bcTags bcTags,
                   const double& dtau,
                   const int isteps,
                   mtr::FMatrix<double>& phi) {
-  double eps = 1.0e-15; // small number to avoid division by zero
+  const double eps=1.0e-8;
+  mtr::FMatrix<double> sign0(phi.dims(1),phi.dims(2));
+  mtr::FMatrix<double> phi0(phi.dims(1),phi.dims(2));
   mtr::FMatrix<double> phi2(phi.dims(1),phi.dims(2));
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
       phi2(i,j) = phi(i,j);
+      phi0(i,j) = phi(i,j);
+      double gphi0 = sqrt(pow((phi(i+1,j) - phi(i-1,j)) / (2.0 * dx),2)
+                        + pow((phi(i,j+1) - phi(i,j-1)) / (2.0 * dy),2));
+      sign0(i,j) = phi(i,j) / sqrt(phi(i,j)*phi(i,j)+gphi0*gphi0*dx*dx+eps*eps);
     }
   }
   
 
-  // update the phi matrix
+  // ... update the phi matrix
   for (int n = 0; n < isteps; n++) {
     for (int j = jstr; j <= jend-1; j++) {
       for (int i = istr; i <= iend-1; i++) {
@@ -206,8 +203,6 @@ void reinitialize(BC::bcTags bcTags,
         double b = (phi(i+1,j)-phi(i,j))/dx;
         double c = (phi(i,j)-phi(i,j-1))/dy;
         double d = (phi(i,j+1)-phi(i,j))/dy;
-        double sign = phi(i,j) / sqrt(phi(i,j)*phi(i,j) 
-                    + sqrt(pow(a-b,2)+pow(c-d,2)));
         double ap = max(a,0.0);
         double am = min(a,0.0);
         double bp = max(b,0.0);
@@ -216,11 +211,22 @@ void reinitialize(BC::bcTags bcTags,
         double cm = min(c,0.0);
         double dp = max(d,0.0);
         double dm = min(d,0.0);
-        double sp = max(sign,0.0);
-        double sm = min(sign,0.0);
+        double sp = max(sign0(i,j),0.0);
+        double sm = min(sign0(i,j),0.0);
         double H = sp*(sqrt(max(ap*ap,bm*bm) + max(cp*cp,dm*dm))-1.0)
                  + sm*(sqrt(max(am*am,bp*bp) + max(cm*cm,dp*dp))-1.0);
-        phi2(i,j) = phi(i,j) - dtau*H;
+        //> subcell fix
+        //  Russo and Smereka (2000)
+        if (phi0(i+1,j)*phi0(i,j) < 0.0 ||
+            phi0(i-1,j)*phi0(i,j) < 0.0 ||
+            phi0(i,j+1)*phi0(i,j) < 0.0 || 
+            phi0(i,j-1)*phi0(i,j) < 0.0) {
+          double D = 2.0*dx*phi0(i,j) / sqrt( pow(phi0(i+1,j)-phi0(i-1,j),2) 
+                                            + pow(phi0(i,j+1)-phi0(i,j-1),2) );
+          phi2(i,j) = phi(i,j) - dtau*(sign0(i,j)*abs(phi(i,j))-D);
+        } else {
+          phi2(i,j) = phi(i,j) - dtau*H;
+        }
       }
     }
     // BC::update_BCs_phi(bcTags,phi2);
