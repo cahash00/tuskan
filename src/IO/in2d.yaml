@@ -5,8 +5,8 @@ domain:
     x: 0.04
     y: 0.02
   dimensions:
-    x: 60
-    y: 30
+    x: 200
+    y: 100
 boundary conditions:
   left: 
     type: periodic
@@ -23,12 +23,14 @@ initial conditions:
     u: 0.007
     v: 0.000
     p: 0.0
-    rho: 1000
+    rho: 1
+    mu: 1.0e-5
   liquid:
     u: 0.0
     v: 0.0
     p: 0.0
     rho: 1000.0
+    mu: 1.0e-3
 droplet:
   center: # center of the domain
     x: 0.02
@@ -36,13 +38,20 @@ droplet:
   diameter: 0.01 # half the channel height
   M: 3 # interface thickness
 solver:
-  iterations: 100000
+  restart:
+    load: true
+    save: false
+  iterations: 2000
   pressure solver:
     method: SOR
-    omega: 1.7
+    omega: 1.2
+level set:
+  reinitialization:
+    enabled: true
+    iterations: 50
 dynamic CFL:
   cfli: 0.1
-  cflf: 0.3
+  cflf: 0.2
 convergence:
   residual: 1.0e-6
 output:
@@ -52,6 +61,6 @@ output:
     file: resid.log
   flowviz:
     enabled: true
-    frequency: 1000
+    frequency: 10
     directory: output
     ghost cells: true
