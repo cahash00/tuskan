@@ -38,9 +38,16 @@ void reinitialize(BC::bcTags bcTags,
                   mtr::FMatrix<double>& phi);
 
   /******************************************************************************/
-double curvature(const int i, const int j,
-                 const double dx, const double dy,
-                 const mtr::FMatrix<double>& phi);
+std::vector<double> surfaceTension(const int i,
+                                   const int j,
+                                   const double Mh,
+                                   const double sigma,
+                                   const double dx, 
+                                   const double dy,
+                                   const mtr::FMatrix<double>& nx1,
+                                   const mtr::FMatrix<double>& ny1,
+                                   const mtr::FMatrix<double>& kappa,
+                                   const mtr::FMatrix<double>& phi);
 
 
 } // end namespace levset

@@ -131,14 +131,14 @@ int main(int argc, char* argv[]){
   const double rhog = config.igas.rho;
   const double nul = config.iliq.mu / rhol;
   const double nug = config.igas.mu / rhog;
+  const double sigma = 0.06;
   printer.print(rhol,rhog,nul,nug);
+  const double Mh = config.drop.M*min(dx,dy);
   levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
   for (int j = jstr-1; j <= jend+1; j++) {
     for (int i = istr-1; i <= iend+1; i++) {
       rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
-      // rho(i,j) = 1.0e3;
       nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
-      // nu(i,j) = 1.0e-6;
     }
   }
   
@@ -160,6 +160,13 @@ int main(int argc, char* argv[]){
   // ... start solver & timer
   timer.start();
   IO::logger->info("Starting Main Solver");
+
+  mtr::FMatrix<double> kappa(p.dims(1),p.dims(2));
+  mtr::FMatrix<double> Fy(p.dims(1),p.dims(2));
+  mtr::FMatrix<double> Fx(p.dims(1),p.dims(2));
+  mtr::FMatrix<double> nx1(p.dims(1),p.dims(2));
+  mtr::FMatrix<double> ny1(p.dims(1),p.dims(2));
+
   for (int ii = 0; ii < config.solver.iter; ii++) {
     // ... update boundary conditions
     BC::update_BCs(bcTags,u,v,p);
@@ -190,9 +197,16 @@ int main(int argc, char* argv[]){
         ab2[0] = 1.5*advec[0]-0.5*advec_old[0];
         ab2[1] = 1.5*advec[1]-0.5*advec_old[1];
 
+        // calculate surface tension force to apply to predictor
+        std::vector<double> fst = levset::surfaceTension(i,j,Mh,sigma,dx,dy,kappa,nx1,ny1,phi);
+        Fx(i,j) = fst[0];
+        Fy(i,j) = fst[1];
+        // fst[0]=0.0;
+        // fst[1]=0.0;
+
         // predictor step - explicit
-        ustar(i,j) = u(i,j) + dt*(-ab2[0] + diffu[0]);
-        vstar(i,j) = v(i,j) + dt*(-ab2[1] + diffu[1]);
+        ustar(i,j) = u(i,j) + dt*(-ab2[0] + diffu[0]-fst[0]/rho(i,j));
+        vstar(i,j) = v(i,j) + dt*(-ab2[1] + diffu[1]-fst[1]/rho(i,j));
       }
     }
 
@@ -239,6 +253,11 @@ int main(int argc, char* argv[]){
                                "rho",rho,
                                "nu",nu,
                                "phi",phi,
+                               "kappa",kappa,
+                               "Fx",Fx,
+                               "Fy",Fy,
+                               "nx",nx1,
+                               "ny",ny1,
                                "heavi",heavi);
       }
     } 
