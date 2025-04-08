@@ -163,17 +163,17 @@ std::vector<double> surfaceTension(const int i,
   double eps=1e-12;
 
   // // Compute gradients of phi using central differences
-  double phix = (phi(i+1,j) - phi(i-1,j)) / (2.0*dx);
-  double phiy = (phi(i,j+1) - phi(i,j-1)) / (2.0*dy);
+  // double phix = (phi(i+1,j) - phi(i-1,j)) / (2.0*dx);
+  // double phiy = (phi(i,j+1) - phi(i,j-1)) / (2.0*dy);
   // Compute gradients of phi using harmonic averaging
-  // double dphidx_forward = (phi(i+1,j) - phi(i,j)) / dx;
-  // double dphidx_backward = (phi(i,j) - phi(i-1,j)) / dx;
-  // double dphidy_forward = (phi(i,j+1) - phi(i,j)) / dy;
-  // double dphidy_backward = (phi(i,j) - phi(i,j-1)) / dy;
+  double dphidx_forward = (phi(i+1,j) - phi(i,j)) / dx;
+  double dphidx_backward = (phi(i,j) - phi(i-1,j)) / dx;
+  double dphidy_forward = (phi(i,j+1) - phi(i,j)) / dy;
+  double dphidy_backward = (phi(i,j) - phi(i,j-1)) / dy;
 
-  // // Harmonic averaging for gradients
-  // double phix = 2.0 * dphidx_forward * dphidx_backward / (dphidx_forward + dphidx_backward+eps);
-  // double phiy = 2.0 * dphidy_forward * dphidy_backward / (dphidy_forward + dphidy_backward+eps);
+  // Harmonic averaging for gradients
+  double phix = 2.0 * dphidx_forward * dphidx_backward / (dphidx_forward + dphidx_backward+eps);
+  double phiy = 2.0 * dphidy_forward * dphidy_backward / (dphidy_forward + dphidy_backward+eps);
 
 
   // Compute magnitude of the gradient
