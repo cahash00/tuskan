@@ -135,6 +135,11 @@ int main(int argc, char* argv[]){
   printer.print(rhol,rhog,nul,nug);
   const double Mh = config.drop.M*min(dx,dy);
   levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
+  
+  // get initial volume to use for volume correction
+  double V0 = levset::getVolume(heavi,dx,dy);
+
+  // initialize density and nu fields
   for (int j = jstr-1; j <= jend+1; j++) {
     for (int i = istr-1; i <= iend+1; i++) {
       rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
@@ -233,6 +238,9 @@ int main(int argc, char* argv[]){
       levset::reinitialize(bcTags,dx,dy,dtau,config.levset.ireinit,phi);
     }
     levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
+    double Vn = levset::getVolume(heavi,dx,dy);
+    double Ln = levset::getLength(phi,dx,dy,Mh);
+    levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
 
     for (int j = jstr-1; j <= jend; j++) {
       for (int i = istr-1; i <= iend; i++) {
@@ -293,7 +301,7 @@ int main(int argc, char* argv[]){
     logFile << ii << " " << ires << "\n";
     if (config.res.enabled) {
       if (ii % config.res.freq == 0) {
-        IO::logger->info("  iter {:04}, cfl: {:5e},dt: {:5e}, res: {:5e}",ii,cfl,dt,ires/res0);
+        IO::logger->info("  iter {:04}, cfl: {:4e},dt: {:4e}, res: {:4e}, dV: {:4e}",ii,cfl,dt,ires/res0,V0-Vn);
         logFile.flush();
       }
     }

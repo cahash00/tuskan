@@ -37,7 +37,7 @@ void reinitialize(BC::bcTags bcTags,
                   const int isteps,
                   mtr::FMatrix<double>& phi);
 
-  /******************************************************************************/
+/******************************************************************************/
 std::vector<double> surfaceTension(const int i,
                                    const int j,
                                    const double Mh,
@@ -49,6 +49,23 @@ std::vector<double> surfaceTension(const int i,
                                    const mtr::FMatrix<double>& kappa,
                                    const mtr::FMatrix<double>& phi);
 
+/******************************************************************************/
+double getLength(mtr::FMatrix<double>& phi,
+                 const double dx,
+                 const double dy,
+                 const double Mh);
+
+/******************************************************************************/
+void volumeCorrection(mtr::FMatrix<double>& phi,
+                      const double Mh,
+                      const double V0,
+                      const double Vn,
+                      const double Ln);
+
+/******************************************************************************/
+double getVolume(mtr::FMatrix<double>& heavi,
+                 const double dx,
+                 const double dy);
 
 } // end namespace levset
 

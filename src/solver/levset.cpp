@@ -218,8 +218,8 @@ void reinitialize(BC::bcTags bcTags,
   mtr::FMatrix<double> sign0(phi.dims(1),phi.dims(2));
   mtr::FMatrix<double> phi0(phi.dims(1),phi.dims(2));
   mtr::FMatrix<double> phi2(phi.dims(1),phi.dims(2));
-  for (int j = jstr-1; j <= jend+1; j++) {
-    for (int i = istr-1; i <= iend+1; i++) {
+  for (int j = jstr-1; j <= jend; j++) {
+    for (int i = istr-1; i <= iend; i++) {
       phi2(i,j) = phi(i,j);
       phi0(i,j) = phi(i,j);
       double gphi0 = sqrt(pow((phi(i+1,j) - phi(i-1,j)) / (2.0 * dx),2)
@@ -280,7 +280,7 @@ double getVolume(mtr::FMatrix<double>& heavi,
   double vol = 0.0;
   for (int j = jstr; j <= jend; j++) {
     for (int i = istr; i <= iend; i++) {
-      vol =+ (1.0-heavi(i,j))*dx*dy;
+      vol = vol + (1.0-heavi(i,j))*dx*dy;
     }
   }
   return vol;
@@ -298,7 +298,7 @@ double getLength(mtr::FMatrix<double>& phi,
       } else {
         delta = 0.0;
       }
-      len =+ delta*dx*dy;
+      len = len + delta*dx*dy;
     }
   }
   return len;
@@ -316,12 +316,7 @@ void volumeCorrection(mtr::FMatrix<double>& phi,
   for (int j = jstr; j <= jend; j++) {
     for (int i = istr; i <= iend; i++) {
       if (abs(phi(i,j)) < Mh) {
-        delta = 1.0/(2.0*Mh)*(1+cos(M_PI*phi(i,j)/Mh));
-      } else {
-        delta = 0.0;
-      }
-      if (delta < 1e-8) {
-        phi(i,j) = phi(i,j) + dV;
+        phi(i,j) = phi(i,j) - dV;
       }
     }
   }
