@@ -206,8 +206,8 @@ int main(int argc, char* argv[]){
         std::vector<double> fst = levset::surfaceTension(i,j,Mh,sigma,dx,dy,kappa,nx1,ny1,phi);
         Fx(i,j) = fst[0];
         Fy(i,j) = fst[1];
-        // fst[0]=0.0;
-        // fst[1]=0.0;
+        fst[0]=0.0;
+        fst[1]=0.0;
 
         // predictor step - explicit
         ustar(i,j) = u(i,j) + dt*(-ab2[0] + diffu[0]-fst[0]/rho(i,j));
