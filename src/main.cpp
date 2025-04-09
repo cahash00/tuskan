@@ -246,7 +246,7 @@ int main(int argc, char* argv[]){
         foutss << setw(5) << std::setfill('0') << ii;
         string caseName = foutss.str();
         IO::vtk_output_2D_node(caseName,config.fv.dir,config.fv.ghost,
-                               xn,yn,u,v,
+                               xc,yc,u,v,
                                "p",p,
                                "rho",rho,
                                "nu",nu,
@@ -313,7 +313,7 @@ int main(int argc, char* argv[]){
   if (config.fv.enabled) {
     IO::logger->info("Outputting final flow solution");
     IO::vtk_output_2D_node("final",config.fv.dir,config.fv.ghost,
-                           xn,yn,u,v,
+                           xc,yc,u,v,
                            "p",p,
                            "rho",rho,
                            "nu",nu,
