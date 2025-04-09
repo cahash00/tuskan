@@ -149,63 +149,64 @@ void weno(const BC::bcTags bcTags,
 } // end advecPhi
 
 /******************************************************************************/
-std::vector<double> surfaceTension(const int i,
-                                   const int j,
-                                   const double Mh,
-                                   const double sigma,
-                                   const double dx, 
-                                   const double dy,
-                                   const mtr::FMatrix<double>& kappa,
-                                   const mtr::FMatrix<double>& nx1,
-                                   const mtr::FMatrix<double>& ny1,
-                                   const mtr::FMatrix<double>& phi) {
+void surfaceTension(mtr::FMatrix<double>& Fx,
+                    mtr::FMatrix<double>& Fy,
+                    mtr::FMatrix<double>& phi,
+                    mtr::FMatrix<double>& kappa,
+                    const double Mh,
+                    const double sigma,
+                    const double dx, 
+                    const double dy) {
   std::vector<double> fst(2,0.0);
   double eps=1e-12;
 
-  // // Compute gradients of phi using central differences
-  // double phix = (phi(i+1,j) - phi(i-1,j)) / (2.0*dx);
-  // double phiy = (phi(i,j+1) - phi(i,j-1)) / (2.0*dy);
-  // Compute gradients of phi using harmonic averaging
-  double dphidx_forward = (phi(i+1,j) - phi(i,j)) / dx;
-  double dphidx_backward = (phi(i,j) - phi(i-1,j)) / dx;
-  double dphidy_forward = (phi(i,j+1) - phi(i,j)) / dy;
-  double dphidy_backward = (phi(i,j) - phi(i,j-1)) / dy;
+  for (int j = jstr; j <= jend-1; j++) {
+    for (int i = istr; i <= iend-1; i++) {
+      // // Compute gradients of phi using central differences
+      double phix = (phi(i+1,j) - phi(i-1,j)) / (2.0*dx);
+      double phiy = (phi(i,j+1) - phi(i,j-1)) / (2.0*dy);
+      // Compute gradients of phi using harmonic averaging
+      // double dphidx_forward = (phi(i+1,j) - phi(i,j)) / dx;
+      // double dphidx_backward = (phi(i,j) - phi(i-1,j)) / dx;
+      // double dphidy_forward = (phi(i,j+1) - phi(i,j)) / dy;
+      // double dphidy_backward = (phi(i,j) - phi(i,j-1)) / dy;
 
-  // Harmonic averaging for gradients
-  double phix = 2.0 * dphidx_forward * dphidx_backward / (dphidx_forward + dphidx_backward+eps);
-  double phiy = 2.0 * dphidy_forward * dphidy_backward / (dphidy_forward + dphidy_backward+eps);
+      // Harmonic averaging for gradients
+      // double phix = 2.0 * dphidx_forward * dphidx_backward / (dphidx_forward + dphidx_backward+eps);
+      // double phiy = 2.0 * dphidy_forward * dphidy_backward / (dphidy_forward + dphidy_backward+eps);
 
 
-  // Compute magnitude of the gradient
-  double grad_mag = std::sqrt(phix*phix + phiy*phiy + eps);
+      // Compute magnitude of the gradient
+      double grad_mag = sqrt(phix*phix + phiy*phiy);
 
-  // Normalized components of the gradient
-  nx1(i,j) = phix / grad_mag;
-  ny1(i,j) = phiy / grad_mag;
+      // Normalized components of the gradient
+      double nx1 = phix / grad_mag;
+      double ny1 = phiy / grad_mag;
 
-  // Compute second derivatives using central differences
-  double phixx = (phi(i+1,j) - 2.0*phi(i,j) + phi(i-1,j))/(dx*dx);
-  double phiyy = (phi(i,j+1) - 2.0*phi(i,j) + phi(i,j-1))/(dy*dy);
-  double phixy = (phi(i+1,j+1) - phi(i+1,j-1) 
-                    - phi(i-1,j+1) + phi(i-1,j-1)) / (4.0*dx*dy);
+      // Compute second derivatives using central differences
+      double phixx = (phi(i+1,j) - 2.0*phi(i,j) + phi(i-1,j))/(dx*dx);
+      double phiyy = (phi(i,j+1) - 2.0*phi(i,j) + phi(i,j-1))/(dy*dy);
+      double phixy = (phi(i+1,j+1) - phi(i+1,j-1) 
+                        - phi(i-1,j+1) + phi(i-1,j-1)) / (4.0*dx*dy);
 
-  // calc curvature
-  kappa(i,j) = (phixx*ny1(i,j)*ny1(i,j) - 2.0*phixy*nx1(i,j)*ny1(i,j) 
-                + phiyy*nx1(i,j)*nx1(i,j)) / grad_mag;
-  if (kappa(i,j) > 1.0/dx) kappa(i,j) = 1.0/dx;
-  if (kappa(i,j) < -1.0/dx) kappa(i,j) = -1.0/dx;
-  double delta = 0.0;
-  if (abs(phi(i,j)) < Mh) {
-    delta = 1.0/(2.0*Mh)*(1+cos(M_PI*phi(i,j)/Mh));
-  } else {
-    delta = 0.0;
+      double delta = 0.0;
+      if (abs(phi(i,j)) < Mh) {
+        kappa(i,j) = (phixx*ny1*ny1 - 2.0*phixy*nx1*ny1 
+            + phiyy*nx1*nx1) / grad_mag;
+        delta = 1.0/(2.0*Mh)*(1.0+cos(M_PI*phi(i,j)/Mh));
+      } else {
+        kappa(i,j) = 0.0;
+        delta = 0.0;
+      }
+      Fx(i,j) = sigma*kappa(i,j)*delta*nx1;
+      Fy(i,j) = sigma*kappa(i,j)*delta*ny1;
+      Fx(i,j) = 0.0;
+      Fy(i,j) = 0.0;
+      // kappa(i,j) = phixx;
+      // kappa(i,j) = phiyy;
+      kappa(i,j) = grad_mag;
+    }
   }
-  fst[0] = sigma*kappa(i,j)*delta*nx1(i,j);
-  fst[1] = sigma*kappa(i,j)*delta*ny1(i,j);
-  nx1(i,j) = phixx;
-  ny1(i,j) = phiyy;
-
-  return fst;
 }
 
 void reinitialize(BC::bcTags bcTags,

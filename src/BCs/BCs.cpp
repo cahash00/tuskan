@@ -93,6 +93,7 @@ void update_BCs(bcTags tags,
       u(istr-1,j) = u(iend-1,j);
       v(istr-1,j) = v(iend,j);
       p(istr-1,j) = tags.Left.pressure;
+      // p(istr-1,j) = p(iend-1,j);
     }
     /**
      * RIGHT BOUNDARY
@@ -113,6 +114,7 @@ void update_BCs(bcTags tags,
       u(iend,j) = u(istr,j);
       v(iend+1,j) = v(istr,j);
       p(iend,j) = tags.Right.pressure;
+      // p(iend,j) = p(istr);
     }
   }
 
@@ -136,6 +138,7 @@ void update_BCs(bcTags tags,
       u(i,jstr-1) = u(i,jend);
       v(i,jstr-1) = v(i,jend-1);
       p(i,jstr-1) = tags.Bottom.pressure;
+      // p(i,jstr-1) = p(i,jend-1);
     }
     /**
      * TOP BOUNDARY
@@ -149,12 +152,13 @@ void update_BCs(bcTags tags,
       // moving wall
       u(i,jend+1) = 2.0*tags.Top.vel[0]-u(i,jend);
       v(i,jend) = tags.Top.vel[1];
-      p(i,jend) = p(i,jend-1);
+      p(i,jend+1) = p(i,jend);
     } else if (tags.Top.bvals(i)==7) {
       // periodic
       u(i,jend+1) = u(i,jstr);
       v(i,jend) = v(i,jstr);
       p(i,jend) = tags.Top.pressure;
+      // p(i,jend) = p(i,jstr);
     }
   }
 

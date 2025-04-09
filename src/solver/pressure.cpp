@@ -74,8 +74,8 @@ void SOR(const double& omega,
     } // end j-loop
     BC::update_BCs(bcTags,ustar,vstar,p2);
 
-    for (int j = jstr-1; j <= jend; j++) {
-      for (int i = istr-1; i <= iend; i++) {
+    for (int j = jstr-1; j <= jend+1; j++) {
+      for (int i = istr-1; i <= iend+1; i++) {
         p1(i,j) = p2(i,j);
       }
     }
@@ -90,8 +90,8 @@ void SOR(const double& omega,
       // throw runtime_error("ERROR: SOR solver did not converge.");
     }
   } // end Jacobi loop
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
       p(i,j) = p2(i,j);
     }
   }

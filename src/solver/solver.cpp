@@ -224,6 +224,8 @@ double get_min_dt(const double& cfl,
 }
 /******************************************************************************/
 void initialize_solution(IO::ConfigData& config,
+                         mtr::FMatrix<double>& xn,
+                         mtr::FMatrix<double>& yn,
                          mtr::FMatrix<double>& u,
                          mtr::FMatrix<double>& v,
                          mtr::FMatrix<double>& u2,
@@ -238,6 +240,10 @@ void initialize_solution(IO::ConfigData& config,
   const double pinit = config.igas.p;
   for (int j = jstr-1; j <= jend+1; j++) {
     for (int i = istr-1; i <= iend+1; i++) {
+      // double vinit = cos(M_PI*xn(i,j)) * sin(M_PI*yn(i,j));
+      // double uinit = cos(M_PI*yn(i,j)) * -sin(M_PI*xn(i,j));
+      // double pinit = 0.0;
+
       u(i,j) = uinit; // average u
       v(i,j) = vinit;
       u2(i,j) = uinit;

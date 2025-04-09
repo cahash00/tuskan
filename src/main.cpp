@@ -113,6 +113,7 @@ int main(int argc, char* argv[]){
 
   // initialize domain
   initialize_solution(config,
+                      xn,yn,
                       u,v,
                       u2,v2,
                       u_old,v_old,
@@ -171,18 +172,22 @@ int main(int argc, char* argv[]){
   mtr::FMatrix<double> Fx(p.dims(1),p.dims(2));
   mtr::FMatrix<double> nx1(p.dims(1),p.dims(2));
   mtr::FMatrix<double> ny1(p.dims(1),p.dims(2));
+  kappa.set_values(0.0);
+  Fx.set_values(0.0);
+  Fy.set_values(0.0);
 
   for (int ii = 0; ii < config.solver.iter; ii++) {
     // ... update boundary conditions
     BC::update_BCs(bcTags,u,v,p);
+    levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
 
     // ... get the minimum dt in the domain for current iteration
     double dt = get_min_dt(cfl,dx,dy,u,v,max(nug,nul));
 
 
     // ... loop over domain for predictor step
-    for (int j = jstr; j <= jend-1; j++) {
-      for (int i = istr; i <= iend-1; i++) {
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
         std::vector<double> advec(2,0.0);
         std::vector<double> advec_old(2,0.0);
         std::vector<double> diffu(2,0.0);
@@ -202,16 +207,9 @@ int main(int argc, char* argv[]){
         ab2[0] = 1.5*advec[0]-0.5*advec_old[0];
         ab2[1] = 1.5*advec[1]-0.5*advec_old[1];
 
-        // calculate surface tension force to apply to predictor
-        std::vector<double> fst = levset::surfaceTension(i,j,Mh,sigma,dx,dy,kappa,nx1,ny1,phi);
-        Fx(i,j) = fst[0];
-        Fy(i,j) = fst[1];
-        // fst[0]=0.0;
-        // fst[1]=0.0;
-
         // predictor step - explicit
-        ustar(i,j) = u(i,j) + dt*(-ab2[0] + diffu[0]-fst[0]/rho(i,j));
-        vstar(i,j) = v(i,j) + dt*(-ab2[1] + diffu[1]-fst[1]/rho(i,j));
+        ustar(i,j) = u(i,j) + dt*(-ab2[0] + diffu[0]-Fx(i,j)/rho(i,j));
+        vstar(i,j) = v(i,j) + dt*(-ab2[1] + diffu[1]-Fy(i,j)/rho(i,j));
       }
     }
 
@@ -242,8 +240,8 @@ int main(int argc, char* argv[]){
     double Ln = levset::getLength(phi,dx,dy,Mh);
     levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
 
-    for (int j = jstr-1; j <= jend; j++) {
-      for (int i = istr-1; i <= iend; i++) {
+    for (int j = jstr-1; j <= jend+1; j++) {
+      for (int i = istr-1; i <= iend+1; i++) {
         rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
         nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
       }

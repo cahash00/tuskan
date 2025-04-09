@@ -60,6 +60,8 @@ double get_min_dt(const double& cfl,
  * @brief initialize the domain and arrays
  ******************************************************************************/
 void initialize_solution(IO::ConfigData& config,
+                         mtr::FMatrix<double>& xn, 
+                         mtr::FMatrix<double>& yn, 
                          mtr::FMatrix<double>& u, 
                          mtr::FMatrix<double>& v,
                          mtr::FMatrix<double>& u2,
