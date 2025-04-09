@@ -186,8 +186,8 @@ int main(int argc, char* argv[]){
 
 
     // ... loop over domain for predictor step
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    for (int j = jstr; j <= jend-1; j++) {
+      for (int i = istr; i <= iend-1; i++) {
         std::vector<double> advec(2,0.0);
         std::vector<double> advec_old(2,0.0);
         std::vector<double> diffu(2,0.0);
