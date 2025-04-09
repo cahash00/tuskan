@@ -248,27 +248,27 @@ int main(int argc, char* argv[]){
         string caseName = foutss.str();
         if (config.fv.mode=="center") {
           IO::getCellCenter(u,v,uc,vc);
-          IO::vtk_output_2D_node(caseName,config.fv.dir,config.fv.ghost,
-                                 xc,yc,uc,vc,
-                                 "p",p,
-                                 "rho",rho,
-                                 "nu",nu,
-                                 "phi",phi,
-                                 "kappa",kappa,
-                                 "Fx",Fx,
-                                 "Fy",Fy,
-                                 "heavi",heavi);
+          IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,
+                            xc,yc,uc,vc,
+                            "p",p,
+                            "rho",rho,
+                            "nu",nu,
+                            "phi",phi,
+                            "kappa",kappa,
+                            "Fx",Fx,
+                            "Fy",Fy,
+                            "heavi",heavi);
         } else {
-          IO::vtk_output_2D_node(caseName,config.fv.dir,config.fv.ghost,
-                                 xn,yn,u,v,
-                                 "p",p,
-                                 "rho",rho,
-                                 "nu",nu,
-                                 "phi",phi,
-                                 "kappa",kappa,
-                                 "Fx",Fx,
-                                 "Fy",Fy,
-                                 "heavi",heavi);
+          IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,
+                            xn,yn,u,v,
+                            "p",p,
+                            "rho",rho,
+                            "nu",nu,
+                            "phi",phi,
+                            "kappa",kappa,
+                            "Fx",Fx,
+                            "Fy",Fy,
+                            "heavi",heavi);
         }
       }
     } 
@@ -327,13 +327,13 @@ int main(int argc, char* argv[]){
    */
   if (config.fv.enabled) {
     IO::logger->info("Outputting final flow solution");
-    IO::vtk_output_2D_node("final",config.fv.dir,config.fv.ghost,
-                           xc,yc,u,v,
-                           "p",p,
-                           "rho",rho,
-                           "nu",nu,
-                           "phi",phi,
-                           "heavi",heavi);
+    IO::vtk_output_2D("final",config.fv.dir,config.fv.ghost,
+                      xc,yc,u,v,
+                      "p",p,
+                      "rho",rho,
+                      "nu",nu,
+                      "phi",phi,
+                      "heavi",heavi);
   } else {
     IO::logger->warn("Output was disabled.");
   }

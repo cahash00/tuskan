@@ -55,7 +55,7 @@ void add_array(FILE* out,const bool ghost,const string& label,T&& array, Args&&.
 };
 
 template <typename... Args>
-  void vtk_output_2D_node(const string& caseName,
+  void vtk_output_2D(const string& caseName,
       const string& foutDir,
       const bool ghost,
       const mtr::FMatrix<double>& xc,
