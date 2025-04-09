@@ -75,6 +75,7 @@ int main(int argc, char* argv[]){
   fmatD phi(ndims[0],ndims[1]);
   fmatD heavi(ndims[0],ndims[1]);
   fmatD rho(ndims[0]+1,ndims[1]+1);
+  fmatD kappa(ndims[0]+1,ndims[1]+1);
   fmatD nu(ndims[0]+1,ndims[1]+1);
   fmatD ustar(ndims[0]+1,ndims[1]+1);
   fmatD vstar(ndims[0]+1,ndims[1]+1);
@@ -84,7 +85,8 @@ int main(int argc, char* argv[]){
   fmatD v_old(ndims[0]+1,ndims[1]+1);
   fmatD u2(ndims[0]+1,ndims[1]+1);
   fmatD v2(ndims[0]+1,ndims[1]+1);
-  fmatD uexact(ndims[0]+1,ndims[1]+1);
+  fmatD Fx(ndims[0]+1,ndims[1]+1);
+  fmatD Fy(ndims[0]+1,ndims[1]+1);
   
   // ... call mesh generator
   Timer timer;
@@ -131,7 +133,7 @@ int main(int argc, char* argv[]){
   const double rhog = config.igas.rho;
   const double nul = config.iliq.mu / rhol;
   const double nug = config.igas.mu / rhog;
-  const double sigma = 0.06;
+  const double sigma = 0.00;
   printer.print(rhol,rhog,nul,nug);
   const double Mh = config.drop.M*min(dx,dy);
   levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
@@ -166,15 +168,10 @@ int main(int argc, char* argv[]){
   timer.start();
   IO::logger->info("Starting Main Solver");
 
-  mtr::FMatrix<double> kappa(p.dims(1),p.dims(2));
-  mtr::FMatrix<double> Fy(p.dims(1),p.dims(2));
-  mtr::FMatrix<double> Fx(p.dims(1),p.dims(2));
-  mtr::FMatrix<double> nx1(p.dims(1),p.dims(2));
-  mtr::FMatrix<double> ny1(p.dims(1),p.dims(2));
-
   for (int ii = 0; ii < config.solver.iter; ii++) {
     // ... update boundary conditions
     BC::update_BCs(bcTags,u,v,p);
+    levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
 
     // ... get the minimum dt in the domain for current iteration
     double dt = get_min_dt(cfl,dx,dy,u,v,max(nug,nul));
@@ -202,16 +199,9 @@ int main(int argc, char* argv[]){
         ab2[0] = 1.5*advec[0]-0.5*advec_old[0];
         ab2[1] = 1.5*advec[1]-0.5*advec_old[1];
 
-        // calculate surface tension force to apply to predictor
-        std::vector<double> fst = levset::surfaceTension(i,j,Mh,sigma,dx,dy,kappa,nx1,ny1,phi);
-        Fx(i,j) = fst[0];
-        Fy(i,j) = fst[1];
-        fst[0]=0.0;
-        fst[1]=0.0;
-
         // predictor step - explicit
-        ustar(i,j) = u(i,j) + dt*(-ab2[0] + diffu[0]-fst[0]/rho(i,j));
-        vstar(i,j) = v(i,j) + dt*(-ab2[1] + diffu[1]-fst[1]/rho(i,j));
+        ustar(i,j) = u(i,j) + dt*(-ab2[0] + diffu[0]-Fx(i,j)/rho(i,j));
+        vstar(i,j) = v(i,j) + dt*(-ab2[1] + diffu[1]-Fy(i,j)/rho(i,j));
       }
     }
 
@@ -264,8 +254,6 @@ int main(int argc, char* argv[]){
                                "kappa",kappa,
                                "Fx",Fx,
                                "Fy",Fy,
-                               "nx",nx1,
-                               "ny",ny1,
                                "heavi",heavi);
       }
     } 
