@@ -71,6 +71,7 @@ int main(int argc, char* argv[]){
   // ... initialize the MATAR matrices for the domain
   fmatD xc(ndims[0],ndims[1]),yc(ndims[0],ndims[1]),
         xn(ndims[0]+1,ndims[1]+1),yn(ndims[0]+1,ndims[1]+1);
+  fmatD uc(ndims[0],ndims[1]),vc(ndims[0],ndims[1]);
   fmatD p(ndims[0]+1,ndims[1]+1);
   fmatD phi(ndims[0],ndims[1]);
   fmatD heavi(ndims[0],ndims[1]);
@@ -245,16 +246,30 @@ int main(int argc, char* argv[]){
         std::ostringstream foutss;
         foutss << setw(5) << std::setfill('0') << ii;
         string caseName = foutss.str();
-        IO::vtk_output_2D_node(caseName,config.fv.dir,config.fv.ghost,
-                               xc,yc,u,v,
-                               "p",p,
-                               "rho",rho,
-                               "nu",nu,
-                               "phi",phi,
-                               "kappa",kappa,
-                               "Fx",Fx,
-                               "Fy",Fy,
-                               "heavi",heavi);
+        if (config.fv.mode=="center") {
+          IO::getCellCenter(u,v,uc,vc);
+          IO::vtk_output_2D_node(caseName,config.fv.dir,config.fv.ghost,
+                                 xc,yc,uc,vc,
+                                 "p",p,
+                                 "rho",rho,
+                                 "nu",nu,
+                                 "phi",phi,
+                                 "kappa",kappa,
+                                 "Fx",Fx,
+                                 "Fy",Fy,
+                                 "heavi",heavi);
+        } else {
+          IO::vtk_output_2D_node(caseName,config.fv.dir,config.fv.ghost,
+                                 xn,yn,u,v,
+                                 "p",p,
+                                 "rho",rho,
+                                 "nu",nu,
+                                 "phi",phi,
+                                 "kappa",kappa,
+                                 "Fx",Fx,
+                                 "Fy",Fy,
+                                 "heavi",heavi);
+        }
       }
     } 
 

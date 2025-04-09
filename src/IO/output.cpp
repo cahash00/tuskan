@@ -35,5 +35,20 @@ void check_directories(const string& foutDir) {
   }
 } // end check_directories
 
+void getCellCenter(mtr::FMatrix<double>& u,
+    mtr::FMatrix<double>& v,
+    mtr::FMatrix<double>& uc,
+    mtr::FMatrix<double>& vc) {
+  for (int j = jstr; j <= jend-1; j++) {
+    for (int i = istr; i <= iend; i++) {
+      uc(i,j) = 0.5*(u(i,j) + u(i-1,j));
+    }
+  }
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend-1; i++) {
+      vc(i,j) = 0.5*(v(i,j)+v(i,j-1));
+    }
+  }
+}
 
 } // end namepsace IO

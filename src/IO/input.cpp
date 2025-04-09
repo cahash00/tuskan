@@ -39,6 +39,7 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& iconfig) {
   ideck.fv.freq  = iconfig["output"]["flowviz"]["frequency"].as<int>();
   ideck.fv.dir = iconfig["output"]["flowviz"]["directory"].as<string>();
   ideck.fv.ghost = iconfig["output"]["flowviz"]["ghost cells"].as<bool>();
+  ideck.fv.mode = iconfig["output"]["flowviz"]["mode"].as<string>();
 
   // ... BC parameters
   ideck.bcLeft.type = iconfig["boundary conditions"]["left"]["type"].as<string>();

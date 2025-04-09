@@ -47,6 +47,7 @@ struct Fv {
   int freq;
   string dir;
   bool ghost;
+  string mode;
 };
 struct Mesh {
   double lx;

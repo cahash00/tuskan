@@ -68,26 +68,14 @@ template <typename... Args>
      * pressure is already cell-centered
      */
     int xstr,xend,ystr,yend,dnx,dny;
-    mtr::FMatrix<double> uc(xc.dims(1),xc.dims(2));
-    mtr::FMatrix<double> vc(xc.dims(1),xc.dims(2));
-    for (int j = jstr; j <= jend-1; j++) {
-      for (int i = istr; i <= iend; i++) {
-        uc(i,j) = 0.5*(u(i,j) + u(i-1,j));
-      }
-    }
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend-1; i++) {
-        vc(i,j) = 0.5*(v(i,j)+v(i,j-1));
-      }
-    }
 
     if (ghost) {
       xstr = istr-1;
-      xend = iend;
+      xend = iend+1;
       ystr = jstr-1;
-      yend = jend;
-      dnx = nx+2;
-      dny = ny+2;
+      yend = jend+1;
+      dnx = nx+3;
+      dny = ny+3;
     } else {
       xstr = istr;
       xend = iend-1;
@@ -119,12 +107,18 @@ template <typename... Args>
     fprintf(out,"VECTORS velocity float \n");
     for (int j = ystr; j <= yend; j++) {
       for (int i = xstr; i <= xend; i++) {
-        fprintf(out,"%f %f %f\n",uc(i,j),vc(i,j),0.0);
+        fprintf(out,"%f %f %f\n",u(i,j),v(i,j),0.0);
       }
     }
     add_array(out,ghost,forward<Args>(args)...);
     fclose(out);
 };
+
+void getCellCenter(mtr::FMatrix<double>& u,
+                   mtr::FMatrix<double>& v,
+                   mtr::FMatrix<double>& uc,
+                   mtr::FMatrix<double>& vc);
+
 /******************************************************************************/
 } // end namespace IO
 #endif // OUTPUT_H
