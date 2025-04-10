@@ -38,9 +38,9 @@ void add_array(FILE* out,const bool ghost,const string& label,T&& array, Args&&.
     yend = jend+1;
   } else {
     xstr = istr;
-    xend = iend-1;
+    xend = iend;
     ystr = jstr;
-    yend = jend-1;
+    yend = jend;
   }
 
   fprintf(out,"SCALARS %s float 1\n",label.c_str());
@@ -74,13 +74,13 @@ template <typename... Args>
       xend = iend+1;
       ystr = jstr-1;
       yend = jend+1;
-      dnx = nx+3;
-      dny = ny+3;
+      dnx = nx+2;
+      dny = ny+2;
     } else {
       xstr = istr;
-      xend = iend-1;
+      xend = iend;
       ystr = jstr;
-      yend = jend-1;
+      yend = jend;
       dnx = nx;
       dny = ny;
     }

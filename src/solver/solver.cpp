@@ -12,6 +12,41 @@
 using namespace std;
 
 /******************************************************************************/
+// double getAdvecU(const int& i, const int& j,
+//                  const double rdx, const double rdy,
+//                  const mtr::FMatrix<double>& u,
+//                  const mtr::FMatrix<double>& v) {
+//   double advec_x = rdx * (0.25 * (
+//     pow(u(i+1,j) + u(i,j), 2) - pow(u(i,j) + u(i-1,j), 2)
+//   ));
+
+//   double avg_vtop = 0.25 * (v(i,j+1) + v(i+1,j+1));
+//   double avg_vbot = 0.25 * (v(i,j) + v(i+1,j));
+//   double avg_utop = 0.5 * (u(i,j+1) + u(i,j));
+//   double avg_ubot = 0.5 * (u(i,j) + u(i,j-1));
+
+//   double advec_y = rdy * (avg_utop * avg_vtop - avg_ubot * avg_vbot);
+
+//   return advec_x + advec_y;
+// }
+// double getAdvecV(const int& i, const int& j,
+//                  const double rdx, const double rdy,
+//                  const mtr::FMatrix<double>& u,
+//                  const mtr::FMatrix<double>& v) {
+//   double advec_y = rdy * (0.25 * (
+//     pow(v(i,j+1) + v(i,j), 2) - pow(v(i,j) + v(i,j-1), 2)
+//   ));
+
+//   double avg_uright = 0.25 * (u(i+1,j) + u(i+1,j+1));
+//   double avg_uleft  = 0.25 * (u(i,j) + u(i,j+1));
+//   double avg_vright = 0.5 * (v(i+1,j) + v(i,j));
+//   double avg_vleft  = 0.5 * (v(i,j) + v(i-1,j));
+
+//   double advec_x = rdx * (avg_uright * avg_vright - avg_uleft * avg_vleft);
+
+//   return advec_x + advec_y;
+// }
+
 // double getAdvecU(const int& i,const int& j,
 //                  const double rdx,const double rdy,
 //                  const mtr::FMatrix<double>& u,
@@ -181,8 +216,8 @@ double L2NORM(const mtr::FMatrix<double>& m1,
   
   double l2norm = 0.0;
   double total = 0.0;
-  for (int j = jstr; j <= jend-1; j++) {
-    for (int i = istr; i <= iend-1; i++) {
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
       double d = m2(i,j) - m1(i,j) + 1.0e-15;
       l2norm += d*d;
       total += 1.0;
@@ -202,8 +237,8 @@ double get_min_dt(const double& cfl,
   double eps = 1.0e-10;
   double umax = 0.0;
   double vmax = 0.0;
-  for (int j = jstr; j <= jend; j++) {
-    for (int i = istr; i <= iend; i++) {
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
       umax = max(umax,abs(u(i,j)));
       vmax = max(vmax,abs(v(i,j)));
     }

@@ -33,8 +33,8 @@ void SOR(const double& omega,
   BC::update_BCs(bcTags,ustar,vstar,p);
   // ... start the jacobi iterations
   int jiter = 5000;
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
       p1(i,j) = p(i,j);
       p2(i,j) = p(i,j);
     }
@@ -45,8 +45,8 @@ void SOR(const double& omega,
     BC::update_BCs(bcTags,ustar,vstar,p1);
     
     // ... loop over the domain
-    for (int j = jstr; j <= jend-1; j++) {
-      for (int i = istr; i <= iend-1; i++) {
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
         // Compute average densities at cell faces
         // - this is using harmonic averaging
         double rho_e = 2.0 * rho(i,j) * rho(i+1,j) / (rho(i,j) + rho(i+1,j));
@@ -74,8 +74,8 @@ void SOR(const double& omega,
     } // end j-loop
     BC::update_BCs(bcTags,ustar,vstar,p2);
 
-    for (int j = jstr-1; j <= jend; j++) {
-      for (int i = istr-1; i <= iend; i++) {
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
         p1(i,j) = p2(i,j);
       }
     }
@@ -87,11 +87,11 @@ void SOR(const double& omega,
       break;
     } else if (n == jiter) {
       cout << res << endl;
-      // throw runtime_error("ERROR: SOR solver did not converge.");
+      throw runtime_error("ERROR: SOR solver did not converge.");
     }
   } // end Jacobi loop
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
       p(i,j) = p2(i,j);
     }
   }

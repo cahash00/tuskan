@@ -74,7 +74,7 @@ void update_BCs(bcTags tags,
                 mtr::FMatrix<double>& v,
                 mtr::FMatrix<double>& p) {
   // update the left + right boundaries
-  for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
+  for (int j = jstr; j <= jend; j++) {
     /**
      * LEFT BOUNDARY
      */
@@ -101,7 +101,7 @@ void update_BCs(bcTags tags,
       // noslip 
       u(iend,j) = 0.0;
       v(iend+1,j) = -v(iend,j);
-      p(iend,j) = p(iend-1,j);
+      p(iend+1,j) = p(iend,j);
     } else if (tags.Right.bvals(j)==1) {
       // moving wall
       u(iend,j) = tags.Right.vel[0];
@@ -112,12 +112,12 @@ void update_BCs(bcTags tags,
       // periodic
       u(iend,j) = u(istr,j);
       v(iend+1,j) = v(istr,j);
-      p(iend,j) = tags.Right.pressure;
+      p(iend+1,j) = tags.Right.pressure;
     }
   }
 
   // update top and bottom boundaries
-  for (int i = istr-nghosts; i <= iend+nghosts; i++) {
+  for (int i = istr; i <= iend; i++) {
     /**
      * BOTTOM BOUNDARY
      */
@@ -144,7 +144,7 @@ void update_BCs(bcTags tags,
       // noslip 
       u(i,jend+1) = -u(i,jend);
       v(i,jend) = 0.0;
-      p(i,jend) = p(i,jend-1);
+      p(i,jend+1) = p(i,jend);
     } else if (tags.Top.bvals(i)==1) {
       // moving wall
       u(i,jend+1) = 2.0*tags.Top.vel[0]-u(i,jend);
@@ -154,7 +154,7 @@ void update_BCs(bcTags tags,
       // periodic
       u(i,jend+1) = u(i,jstr);
       v(i,jend) = v(i,jstr);
-      p(i,jend) = tags.Top.pressure;
+      p(i,jend+1) = tags.Top.pressure;
     }
   }
 
@@ -176,22 +176,21 @@ void update_BCs_phi(bcTags tags,
       phi(istr-1,j) = phi(istr,j);
     } else if (tags.Left.bvals(j)==7) {
       // periodic
-      phi(istr-1,j) = phi(iend-1,j);
+      phi(istr-1,j) = phi(iend,j);
     }
     /**
      * RIGHT BOUNDARY
      */
     if (tags.Right.bvals(j)==0) {
       // noslip 
-      phi(iend,j) = phi(iend-1,j);
+      phi(iend+1,j) = phi(iend,j);
     } else if (tags.Right.bvals(j)==1) {
       // moving wall
-      phi(iend,j) = phi(iend-1,j);
-    } else 
-      if (tags.Right.bvals(j)==7) {
-        // periodic
-        phi(iend,j) = phi(istr,j);
-      }
+      phi(iend+1,j) = phi(iend-1,j);
+    } else if (tags.Right.bvals(j)==7) {
+      // periodic
+      phi(iend+1,j) = phi(istr,j);
+    }
   }
 
   // update top and bottom boundaries
@@ -207,20 +206,20 @@ void update_BCs_phi(bcTags tags,
       phi(i,jstr-1) = phi(i,jstr);
     } else if (tags.Bottom.bvals(i)==7) {
       // periodic
-      phi(i,jstr-1) = phi(i,jend-1);
+      phi(i,jstr-1) = phi(i,jend);
     }
     /**
      * TOP BOUNDARY
      */
     if (tags.Top.bvals(i)==0) {
       // noslip 
-      phi(i,jend) = phi(i,jend-1);
+      phi(i,jend+1) = phi(i,jend);
     } else if (tags.Top.bvals(i)==1) {
       // moving wall
-      phi(i,jend) = phi(i,jend-1);
+      phi(i,jend+1) = phi(i,jend-1);
     } else if (tags.Top.bvals(i)==7) {
       // periodic
-      phi(i,jend) = phi(i,jstr);
+      phi(i,jend+1) = phi(i,jstr);
     }
   }
 

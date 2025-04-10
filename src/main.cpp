@@ -69,25 +69,28 @@ int main(int argc, char* argv[]){
   ndims[1] = ny+nghosts*2;
 
   // ... initialize the MATAR matrices for the domain
-  fmatD xc(ndims[0],ndims[1]),yc(ndims[0],ndims[1]),
-        xn(ndims[0]+1,ndims[1]+1),yn(ndims[0]+1,ndims[1]+1);
+  fmatD xc(ndims[0],ndims[1]),yc(ndims[0],ndims[1]);
+  fmatD xu(ndims[0],ndims[1]),yu(ndims[0],ndims[1]);
+  fmatD xv(ndims[0],ndims[1]),yv(ndims[0],ndims[1]);
   fmatD uc(ndims[0],ndims[1]),vc(ndims[0],ndims[1]);
-  fmatD p(ndims[0]+1,ndims[1]+1);
+  fmatD p(ndims[0],ndims[1]);
   fmatD phi(ndims[0],ndims[1]);
   fmatD heavi(ndims[0],ndims[1]);
-  fmatD rho(ndims[0]+1,ndims[1]+1);
-  fmatD kappa(ndims[0]+1,ndims[1]+1);
-  fmatD nu(ndims[0]+1,ndims[1]+1);
-  fmatD ustar(ndims[0]+1,ndims[1]+1);
-  fmatD vstar(ndims[0]+1,ndims[1]+1);
-  fmatD u(ndims[0]+1,ndims[1]+1);
-  fmatD v(ndims[0]+1,ndims[1]+1);
-  fmatD u_old(ndims[0]+1,ndims[1]+1);
-  fmatD v_old(ndims[0]+1,ndims[1]+1);
-  fmatD u2(ndims[0]+1,ndims[1]+1);
-  fmatD v2(ndims[0]+1,ndims[1]+1);
-  fmatD Fx(ndims[0]+1,ndims[1]+1);
-  fmatD Fy(ndims[0]+1,ndims[1]+1);
+  fmatD rho(ndims[0],ndims[1]);
+  fmatD kappa(ndims[0],ndims[1]);
+  fmatD nu(ndims[0],ndims[1]);
+  fmatD ustar(ndims[0],ndims[1]);
+  fmatD vstar(ndims[0],ndims[1]);
+  fmatD u(ndims[0],ndims[1]);
+  fmatD v(ndims[0],ndims[1]);
+  fmatD u_old(ndims[0],ndims[1]);
+  fmatD v_old(ndims[0],ndims[1]);
+  fmatD u2(ndims[0],ndims[1]);
+  fmatD v2(ndims[0],ndims[1]);
+  fmatD Fx(ndims[0],ndims[1]);
+  fmatD Fy(ndims[0],ndims[1]);
+  Fx.set_values(0.0);
+  Fy.set_values(0.0);
   
   // ... call mesh generator
   Timer timer;
@@ -95,7 +98,7 @@ int main(int argc, char* argv[]){
   IO::logger->info("Generating 2D mesh");
   double dx = 0.0;
   double dy = 0.0;
-  mesh::mesher2D(config.mesh.lx,config.mesh.ly,xc,yc,xn,yn,dx,dy);
+  mesh::mesher2D(config.mesh.lx,config.mesh.ly,xc,yc,xu,yu,xv,yv,dx,dy);
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   IO::logger->info("Tagging boundaries");
@@ -133,22 +136,27 @@ int main(int argc, char* argv[]){
   const double rhol = config.iliq.rho;
   const double rhog = config.igas.rho;
   const double nul = config.iliq.mu / rhol;
-  const double nug = config.igas.mu / rhog;
+  // const double nug = config.igas.mu / rhog;
+  const double nug = config.igas.mu;
   const double sigma = 0.00;
-  printer.print(rhol,rhog,nul,nug);
   const double Mh = config.drop.M*min(dx,dy);
-  levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
+  // levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
   
   // get initial volume to use for volume correction
-  double V0 = levset::getVolume(heavi,dx,dy);
+  double V0=0.0;
+  // V0 = levset::getVolume(heavi,dx,dy);
 
   // initialize density and nu fields
-  for (int j = jstr-1; j <= jend+1; j++) {
-    for (int i = istr-1; i <= iend+1; i++) {
-      rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
-      nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
-    }
-  }
+  rho.set_values(rhog);
+  nu.set_values(nug);
+  // for (int j = jstr-1; j <= jend+1; j++) {
+  //   for (int i = istr-1; i <= iend+1; i++) {
+  //     cout << nu(i,j) << " ";
+  //     // rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
+  //     // nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
+  //   }
+  //   cout << endl;
+  // }
   
 
 
@@ -172,15 +180,18 @@ int main(int argc, char* argv[]){
   for (int ii = 0; ii < config.solver.iter; ii++) {
     // ... update boundary conditions
     BC::update_BCs(bcTags,u,v,p);
-    levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
+    // levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
 
     // ... get the minimum dt in the domain for current iteration
     double dt = get_min_dt(cfl,dx,dy,u,v,max(nug,nul));
+    // ustar.set_values(0.000);
+    // vstar.set_values(0.000);
+    BC::update_BCs(bcTags,ustar,vstar,p);
 
 
     // ... loop over domain for predictor step
-    for (int j = jstr; j <= jend-1; j++) {
-      for (int i = istr; i <= iend-1; i++) {
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
         std::vector<double> advec(2,0.0);
         std::vector<double> advec_old(2,0.0);
         std::vector<double> diffu(2,0.0);
@@ -205,73 +216,97 @@ int main(int argc, char* argv[]){
         vstar(i,j) = v(i,j) + dt*(-ab2[1] + diffu[1]-Fy(i,j)/rho(i,j));
       }
     }
+    BC::update_BCs(bcTags,ustar,vstar,p);
 
     // ... solve for the pressure
+    if (config.fv.enabled) {
+      if (ii % config.fv.freq == 0) {
+        if (config.fv.mode=="center") {
+          std::ostringstream foutss;
+          foutss << setw(5) << std::setfill('0') << ii;
+          string caseName = foutss.str();
+          IO::getCellCenter(u,v,uc,vc);
+          IO::vtk_output_2D(caseName,config.fv.dir,false,
+              xc,yc,uc,vc,
+              "p",p,
+              "rho",rho,
+              "nu",nu,
+              "phi",phi,
+              "kappa",kappa,
+              "Fx",Fx,
+              "Fy",Fy,
+              "heavi",heavi);
+        } else {
+          std::ostringstream foutssU;
+          foutssU << "u" << setw(5) << std::setfill('0') << ii;
+          string caseName = foutssU.str();
+          IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,
+              xu,yu,u,v,
+              "p",p,
+              "rho",rho,
+              "nu",nu,
+              "phi",phi,
+              "kappa",kappa,
+              "Fx",Fx,
+              "Fy",Fy,
+              "heavi",heavi);
+          std::ostringstream foutssV;
+          foutssV << "v" << setw(5) << std::setfill('0') << ii;
+          caseName = foutssV.str();
+          IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,
+              xv,yv,u,v,
+              "p",p,
+              "rho",rho,
+              "nu",nu,
+              "phi",phi,
+              "kappa",kappa,
+              "Fx",Fx,
+              "Fy",Fy,
+              "heavi",heavi);
+        }
+      }
+    } 
     psolve::SOR(config.solver.omega,p,ustar,vstar,dx,dy,dt,rho,bcTags);
     BC::update_BCs(bcTags,ustar,vstar,p);
 
     
     // ... apply the pressure correctior
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    for (int j = jstr; j <= jend+1; j++) {
+      for (int i = istr; i <= iend+1; i++) {
         double dpdx = (p(i,j) - p(i-1,j)) / (dx);
         double dpdy = (p(i,j) - p(i,j-1)) / (dy);
         u2(i,j) = ustar(i,j) - 1.0/rho(i,j)*dt*dpdx;
         v2(i,j) = vstar(i,j) - 1.0/rho(i,j)*dt*dpdy;
+        ustar(i,j) = u2(i,j);
+        vstar(i,j) = v2(i,j);
       }
     }
-    BC::update_BCs_phi(bcTags,rho);
-    BC::update_BCs_phi(bcTags,nu);
     BC::update_BCs(bcTags,u2,v2,p);
-    // ... solve advection eq for phi
-    levset::weno(bcTags,dx,dy,dt,u2,v2,phi);
-    if (config.levset.reinit) {
-      levset::reinitialize(bcTags,dx,dy,dtau,config.levset.ireinit,phi);
-    }
-    levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
-    double Vn = levset::getVolume(heavi,dx,dy);
-    double Ln = levset::getLength(phi,dx,dy,Mh);
-    levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
 
-    for (int j = jstr-1; j <= jend; j++) {
-      for (int i = istr-1; i <= iend; i++) {
-        rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
-        nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
-      }
-    }
+    /**
+     * PHI ADVECTION & VOLUME CORRECTION
+     */
+    double Vn = 0.0;
+    // BC::update_BCs_phi(bcTags,rho);
+    // BC::update_BCs_phi(bcTags,nu);
+    // // ... solve advection eq for phi
+    // levset::weno(bcTags,dx,dy,dt,u2,v2,phi);
+    // if (config.levset.reinit) {
+    //   levset::reinitialize(bcTags,dx,dy,dtau,config.levset.ireinit,phi);
+    // }
+    // levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
+    // double Vn = levset::getVolume(heavi,dx,dy);
+    // double Ln = levset::getLength(phi,dx,dy,Mh);
+    // levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
+
+    // for (int j = jstr-1; j <= jend; j++) {
+    //   for (int i = istr-1; i <= iend; i++) {
+    //     rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
+    //     nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
+    //   }
+    // }
 
     // ... output intermediate flowviz
-    if (config.fv.enabled) {
-      if (ii % config.fv.freq == 0) {
-        std::ostringstream foutss;
-        foutss << setw(5) << std::setfill('0') << ii;
-        string caseName = foutss.str();
-        if (config.fv.mode=="center") {
-          IO::getCellCenter(u,v,uc,vc);
-          IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,
-                            xc,yc,uc,vc,
-                            "p",p,
-                            "rho",rho,
-                            "nu",nu,
-                            "phi",phi,
-                            "kappa",kappa,
-                            "Fx",Fx,
-                            "Fy",Fy,
-                            "heavi",heavi);
-        } else {
-          IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,
-                            xn,yn,u,v,
-                            "p",p,
-                            "rho",rho,
-                            "nu",nu,
-                            "phi",phi,
-                            "kappa",kappa,
-                            "Fx",Fx,
-                            "Fy",Fy,
-                            "heavi",heavi);
-        }
-      }
-    } 
 
     // ... Dyanmic CFL
     if (ii > 0) 
@@ -291,8 +326,8 @@ int main(int argc, char* argv[]){
     cfl = min(config.solver.cflf,max(cfl,config.solver.cfli)); 
 
     // ... store the previous timestep and update
-    for (int j = jstr-1; j <= jend; j++) {
-      for (int i = istr-1; i <= iend; i++) {
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
         u_old(i,j) = u(i,j);
         v_old(i,j) = v(i,j);
         u(i,j) = u2(i,j);
@@ -327,12 +362,13 @@ int main(int argc, char* argv[]){
    */
   if (config.fv.enabled) {
     IO::logger->info("Outputting final flow solution");
-    IO::vtk_output_2D("final",config.fv.dir,config.fv.ghost,
+    IO::vtk_output_2D("final",config.fv.dir,false,
                       xc,yc,u,v,
                       "p",p,
                       "rho",rho,
                       "nu",nu,
                       "phi",phi,
+                      "kappa",kappa,
                       "heavi",heavi);
   } else {
     IO::logger->warn("Output was disabled.");

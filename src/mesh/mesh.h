@@ -27,7 +27,8 @@ using namespace mtr;
 namespace mesh {
 void mesher2D(const double& lx, const double& ly, 
               FMatrix<double>& xc, FMatrix<double>& yc,
-              FMatrix<double>& xn, FMatrix<double>& yn,
+              FMatrix<double>& xu, FMatrix<double>& yu,
+              FMatrix<double>& xv, FMatrix<double>& yv,
               double& dx, double& dy);
 } // end namespace mesh
 #endif // MESH_H
