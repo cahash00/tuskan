@@ -14,8 +14,8 @@ void get_phi(mtr::FMatrix<double>& phi,
              const double& xd,
              const double& yd,
              const double& r_drop) {
-  for (int j = jstr-1; j <= jend+1; j++) {
-    for (int i = istr-1; i <= iend+1; i++) {
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
       phi(i,j) = sqrt(pow((xc(i,j)-xd),2) + pow((yc(i,j)-yd),2))-r_drop;
     }
   }
@@ -162,35 +162,36 @@ void surfaceTension(mtr::FMatrix<double>& Fx,
 
   for (int j = jstr; j <= jend-1; j++) {
     for (int i = istr; i <= iend-1; i++) {
-      // // Compute gradients of phi using central differences
-      double phix = (phi(i+1,j) - phi(i-1,j)) / (2.0*dx);
-      double phiy = (phi(i,j+1) - phi(i,j-1)) / (2.0*dy);
-      // Compute gradients of phi using harmonic averaging
-      // double dphidx_forward = (phi(i+1,j) - phi(i,j)) / dx;
-      // double dphidx_backward = (phi(i,j) - phi(i-1,j)) / dx;
-      // double dphidy_forward = (phi(i,j+1) - phi(i,j)) / dy;
-      // double dphidy_backward = (phi(i,j) - phi(i,j-1)) / dy;
-
-      // Harmonic averaging for gradients
-      // double phix = 2.0 * dphidx_forward * dphidx_backward / (dphidx_forward + dphidx_backward+eps);
-      // double phiy = 2.0 * dphidy_forward * dphidy_backward / (dphidy_forward + dphidy_backward+eps);
-
-
-      // Compute magnitude of the gradient
-      double grad_mag = sqrt(phix*phix + phiy*phiy);
-
-      // Normalized components of the gradient
-      double nx1 = phix / grad_mag;
-      double ny1 = phiy / grad_mag;
-
-      // Compute second derivatives using central differences
-      double phixx = (phi(i+1,j) - 2.0*phi(i,j) + phi(i-1,j))/(dx*dx);
-      double phiyy = (phi(i,j+1) - 2.0*phi(i,j) + phi(i,j-1))/(dy*dy);
-      double phixy = (phi(i+1,j+1) - phi(i+1,j-1)
-                        - phi(i-1,j+1) + phi(i-1,j-1)) / (4.0*dx*dy);
-
       double delta = 0.0;
+      double phixx,phiyy,phixy,ny1,nx1;
       if (abs(phi(i,j)) < Mh) {
+        // // Compute gradients of phi using central differences
+        // double phix = (phi(i+1,j) - phi(i-1,j)) / (2.0*dx);
+        // double phiy = (phi(i,j+1) - phi(i,j-1)) / (2.0*dy);
+        // Compute gradients of phi using harmonic averaging
+        double dphidx_forward = (phi(i+1,j) - phi(i,j)) / dx;
+        double dphidx_backward = (phi(i,j) - phi(i-1,j)) / dx;
+        double dphidy_forward = (phi(i,j+1) - phi(i,j)) / dy;
+        double dphidy_backward = (phi(i,j) - phi(i,j-1)) / dy;
+
+        // Harmonic averaging for gradients
+        double phix = 2.0 * dphidx_forward * dphidx_backward / (dphidx_forward + dphidx_backward+eps);
+        double phiy = 2.0 * dphidy_forward * dphidy_backward / (dphidy_forward + dphidy_backward+eps);
+
+
+        // Compute magnitude of the gradient
+        double grad_mag = sqrt(phix*phix + phiy*phiy);
+
+        // Normalized components of the gradient
+        nx1 = phix / grad_mag;
+        ny1 = phiy / grad_mag;
+
+        // Compute second derivatives using central differences
+        phixx = (phi(i+1,j) - 2.0*phi(i,j) + phi(i-1,j))/(dx*dx);
+        phiyy = (phi(i,j+1) - 2.0*phi(i,j) + phi(i,j-1))/(dy*dy);
+        phixy = (phi(i+1,j+1) - phi(i+1,j-1)
+                          - phi(i-1,j+1) + phi(i-1,j-1)) / (4.0*dx*dy);
+
         kappa(i,j) = (phixx*ny1*ny1 - 2.0*phixy*nx1*ny1
             + phiyy*nx1*nx1) / grad_mag;
         delta = 1.0/(2.0*Mh)*(1.0+cos(M_PI*phi(i,j)/Mh));
@@ -201,8 +202,6 @@ void surfaceTension(mtr::FMatrix<double>& Fx,
       Fx(i,j) = sigma*kappa(i,j)*delta*nx1;
       Fy(i,j) = sigma*kappa(i,j)*delta*ny1;
       // kappa(i,j) = phixx;
-      // kappa(i,j) = phiyy;
-      // kappa(i,j) = grad_mag;
     }
   }
 }
