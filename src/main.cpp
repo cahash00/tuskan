@@ -136,7 +136,7 @@ int main(int argc, char* argv[]){
   const double rhog = config.igas.rho;
   const double nul = config.iliq.mu / rhol;
   const double nug = config.igas.mu / rhog;
-  const double sigma = 0.06;
+  const double sigma = 0.8;
   printer.print(rhol,rhog,nul,nug);
   const double Mh = config.drop.M*min(dx,dy);
   levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
@@ -274,7 +274,7 @@ int main(int argc, char* argv[]){
         string caseName = foutss.str();
         if (config.fv.mode=="center") {
           IO::getCellCenter(u,v,uc,vc);
-          IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,
+          IO::vtk_output_2D(caseName,config.fv.dir,false,
                             xc,yc,uc,vc,
                             "p",p,
                             "rho",rho,
