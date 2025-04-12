@@ -14,6 +14,7 @@ struct levelset {
   int ireinit;
 };
 struct droplet {
+  bool enabled;
   double r;
   double M;
   double x;

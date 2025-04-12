@@ -21,13 +21,13 @@ void heaviside(const double& M,
                mtr::FMatrix<double>& heavi);
 
 /******************************************************************************/
-void weno(BC::bcTags bcTags,
-          const double dx,
-          const double dy,
-          const double dt,
-          const mtr::FMatrix<double>& u,
-          const mtr::FMatrix<double>& v,
-          mtr::FMatrix<double>& phi);
+void advecPhi(BC::bcTags bcTags,
+              const double dx,
+              const double dy,
+              const double dt,
+              const mtr::FMatrix<double>& u,
+              const mtr::FMatrix<double>& v,
+              mtr::FMatrix<double>& phi);
 
 /******************************************************************************/
 void reinitialize(BC::bcTags bcTags,
