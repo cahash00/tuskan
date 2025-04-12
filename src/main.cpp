@@ -136,7 +136,7 @@ int main(int argc, char* argv[]){
   const double rhog = config.igas.rho;
   const double nul = config.iliq.mu / rhol;
   const double nug = config.igas.mu / rhog;
-  const double sigma = 0.8;
+  const double sigma = config.drop.sigma;
   printer.print(rhol,rhog,nul,nug);
   const double Mh = config.drop.M*min(dx,dy);
   levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);

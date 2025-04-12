@@ -86,6 +86,7 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& iconfig) {
 
   // droplets
   ideck.drop.enabled = iconfig["droplet"]["enabled"].as<bool>();
+  ideck.drop.sigma = iconfig["droplet"]["sigma"].as<double>();
   ideck.drop.r = iconfig["droplet"]["diameter"].as<double>() *0.5;
   ideck.drop.M = iconfig["droplet"]["M"].as<double>();
   ideck.drop.x = iconfig["droplet"]["center"]["x"].as<double>();

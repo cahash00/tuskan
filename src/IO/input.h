@@ -15,6 +15,7 @@ struct levelset {
 };
 struct droplet {
   bool enabled;
+  double sigma;
   double r;
   double M;
   double x;
