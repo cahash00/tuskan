@@ -36,17 +36,16 @@ struct bcTags {
  * @brief tag_BCs
  * @detail goes over the domain and tags the edges for boundary conditions
  */
-bcTags tag_BCs(IO::ConfigData config,
-               const int nx,
-               const int ny) {
+bcTags tag_BCs(IO::ConfigData config) {
   std::map<std::string,int> bcTypes = {
+    {"interior",-1},
     {"noslip wall",0},
     {"moving wall",1},
     {"inlet",2},
     {"outlet",3},
     {"periodic",7}
   };
-  bcTags tags(nx,ny);
+  bcTags tags(d.nxl+2,d.nyl+2);
   tags.Left.bvals.set_values(bcTypes[config.bcLeft.type]);
   tags.Right.bvals.set_values(bcTypes[config.bcRight.type]);
   tags.Bottom.bvals.set_values(bcTypes[config.bcBottom.type]);
@@ -62,12 +61,12 @@ bcTags tag_BCs(IO::ConfigData config,
   tags.Right.pressure = config.bcRight.pressure;
   tags.Left.pressure = config.bcLeft.pressure;
 
-  // check to make sure periodics align
-  if (config.bcLeft.type=="periodic") {
-    assert(config.bcLeft.type==config.bcRight.type);
-  } else if (config.bcTop.type=="periodic") {
-    assert(config.bcBottom.type==config.bcTop.type);
-  }
+  // check for neightboring procs, MPI implementation
+  if (d.nl != MPI_PROC_NULL) tags.Left.bvals.set_values(-1);
+  if (d.nr != MPI_PROC_NULL) tags.Right.bvals.set_values(-1);
+  if (d.nb != MPI_PROC_NULL) tags.Bottom.bvals.set_values(-1);
+  if (d.nt != MPI_PROC_NULL) tags.Top.bvals.set_values(-1);
+
   return tags;
 }
 
@@ -80,7 +79,11 @@ void update_BCs(bcTags tags,
     /**
      * LEFT BOUNDARY
      */
-    if (tags.Left.bvals(j)==0) {
+    if (tags.Left.bvals(j)==-1) {
+      comm::exchange_ghost_cells("Left",u);
+      comm::exchange_ghost_cells("Left",v);
+      comm::exchange_ghost_cells("Left",p);
+    } else if (tags.Left.bvals(j)==0) {
       // noslip 
       u(istr,j) = 0.0;
       v(istr-1,j) = -v(istr,j);
@@ -99,7 +102,11 @@ void update_BCs(bcTags tags,
     /**
      * RIGHT BOUNDARY
      */
-    if (tags.Right.bvals(j)==0) {
+    if (tags.Right.bvals(j)==-1) {
+      comm::exchange_ghost_cells("Right",u);
+      comm::exchange_ghost_cells("Right",v);
+      comm::exchange_ghost_cells("Right",p);
+    } else if (tags.Right.bvals(j)==0) {
       // noslip 
       u(iend,j) = 0.0;
       v(iend+1,j) = -v(iend,j);
@@ -123,7 +130,11 @@ void update_BCs(bcTags tags,
     /**
      * BOTTOM BOUNDARY
      */
-    if (tags.Bottom.bvals(i)==0) {
+    if (tags.Bottom.bvals(i)==-1) {
+      comm::exchange_ghost_cells("Bottom",u);
+      comm::exchange_ghost_cells("Bottom",v);
+      comm::exchange_ghost_cells("Bottom",p);
+    } else if (tags.Bottom.bvals(i)==0) {
       // noslip wall 
       u(i,jstr-1) = -u(i,jstr);
       v(i,jstr) = 0.0;
@@ -142,7 +153,11 @@ void update_BCs(bcTags tags,
     /**
      * TOP BOUNDARY
      */
-    if (tags.Top.bvals(i)==0) {
+    if (tags.Top.bvals(i)==-1) {
+      comm::exchange_ghost_cells("Top",u);
+      comm::exchange_ghost_cells("Top",v);
+      comm::exchange_ghost_cells("Top",p);
+    } else if (tags.Top.bvals(i)==0) {
       // noslip 
       u(i,jend+1) = -u(i,jend);
       v(i,jend) = 0.0;
@@ -170,7 +185,9 @@ void update_BCs_phi(bcTags tags,
     /**
      * LEFT BOUNDARY
      */
-    if (tags.Left.bvals(j)==0) {
+    if (tags.Bottom.bvals(j)==-1) {
+      comm::exchange_ghost_cells("Left",phi);
+    } else if (tags.Left.bvals(j)==0) {
       // noslip 
       phi(istr-1,j) = phi(istr,j);
     } else if (tags.Left.bvals(j)==1) {
@@ -183,7 +200,9 @@ void update_BCs_phi(bcTags tags,
     /**
      * RIGHT BOUNDARY
      */
-    if (tags.Right.bvals(j)==0) {
+    if (tags.Bottom.bvals(j)==-1) {
+      comm::exchange_ghost_cells("Right",phi);
+    } else if (tags.Right.bvals(j)==0) {
       // noslip 
       phi(iend,j) = phi(iend-1,j);
     } else if (tags.Right.bvals(j)==1) {
@@ -201,7 +220,9 @@ void update_BCs_phi(bcTags tags,
     /**
      * BOTTOM BOUNDARY
      */
-    if (tags.Bottom.bvals(i)==0) {
+    if (tags.Bottom.bvals(i)==-1) {
+      comm::exchange_ghost_cells("Bottom",phi);
+    } else if (tags.Bottom.bvals(i)==0) {
       // noslip wall 
       phi(i,jstr-1) = phi(i,jstr);
     } else if (tags.Bottom.bvals(i)==1) {
@@ -214,7 +235,9 @@ void update_BCs_phi(bcTags tags,
     /**
      * TOP BOUNDARY
      */
-    if (tags.Top.bvals(i)==0) {
+    if (tags.Bottom.bvals(i)==-1) {
+      comm::exchange_ghost_cells("Top",phi);
+    } else if (tags.Top.bvals(i)==0) {
       // noslip 
       phi(i,jend) = phi(i,jend-1);
     } else if (tags.Top.bvals(i)==1) {

@@ -65,7 +65,7 @@ int main(int argc, char* argv[]){
   comm::Decomp d = comm::decomposer(config.mesh.nx,config.mesh.ny);
   comm::print_decomposer_info(d);
   // ... get domain stats
-  getDomainIndices(d);
+  getDomainIndices();
 
   // ... initialize the MATAR matrices for the domain
   // use local number of cells rather than the global ncells
@@ -93,7 +93,9 @@ int main(int argc, char* argv[]){
   heavi.set_values(0.0);
   phi.set_values(0.0);
   
-  // ... call mesh generator
+  /***********************
+   * call mesh generator *
+   ***********************/
   Timer timer;
   timer.start();
   if(rank==0) IO::logger->info("Generating 2D mesh");
@@ -103,10 +105,12 @@ int main(int argc, char* argv[]){
   timer.stop();
   if(rank==0) IO::logger->info("  done ({} seconds)",timer.time());
   if(rank==0) IO::logger->info("Tagging boundaries");
-  BC::bcTags bcTags = BC::tag_BCs(config,u.dims(1),u.dims(2));
+  BC::bcTags bcTags = BC::tag_BCs(config);
   if(rank==0) IO::logger->info("  done");
 
-  // ... initialization
+  /******************
+   * initialization *
+   ******************/
   ofstream logFile(config.res.file, ios::out);
   if (!logFile) {
       std::cerr << "Error opening log file!\n";

@@ -8,6 +8,6 @@ using namespace std;
 extern const int nghosts;
 extern int istr,iend,jstr,jend;
 
-void getDomainIndices(comm::Decomp& d);
+void getDomainIndices();
   
 #endif // PARAMS_H

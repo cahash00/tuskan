@@ -31,9 +31,7 @@ struct bcTags {
   bcTags(int nx, int ny);
 };
 
-bcTags tag_BCs(IO::ConfigData config,
-               const int nx,
-               const int ny);
+bcTags tag_BCs(IO::ConfigData config);
 
 void update_BCs(bcTags tags, 
                 fmat<double>& u,
