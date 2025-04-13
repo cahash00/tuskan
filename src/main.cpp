@@ -58,23 +58,21 @@ int main(int argc, char* argv[]){
   
   // ... get domain stats
   getDomainIndices(config.mesh.nx,config.mesh.ny);
-  vector<int> ndims(2,0);
-  ndims[0] = nx+nghosts*2;
-  ndims[1] = ny+nghosts*2;
-  const int isize = nx+2;
-  const int jsize = nx+2;
 
   // ... initialize and finalize Kokkos with the main scope
-  if (rank==0) IO::logger->info("Initializing Kokkos");
+  if (rank==0) if(rank==0) IO::logger->info("Initializing Kokkos");
   Kokkos::ScopeGuard kokkos_guard(argc, argv); 
   // Kokkos::initialize(argc,argv);
-  if (rank==0) IO::logger->info("  done");
+  if (rank==0) if(rank==0) IO::logger->info("  done");
 
   // ... call decomposer
   comm::Decomp d = comm::decomposer(nx,ny);
   comm::print_decomposer_info(d);
 
   // ... initialize the MATAR matrices for the domain
+  // use local number of cells rather than the global ncells
+  const int isize = d.nxl+2;
+  const int jsize = d.nyl+2;
   fmat<double> xc(isize,jsize),yc(isize,jsize),
                xn(isize+1,jsize+1),yn(isize+1,jsize+1);
   fmat<double> uc(isize,jsize),vc(isize,jsize);
@@ -100,15 +98,15 @@ int main(int argc, char* argv[]){
   // ... call mesh generator
   Timer timer;
   timer.start();
-  IO::logger->info("Generating 2D mesh");
+  if(rank==0) IO::logger->info("Generating 2D mesh");
   double dx = 0.0;
   double dy = 0.0;
   mesh::mesher2D(config.mesh.lx,config.mesh.ly,xc,yc,xn,yn,dx,dy);
   timer.stop();
-  IO::logger->info("  done ({} seconds)",timer.time());
-  IO::logger->info("Tagging boundaries");
+  if(rank==0) IO::logger->info("  done ({} seconds)",timer.time());
+  if(rank==0) IO::logger->info("Tagging boundaries");
   BC::bcTags bcTags = BC::tag_BCs(config,u.dims(1),u.dims(2));
-  IO::logger->info("  done");
+  if(rank==0) IO::logger->info("  done");
 
   // ... initialization
   ofstream logFile(config.res.file, ios::out);
@@ -117,10 +115,10 @@ int main(int argc, char* argv[]){
       return -1;
   }
   timer.start();
-  IO::logger->info("Initializing the domain");
+  if(rank==0) IO::logger->info("Initializing the domain");
   double rdx  = 1.0/dx;  // reciprocal of dx
   double rdy  = 1.0/dy;  // reciprocal of dx
-  IO::logger->info("  dx: {},dy: {}",dx,dy);
+  if(rank==0) IO::logger->info("  dx: {},dy: {}",dx,dy);
 
   // ... initialize domain
   initialize_solution(config,u,v,u2,v2,u_old,v_old,ustar,vstar,p);
@@ -164,7 +162,7 @@ int main(int argc, char* argv[]){
                     "kappa",kappa,"Fx",Fx,"Fy",Fy,"heavi",heavi);
   
   timer.stop();
-  IO::logger->info("  done ({} seconds)",timer.time());
+  if(rank==0) IO::logger->info("  done ({} seconds)",timer.time());
   
   /********************
    * main solver loop *
@@ -177,7 +175,7 @@ int main(int argc, char* argv[]){
 
   // ... start solver & timer
   timer.start();
-  IO::logger->info("Starting Main Solver");
+  if(rank==0) IO::logger->info("Starting Main Solver");
 
   for (int ii = 1; ii <= config.solver.iter; ii++) {
     // ... update boundary conditions
@@ -311,7 +309,7 @@ int main(int argc, char* argv[]){
     logFile << ii << " " << ires << "\n";
     if (config.res.enabled) {
       if (ii % config.res.freq == 0) {
-        IO::logger->info("  iter {:04}, cfl: {:4e},dt: {:4e}, res: {:4e}, dV: {:4e}",ii,cfl,dt,ires/res0,V0-Vn);
+        if(rank==0) IO::logger->info("  iter {:04}, cfl: {:4e},dt: {:4e}, res: {:4e}, dV: {:4e}",ii,cfl,dt,ires/res0,V0-Vn);
         logFile.flush();
       }
     }
@@ -326,13 +324,13 @@ int main(int argc, char* argv[]){
   } // end of ii-loop
 
   timer.stop();
-  IO::logger->info("  done ({} seconds)",timer.time());
-  IO::logger->info("Average time / iteration: {} seconds",
+  if(rank==0) IO::logger->info("  done ({} seconds)",timer.time());
+  if(rank==0) IO::logger->info("Average time / iteration: {} seconds",
                    timer.time()/static_cast<double>(finalIter));
 
   // ... output section
   if (config.fv.enabled) {
-    IO::logger->info("Outputting final flow solution");
+    if(rank==0) IO::logger->info("Outputting final flow solution");
     IO::vtk_output_2D("final",config.fv.dir,false,xc,yc,u,v,
                       "p",p,"rho",rho,"nu",nu,"phi",phi,"heavi",heavi);
   } else {
@@ -348,7 +346,7 @@ int main(int argc, char* argv[]){
 
 
   // ... Final run summary output here
-  IO::logger->info("Done!");
+  if(rank==0) IO::logger->info("Done!");
   MPI_Finalize();
 
   return 0;

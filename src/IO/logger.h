@@ -12,6 +12,7 @@ namespace IO {
 extern std::shared_ptr<spdlog::logger> logger;
 
 void init_logger();
+void logit(const std::string& message);
 
 } // end namespace IO
 #endif // end LOGGER_H

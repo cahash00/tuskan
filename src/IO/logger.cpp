@@ -31,5 +31,16 @@ void init_logger() {
     spdlog::set_default_logger(logger);
   }
 } // end init_logger
+
+void logit(const std::string& message) {
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  if (rank==0) {
+    logger->info(message);
+  }
+}
+  
+
+
 } // end namespace IO
 #endif // end LOGGER_H
