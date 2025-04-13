@@ -14,6 +14,8 @@ struct levelset {
   int ireinit;
 };
 struct droplet {
+  bool enabled;
+  double sigma;
   double r;
   double M;
   double x;
@@ -47,6 +49,7 @@ struct Fv {
   int freq;
   string dir;
   bool ghost;
+  string mode;
 };
 struct Mesh {
   double lx;

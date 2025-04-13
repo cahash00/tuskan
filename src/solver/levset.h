@@ -21,13 +21,13 @@ void heaviside(const double& M,
                mtr::FMatrix<double>& heavi);
 
 /******************************************************************************/
-void weno(BC::bcTags bcTags,
-          const double dx,
-          const double dy,
-          const double dt,
-          const mtr::FMatrix<double>& u,
-          const mtr::FMatrix<double>& v,
-          mtr::FMatrix<double>& phi);
+void advecPhi(BC::bcTags bcTags,
+              const double dx,
+              const double dy,
+              const double dt,
+              const mtr::FMatrix<double>& u,
+              const mtr::FMatrix<double>& v,
+              mtr::FMatrix<double>& phi);
 
 /******************************************************************************/
 void reinitialize(BC::bcTags bcTags,
@@ -37,11 +37,33 @@ void reinitialize(BC::bcTags bcTags,
                   const int isteps,
                   mtr::FMatrix<double>& phi);
 
-  /******************************************************************************/
-double curvature(const int i, const int j,
-                 const double dx, const double dy,
-                 const mtr::FMatrix<double>& phi);
+/******************************************************************************/
+void surfaceTension(mtr::FMatrix<double>& Fx,
+                    mtr::FMatrix<double>& Fy,
+                    mtr::FMatrix<double>& phi,
+                    mtr::FMatrix<double>& kappa,
+                    const double Mh,
+                    const double sigma,
+                    const double dx,
+                    const double dy);
 
+/******************************************************************************/
+double getLength(mtr::FMatrix<double>& phi,
+                 const double dx,
+                 const double dy,
+                 const double Mh);
+
+/******************************************************************************/
+void volumeCorrection(mtr::FMatrix<double>& phi,
+                      const double Mh,
+                      const double V0,
+                      const double Vn,
+                      const double Ln);
+
+/******************************************************************************/
+double getVolume(mtr::FMatrix<double>& heavi,
+                 const double dx,
+                 const double dy);
 
 } // end namespace levset
 

@@ -55,7 +55,7 @@ void add_array(FILE* out,const bool ghost,const string& label,T&& array, Args&&.
 };
 
 template <typename... Args>
-  void vtk_output_2D_node(const string& caseName,
+  void vtk_output_2D(const string& caseName,
       const string& foutDir,
       const bool ghost,
       const mtr::FMatrix<double>& xc,
@@ -68,18 +68,6 @@ template <typename... Args>
      * pressure is already cell-centered
      */
     int xstr,xend,ystr,yend,dnx,dny;
-    mtr::FMatrix<double> uc(xc.dims(1),xc.dims(2));
-    mtr::FMatrix<double> vc(xc.dims(1),xc.dims(2));
-    for (int j = jstr-1; j <= jend; j++) {
-      for (int i = istr-1; i <= iend; i++) {
-        uc(i,j) = 0.5*(u(i,j) + u(i+1,j));
-      }
-    }
-    for (int j = jstr-1; j <= jend; j++) {
-      for (int i = istr-1; i <= iend; i++) {
-        vc(i,j) = 0.5*(v(i,j)+v(i,j+1));
-      }
-    }
 
     if (ghost) {
       xstr = istr-1;
@@ -125,6 +113,12 @@ template <typename... Args>
     add_array(out,ghost,forward<Args>(args)...);
     fclose(out);
 };
+
+void getCellCenter(mtr::FMatrix<double>& u,
+                   mtr::FMatrix<double>& v,
+                   mtr::FMatrix<double>& uc,
+                   mtr::FMatrix<double>& vc);
+
 /******************************************************************************/
 } // end namespace IO
 #endif // OUTPUT_H

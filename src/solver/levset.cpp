@@ -14,8 +14,8 @@ void get_phi(mtr::FMatrix<double>& phi,
              const double& xd,
              const double& yd,
              const double& r_drop) {
-  for (int j = jstr-1; j <= jend+1; j++) {
-    for (int i = istr-1; i <= iend+1; i++) {
+  for (int j = jstr-1; j <= jend; j++) {
+    for (int i = istr-1; i <= iend; i++) {
       phi(i,j) = sqrt(pow((xc(i,j)-xd),2) + pow((yc(i,j)-yd),2))-r_drop;
     }
   }
@@ -27,8 +27,8 @@ void heaviside(const double& M,
                const mtr::FMatrix<double>& phi,
                mtr::FMatrix<double>& heavi) {
   const double Mh = M*h;
-  for (int j = jstr-1; j <= jend+1; j++) {
-    for (int i = istr-1; i <= iend+1; i++) {
+  for (int j = jstr-1; j <= jend; j++) {
+    for (int i = istr-1; i <= iend; i++) {
       if (phi(i,j) < -Mh) {
         heavi(i,j) = 0.0;
       } else if (phi(i,j) > Mh) {
@@ -39,17 +39,6 @@ void heaviside(const double& M,
     }
   }
 } // end marker
-
-/******************************************************************************/
-double M_switch(const double a, 
-                const double b) {
-  if (abs(a) < abs(b)) {
-    return a;
-  } else {
-    return b;
-  }
-  return -1;
-} // end M_switch
 
 /******************************************************************************/
 std::vector<double> get_phiHalf(const int i,
@@ -67,13 +56,10 @@ std::vector<double> get_phiHalf(const int i,
 
     // get interface values using simple 1st order CD
     if (u(i,j) > 0.0) {
-        phiHalf[0] = phi(i,j) + 0.5*dm1;  // Backward difference
-    }
-    else if (u(i,j) < 0.0) {
-        phiHalf[0] = phi(i+1,j) - 0.5*dp1;  // Forward difference
+        phiHalf[0] = phi(i-1,j);  // Backward difference
     }
     else {
-        phiHalf[0] = phi(i,j);  // If velocity is zero, take current value
+        phiHalf[0] = phi(i,j);  // Forward difference
     }
 
     /**
@@ -84,43 +70,66 @@ std::vector<double> get_phiHalf(const int i,
 
     // get interface values using simple 1st order CD
     if (v(i,j) > 0.0) {
-        phiHalf[1] = phi(i,j) + 0.5*dm1_y;  // Backward difference
-    }
-    else if (v(i,j) < 0.0) {
-        phiHalf[1] = phi(i,j+1) - 0.5*dp1_y;  // Forward difference
+        phiHalf[1] = phi(i-1,j);  // Backward difference
     }
     else {
-        phiHalf[1] = phi(i,j);  // If velocity is zero, take current value
+        phiHalf[1] = phi(i,j);  // Forward difference
     }
 
     return phiHalf;
 
 } // end get_phiHalf
 /******************************************************************************/
-double get_Lphi(const int i,
-                const int j,
-                const mtr::FMatrix<double>& u, 
-                const mtr::FMatrix<double>& v, 
-                const double dx,
-                const double dy,
-                mtr::FMatrix<double>& phi) {
-  // ... get the cell-centered velocities
-  const double ucell = 0.5*(u(i-1,j)+u(i,j));
-  const double vcell = 0.5*(v(i,j-1)+v(i,j));
+// double get_Lphi(const int i,
+//                 const int j,
+//                 const mtr::FMatrix<double>& u, 
+//                 const mtr::FMatrix<double>& v, 
+//                 const double dx,
+//                 const double dy,
+//                 mtr::FMatrix<double>& phi) {
+//   // ... get the cell-centered velocities
+//   const double ucell = 0.5*(u(i-1,j)+u(i,j));
+//   const double vcell = 0.5*(v(i,j-1)+v(i,j));
 
-  // ... get the cell face phi values based on switch function
-  std::vector<double> phiHalf = get_phiHalf(i,j,u,v,phi);
+//   // ... get the cell face phi values based on switch function
+//   std::vector<double> phiHalf = get_phiHalf(i,j,u,v,phi);
   
-  // ... Calculate the spatial derivative using phiHalf values
-  const double dphidx = (phiHalf[0] - phi(i, j)) / dx;
-  const double dphidy = (phiHalf[1] - phi(i, j)) / dy;
+//   // ... Calculate the spatial derivative using phiHalf values
+//   const double dphidx = (phiHalf[0] - phi(i, j)) / dx;
+//   const double dphidy = (phiHalf[1] - phi(i, j)) / dy;
 
-  // ... Advection term calculation
-  const double Lphi = - ucell * dphidx - vcell * dphidy;
-  return Lphi;
+//   // ... Advection term calculation
+//   const double Lphi = - ucell * dphidx - vcell * dphidy;
+//   return Lphi;
+// }
+double get_Lphi(const int i, const int j,
+                const mtr::FMatrix<double>& u,
+                const mtr::FMatrix<double>& v,
+                const double dx, const double dy,
+                const mtr::FMatrix<double>& phi) {
+  // u at i+1/2,j and i-1/2,j
+  double u_right = u(i,j); // u_{i+1/2,j}
+  double u_left  = u(i-1,j);   // u_{i-1/2,j}
+
+  double phi_right = (u_right > 0.0) ? phi(i,j)   : phi(i+1,j);
+  double phi_left  = (u_left  > 0.0) ? phi(i-1,j) : phi(i,j);
+
+  double flux_x = (u_right * phi_right - u_left * phi_left) / dx;
+
+  // v at i,j+1/2 and i,j-1/2
+  double v_top    = v(i,j); // v_{i,j+1/2}
+  double v_bottom = v(i,j-1);   // v_{i,j-1/2}
+
+  double phi_top    = (v_top    > 0.0) ? phi(i,j)   : phi(i,j+1);
+  double phi_bottom = (v_bottom > 0.0) ? phi(i,j-1) : phi(i,j);
+
+  double flux_y = (v_top * phi_top - v_bottom * phi_bottom) / dy;
+
+  return -(flux_x + flux_y);
 }
+
 /******************************************************************************/
-void weno(const BC::bcTags bcTags,
+void advecPhi(const BC::bcTags bcTags,
           const double dx,
           const double dy,
           const double dt,
@@ -132,55 +141,105 @@ void weno(const BC::bcTags bcTags,
   mtr::FMatrix<double> phi2(phi.dims(1),phi.dims(2));
 
   BC::update_BCs_phi(bcTags,phi);
-  // ... calculate phi*
-  for (int j = jstr; j <= jend-1; j++) {
-    for (int i = istr; i <= iend-1; i++) {
-      double Lphi = get_Lphi(i,j,u,v,dx,dy,phi);
-      phiStar(i,j) = phi(i,j) + dt*Lphi;
-    }
-  }
-  BC::update_BCs_phi(bcTags,phiStar);
+  // // ... calculate phi*
+  // for (int j = jstr-1; j <= jend; j++) {
+  //   for (int i = istr-1; i <= iend; i++) {
+  //     double Lphi = get_Lphi(i,j,u,v,dx,dy,phi);
+  //     phiStar(i,j) = phi(i,j) + dt*Lphi;
+  //   }
+  // }
+  // BC::update_BCs_phi(bcTags,phiStar);
 
-  // ... correct phi*
+  // // ... correct phi*
+  // for (int j = jstr-1; j <= jend; j++) {
+  //   for (int i = istr-1; i <= iend; i++) {
+  //     double LphiN = get_Lphi(i,j,u,v,dx,dy,phi);
+  //     double LphiStar = get_Lphi(i,j,u,v,dx,dy,phiStar);
+  //     phi2(i,j) = phi(i,j) + dt*0.5*(LphiN+LphiStar);
+  //   }
+  // }
+  // ... simple first-order Euler time discretization
   for (int j = jstr; j <= jend-1; j++) {
     for (int i = istr; i <= iend-1; i++) {
-      double LphiN = get_Lphi(i,j,u,v,dx,dy,phi);
-      double LphiStar = get_Lphi(i,j,u,v,dx,dy,phiStar);
-      phi2(i,j) = phi(i,j) + dt*0.5*(LphiN+LphiStar);
+      double ucell=0.0,vcell=0.0;
+      ucell = (u(i,j)+u(i-1,j))*0.5;
+      vcell = (v(i,j)+v(i,j-1))*0.5;
+
+      double phix =0.0,phiy=0.0;
+      if (ucell > 0.0) {
+        phix = (phi(i,j)-phi(i-1,j))/dx;
+      } else if (ucell < 0.0) {
+        phix = (phi(i+1,j)-phi(i,j))/dx;
+      } else {
+        phix = 0.0;
+      }
+      if (vcell > 0.0) {
+        phiy = (phi(i,j)-phi(i,j-1))/dy;
+      } else if (vcell < 0.0) {
+        phiy = (phi(i,j+1)-phi(i,j))/dy;
+      } else {
+        phiy = 0.0;
+      }
+      
+      phi2(i,j) = phi(i,j) - dt*(ucell*phix + vcell*phiy);
     }
   }
+  
   BC::update_BCs_phi(bcTags,phi2);
 
   // ... update the phi solution
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
+  for (int j = jstr; j <= jend-1; j++) {
+    for (int i = istr; i <= iend-1; i++) {
       phi(i,j) = phi2(i,j);
     }
   }
-} // end weno
-double curvature(const int i, const int j,
-                 const double dx, const double dy,
-                 const mtr::FMatrix<double>& phi) {
-    // Compute gradients of phi using central differences
-    double dphidx = (phi(i+1, j) - phi(i-1, j)) / (2.0 * dx);
-    double dphidy = (phi(i, j+1) - phi(i, j-1)) / (2.0 * dy);
+} // end advecPhi
 
-    // Compute magnitude of the gradient
-    double grad_mag = std::sqrt(dphidx * dphidx + dphidy * dphidy + 1e-12); // Avoid division by zero
+/******************************************************************************/
+void surfaceTension(mtr::FMatrix<double>& Fx,
+                    mtr::FMatrix<double>& Fy,
+                    mtr::FMatrix<double>& phi,
+                    mtr::FMatrix<double>& kappa,
+                    const double Mh,
+                    const double sigma,
+                    const double dx,
+                    const double dy) {
+  std::vector<double> fst(2,0.0);
+  double eps=1e-12;
 
-    // Normalized components of the gradient
-    double nx = dphidx / grad_mag;
-    double ny = dphidy / grad_mag;
+  for (int j = jstr; j <= jend-1; j++) {
+    for (int i = istr; i <= iend-1; i++) {
+      double delta = 0.0;
+      double phixx,phiyy,phixy,ny1,nx1;
+      if (abs(phi(i,j)) < Mh) {
+        // Compute gradients of phi using central differences
+        double phix = (phi(i+1,j) - phi(i-1,j)) / (2.0*dx);
+        double phiy = (phi(i,j+1) - phi(i,j-1)) / (2.0*dy);
 
-    // Compute second derivatives using central differences
-    double d2phidx2 = (phi(i+1, j) - 2.0 * phi(i, j) + phi(i-1, j)) / (dx * dx);
-    double d2phidy2 = (phi(i, j+1) - 2.0 * phi(i, j) + phi(i, j-1)) / (dy * dy);
-    double d2phidxdy = (phi(i+1, j+1) - phi(i+1, j-1) - phi(i-1, j+1) + phi(i-1, j-1)) / (4.0 * dx * dy);
+        // Compute magnitude of the gradient
+        double grad_mag = sqrt(phix*phix + phiy*phiy + eps);
 
-    // Divergence of normalized gradient
-    double curvature = (d2phidx2 * ny * ny - 2.0 * d2phidxdy * nx * ny + d2phidy2 * nx * nx) / grad_mag;
+        // Normalized components of the gradient
+        nx1 = phix / grad_mag;
+        ny1 = phiy / grad_mag;
 
-    return curvature;
+        // Compute second derivatives using central differences
+        phixx = (phi(i+1,j) - 2.0*phi(i,j) + phi(i-1,j))/(dx*dx);
+        phiyy = (phi(i,j+1) - 2.0*phi(i,j) + phi(i,j-1))/(dy*dy);
+        phixy = (phi(i+1,j+1) - phi(i+1,j-1)
+                          - phi(i-1,j+1) + phi(i-1,j-1)) / (4.0*dx*dy);
+
+        kappa(i,j) = (phixx*ny1*ny1 - 2.0*phixy*nx1*ny1
+            + phiyy*nx1*nx1) / grad_mag;
+        delta = 1.0/(2.0*Mh)*(1.0+cos(M_PI*phi(i,j)/Mh));
+      } else {
+        kappa(i,j) = 0.0;
+        delta = 0.0;
+      }
+      Fx(i,j) = sigma*kappa(i,j)*delta*nx1;
+      Fy(i,j) = sigma*kappa(i,j)*delta*ny1;
+    }
+  }
 }
 
 void reinitialize(BC::bcTags bcTags,
@@ -189,16 +248,22 @@ void reinitialize(BC::bcTags bcTags,
                   const double& dtau,
                   const int isteps,
                   mtr::FMatrix<double>& phi) {
-  double eps = 1.0e-15; // small number to avoid division by zero
+  const double eps=1.0e-12;
+  mtr::FMatrix<double> sign0(phi.dims(1),phi.dims(2));
+  mtr::FMatrix<double> phi0(phi.dims(1),phi.dims(2));
   mtr::FMatrix<double> phi2(phi.dims(1),phi.dims(2));
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
+  for (int j = jstr; j <= jend-1; j++) {
+    for (int i = istr; i <= iend-1; i++) {
       phi2(i,j) = phi(i,j);
+      phi0(i,j) = phi(i,j);
+      double gphi0 = sqrt(pow((phi(i+1,j) - phi(i-1,j)) / (2.0 * dx),2)
+                        + pow((phi(i,j+1) - phi(i,j-1)) / (2.0 * dy),2));
+      sign0(i,j) = phi(i,j) / sqrt(phi(i,j)*phi(i,j)+gphi0*gphi0*dx*dx+eps*eps);
     }
   }
   
 
-  // update the phi matrix
+  // ... update the phi matrix
   for (int n = 0; n < isteps; n++) {
     for (int j = jstr; j <= jend-1; j++) {
       for (int i = istr; i <= iend-1; i++) {
@@ -206,8 +271,6 @@ void reinitialize(BC::bcTags bcTags,
         double b = (phi(i+1,j)-phi(i,j))/dx;
         double c = (phi(i,j)-phi(i,j-1))/dy;
         double d = (phi(i,j+1)-phi(i,j))/dy;
-        double sign = phi(i,j) / sqrt(phi(i,j)*phi(i,j) 
-                    + sqrt(pow(a-b,2)+pow(c-d,2)));
         double ap = max(a,0.0);
         double am = min(a,0.0);
         double bp = max(b,0.0);
@@ -216,13 +279,26 @@ void reinitialize(BC::bcTags bcTags,
         double cm = min(c,0.0);
         double dp = max(d,0.0);
         double dm = min(d,0.0);
-        double sp = max(sign,0.0);
-        double sm = min(sign,0.0);
+        double sp = max(sign0(i,j),0.0);
+        double sm = min(sign0(i,j),0.0);
         double H = sp*(sqrt(max(ap*ap,bm*bm) + max(cp*cp,dm*dm))-1.0)
                  + sm*(sqrt(max(am*am,bp*bp) + max(cm*cm,dp*dp))-1.0);
-        phi2(i,j) = phi(i,j) - dtau*H;
+        //> subcell fix
+        //  Russo and Smereka (2000)
+        //  Vastly improves the ability to reduce the amount of volume lost
+        if (phi0(i+1,j)*phi0(i,j) < 0.0 ||
+            phi0(i-1,j)*phi0(i,j) < 0.0 ||
+            phi0(i,j+1)*phi0(i,j) < 0.0 || 
+            phi0(i,j-1)*phi0(i,j) < 0.0) {
+          double D = 2.0*dx*phi0(i,j) / sqrt( pow(phi0(i+1,j)-phi0(i-1,j),2) 
+                                            + pow(phi0(i,j+1)-phi0(i,j-1),2) );
+          phi2(i,j) = phi(i,j) - dtau*(sign0(i,j)*abs(phi(i,j))-D);
+        } else {
+          phi2(i,j) = phi(i,j) - dtau*H;
+        }
       }
     }
+    
     // BC::update_BCs_phi(bcTags,phi2);
     for (int j = jstr; j <= jend-1; j++) {
       for (int i = istr; i <= iend-1; i++) {
@@ -231,5 +307,54 @@ void reinitialize(BC::bcTags bcTags,
     }
   }
 } // end reinitialize
+
+double getVolume(mtr::FMatrix<double>& heavi,
+                 const double dx,
+                 const double dy) {
+  double vol = 0.0;
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
+      vol = vol + (1.0-heavi(i,j))*dx*dy;
+    }
+  }
+  return vol;
+}
+
+double getLength(mtr::FMatrix<double>& phi,
+                 const double dx,
+                 const double dy,
+                 const double Mh) {
+  double len=0.0,delta=0.0;
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
+      if (abs(phi(i,j)) < Mh) {
+        delta = 1.0/(2.0*Mh)*(1+cos(M_PI*phi(i,j)/Mh));
+      } else {
+        delta = 0.0;
+      }
+      len = len + delta*dx*dy;
+    }
+  }
+  return len;
+}
+  
+  
+
+void volumeCorrection(mtr::FMatrix<double>& phi,
+                      const double Mh,
+                      const double V0,
+                      const double Vn,
+                      const double Ln) {
+  double dV = (V0-Vn)/Ln;
+  double delta = 0.0;
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
+      if (abs(phi(i,j)) < Mh) {
+        phi(i,j) = phi(i,j) - dV;
+      }
+    }
+  }
+}
+  
 
 } // end namespace levset

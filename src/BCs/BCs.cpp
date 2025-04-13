@@ -80,7 +80,7 @@ void update_BCs(bcTags tags,
      */
     if (tags.Left.bvals(j)==0) {
       // noslip 
-      u(istr-1,j) = 0.0;
+      u(istr,j) = 0.0;
       v(istr-1,j) = -v(istr,j);
       p(istr-1,j) = p(istr,j);
     } else if (tags.Left.bvals(j)==1) {
@@ -124,7 +124,7 @@ void update_BCs(bcTags tags,
     if (tags.Bottom.bvals(i)==0) {
       // noslip wall 
       u(i,jstr-1) = -u(i,jstr);
-      v(i,jstr-1) = 0.0;
+      v(i,jstr) = 0.0;
       p(i,jstr-1) = p(i,jstr);
     } else if (tags.Bottom.bvals(i)==1) {
       // moving wall
@@ -147,8 +147,8 @@ void update_BCs(bcTags tags,
       p(i,jend) = p(i,jend-1);
     } else if (tags.Top.bvals(i)==1) {
       // moving wall
-      u(i,jend+1) = 2.0*tags.Top.vel[0]-u(i,jend);
-      v(i,jend) = tags.Top.vel[1];
+      u(i,jend) = 2.0*tags.Top.vel[0]-u(i,jend);
+      v(i,jend-1) = tags.Top.vel[1];
       p(i,jend) = p(i,jend-1);
     } else if (tags.Top.bvals(i)==7) {
       // periodic

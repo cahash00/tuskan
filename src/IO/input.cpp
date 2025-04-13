@@ -22,6 +22,7 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& iconfig) {
   ideck.mesh.ly = iconfig["domain"]["lengths"]["y"].as<double>();
   ideck.mesh.nx = iconfig["domain"]["dimensions"]["x"].as<int>();
   ideck.mesh.ny = iconfig["domain"]["dimensions"]["y"].as<int>();
+
   // ... solver settings
   ideck.restart.load = iconfig["solver"]["restart"]["load"].as<bool>();
   ideck.restart.save = iconfig["solver"]["restart"]["save"].as<bool>();
@@ -39,6 +40,7 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& iconfig) {
   ideck.fv.freq  = iconfig["output"]["flowviz"]["frequency"].as<int>();
   ideck.fv.dir = iconfig["output"]["flowviz"]["directory"].as<string>();
   ideck.fv.ghost = iconfig["output"]["flowviz"]["ghost cells"].as<bool>();
+  ideck.fv.mode = iconfig["output"]["flowviz"]["mode"].as<string>();
 
   // ... BC parameters
   ideck.bcLeft.type = iconfig["boundary conditions"]["left"]["type"].as<string>();
@@ -83,6 +85,8 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& iconfig) {
   ideck.iliq.mu = iconfig["initial conditions"]["liquid"]["mu"].as<double>();
 
   // droplets
+  ideck.drop.enabled = iconfig["droplet"]["enabled"].as<bool>();
+  ideck.drop.sigma = iconfig["droplet"]["sigma"].as<double>();
   ideck.drop.r = iconfig["droplet"]["diameter"].as<double>() *0.5;
   ideck.drop.M = iconfig["droplet"]["M"].as<double>();
   ideck.drop.x = iconfig["droplet"]["center"]["x"].as<double>();
