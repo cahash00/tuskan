@@ -226,6 +226,7 @@ int main(int argc, char* argv[]){
       }
     }
     MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
+    cout << "after advection" << endl;
 
     // ... solve for the pressure
     psolve::SOR(config.solver.omega,p,ustar,vstar,dx,dy,dt,rho,bcTags);
@@ -245,10 +246,15 @@ int main(int argc, char* argv[]){
       }
     }
     MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
+    cout << "after pressure" << endl;
     BC::update_BCs_phi(bcTags,rho);
+    cout << "after BC" << endl;
     BC::update_BCs_phi(bcTags,nu);
+    cout << "after BC" << endl;
     BC::update_BCs(bcTags,u2,v2,p);
+    cout << "after BC" << endl;
     MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
+    cout << "after BC" << endl;
 
     // ... solve advection eq for phi
     double Vn = 0.0;
@@ -263,6 +269,7 @@ int main(int argc, char* argv[]){
       levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
     }
     MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
+    cout << "after phi advection" << endl;
     
     // ... update density and viscosity values
     for (int j = jstr-1; j <= jend; j++) {
@@ -281,21 +288,18 @@ int main(int argc, char* argv[]){
         string caseName = foutss.str();
         if (config.fv.mode=="center") {
           IO::getCellCenter(u,v,uc,vc);
-          MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
           IO::vtk_output_2D(caseName,config.fv.dir,false,xc,yc,uc,vc,
                             "p",p,"rho",rho,"nu",nu,"phi",phi,"kappa",kappa,
                             "Fx",Fx,"Fy",Fy,"heavi",heavi);
-          MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
         } else {
-          MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
           IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,xn,yn,u,v,
                             "p",p,"rho",rho,"nu",nu,"phi",phi,"kappa",kappa,
                             "Fx",Fx,"Fy",Fy,"heavi",heavi);
-          MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
         }
       }
     } 
     MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
+    cout << "after flowviz" << endl;
 
     // ... Dynamic CFL
     if (ii > 1) 

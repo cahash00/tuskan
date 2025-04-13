@@ -79,11 +79,7 @@ void update_BCs(bcTags tags,
     /**
      * LEFT BOUNDARY
      */
-    if (tags.Left.bvals(j)==-1) {
-      comm::exchange_ghost_cells("Left",u);
-      comm::exchange_ghost_cells("Left",v);
-      comm::exchange_ghost_cells("Left",p);
-    } else if (tags.Left.bvals(j)==0) {
+    if (tags.Left.bvals(j)==0) {
       // noslip 
       u(istr,j) = 0.0;
       v(istr-1,j) = -v(istr,j);
@@ -102,11 +98,7 @@ void update_BCs(bcTags tags,
     /**
      * RIGHT BOUNDARY
      */
-    if (tags.Right.bvals(j)==-1) {
-      comm::exchange_ghost_cells("Right",u);
-      comm::exchange_ghost_cells("Right",v);
-      comm::exchange_ghost_cells("Right",p);
-    } else if (tags.Right.bvals(j)==0) {
+    if (tags.Right.bvals(j)==0) {
       // noslip 
       u(iend,j) = 0.0;
       v(iend+1,j) = -v(iend,j);
@@ -130,11 +122,7 @@ void update_BCs(bcTags tags,
     /**
      * BOTTOM BOUNDARY
      */
-    if (tags.Bottom.bvals(i)==-1) {
-      comm::exchange_ghost_cells("Bottom",u);
-      comm::exchange_ghost_cells("Bottom",v);
-      comm::exchange_ghost_cells("Bottom",p);
-    } else if (tags.Bottom.bvals(i)==0) {
+    if (tags.Bottom.bvals(i)==0) {
       // noslip wall 
       u(i,jstr-1) = -u(i,jstr);
       v(i,jstr) = 0.0;
@@ -153,11 +141,7 @@ void update_BCs(bcTags tags,
     /**
      * TOP BOUNDARY
      */
-    if (tags.Top.bvals(i)==-1) {
-      comm::exchange_ghost_cells("Top",u);
-      comm::exchange_ghost_cells("Top",v);
-      comm::exchange_ghost_cells("Top",p);
-    } else if (tags.Top.bvals(i)==0) {
+    if (tags.Top.bvals(i)==0) {
       // noslip 
       u(i,jend+1) = -u(i,jend);
       v(i,jend) = 0.0;
@@ -174,6 +158,9 @@ void update_BCs(bcTags tags,
       p(i,jend) = tags.Top.pressure;
     }
   }
+  comm::exchange_ghost_cells("Left",u);
+  comm::exchange_ghost_cells("Left",v);
+  comm::exchange_ghost_cells("Left",p);
 
   
 } // end update_BCs
