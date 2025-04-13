@@ -3,17 +3,18 @@
 
 #include <matar.h>
 #include <BCs.h>
+#include <types.h>
 
 namespace psolve {
 
 void SOR(const double& omega,
-         mtr::FMatrix<double>& p,
-         mtr::FMatrix<double>& ustar,
-         mtr::FMatrix<double>& vstar,
+         fmat<double>& p,
+         fmat<double>& ustar,
+         fmat<double>& vstar,
          const double& dx,
          const double& dy,
          const double& dt,
-         mtr::FMatrix<double>& rho,
+         fmat<double>& rho,
          BC::bcTags bcTags);
 
 }

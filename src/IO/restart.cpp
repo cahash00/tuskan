@@ -6,6 +6,7 @@
  * @date April 07, 2025
  */
 
+#include <types.h>
 #include <input.h>
 #include <output.h>
 #include <matar.h>
@@ -23,7 +24,7 @@ namespace restart {
 /******************************************************************************/
 // Function to save the matrix to a binary file
 void save(const std::string& filename, 
-          const mtr::FMatrix<double>& u) {
+          const fmat<double>& u) {
   std::ofstream file(filename, std::ios::binary);
   if (!file.is_open()) {
     std::cerr << "Error: Could not open file " << filename << " for writing.\n";
@@ -42,7 +43,7 @@ void save(const std::string& filename,
 
 // Function to load the matrix from a binary file
 void load(const std::string& filename,
-          const mtr::FMatrix<double>& u) {
+          const fmat<double>& u) {
   std::ifstream file(filename, std::ios::binary);
   if (!file.is_open()) {
     std::cerr << "Error: Could not open file " << filename << " for reading.\n";

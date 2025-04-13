@@ -16,6 +16,7 @@
 #include <iostream>
 #include <params.h>
 #include <input.h>
+#include <types.h>
 #include <fstream>
 
 using namespace std;
@@ -35,10 +36,10 @@ void check_directories(const string& foutDir) {
   }
 } // end check_directories
 
-void getCellCenter(mtr::FMatrix<double>& u,
-    mtr::FMatrix<double>& v,
-    mtr::FMatrix<double>& uc,
-    mtr::FMatrix<double>& vc) {
+void getCellCenter(fmat<double>& u,
+    fmat<double>& v,
+    fmat<double>& uc,
+    fmat<double>& vc) {
   for (int j = jstr; j <= jend-1; j++) {
     for (int i = istr; i <= iend; i++) {
       uc(i,j) = 0.5*(u(i,j) + u(i-1,j));

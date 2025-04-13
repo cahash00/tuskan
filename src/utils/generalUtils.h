@@ -7,6 +7,7 @@
  * @brief General utilities library
  */
 
+#include <types.h>
 #include <chrono>
 #include <spdlog/spdlog.h>
 #include <matar.h>

@@ -5,19 +5,20 @@
 #include <solver.h>
 #include <BCs.h>
 #include <pprint.hpp>
+#include <types.h>
 
 using namespace std;
 
 namespace psolve {
 
 void SOR(const double& omega,
-         mtr::FMatrix<double>& p,
-         mtr::FMatrix<double>& ustar,
-         mtr::FMatrix<double>& vstar,
+         fmat<double>& p,
+         fmat<double>& ustar,
+         fmat<double>& vstar,
          const double& dx,
          const double& dy,
          const double& dt,
-         mtr::FMatrix<double>& rho,
+         fmat<double>& rho,
          BC::bcTags bcTags) {
   
   // ... initialize pressure array
@@ -25,8 +26,8 @@ void SOR(const double& omega,
   const double dy2 = dy*dy;
   // const double coeff = 2.0*(1.0/dx2+1.0/dy2);
 
-  mtr::FMatrix<double> p1(p.dims(1),p.dims(2));
-  mtr::FMatrix<double> p2(p.dims(1),p.dims(2));
+  fmat<double> p1(p.dims(1),p.dims(2));
+  fmat<double> p2(p.dims(1),p.dims(2));
 
 
   // ... set pressure gradient boundary conditions

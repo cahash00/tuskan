@@ -25,10 +25,9 @@
 #include <BCs.h>
 #include <fstream>
 #include <string>
+#include <types.h>
 
 using namespace std;
-typedef mtr::FMatrix<double> fmatD;
-typedef mtr::FMatrix<int> fmatI;
 
 /**
  * Main program
@@ -67,27 +66,29 @@ int main(int argc, char* argv[]){
   vector<int> ndims(2,0);
   ndims[0] = nx+nghosts*2;
   ndims[1] = ny+nghosts*2;
+  const int isize = nx+2;
+  const int jsize = nx+2;
 
   // ... initialize the MATAR matrices for the domain
-  fmatD xc(ndims[0],ndims[1]),yc(ndims[0],ndims[1]),
-        xn(ndims[0]+1,ndims[1]+1),yn(ndims[0]+1,ndims[1]+1);
-  fmatD uc(ndims[0],ndims[1]),vc(ndims[0],ndims[1]);
-  fmatD p(ndims[0]+1,ndims[1]+1);
-  fmatD phi(ndims[0]+1,ndims[1]+1);
-  fmatD heavi(ndims[0]+1,ndims[1]+1);
-  fmatD rho(ndims[0]+1,ndims[1]+1);
-  fmatD kappa(ndims[0]+1,ndims[1]+1);
-  fmatD nu(ndims[0]+1,ndims[1]+1);
-  fmatD ustar(ndims[0]+1,ndims[1]+1);
-  fmatD vstar(ndims[0]+1,ndims[1]+1);
-  fmatD u(ndims[0]+1,ndims[1]+1);
-  fmatD v(ndims[0]+1,ndims[1]+1);
-  fmatD u_old(ndims[0]+1,ndims[1]+1);
-  fmatD v_old(ndims[0]+1,ndims[1]+1);
-  fmatD u2(ndims[0]+1,ndims[1]+1);
-  fmatD v2(ndims[0]+1,ndims[1]+1);
-  fmatD Fx(ndims[0]+1,ndims[1]+1);
-  fmatD Fy(ndims[0]+1,ndims[1]+1);
+  fmat<double> xc(isize,jsize),yc(isize,jsize),
+               xn(isize+1,jsize+1),yn(isize+1,jsize+1);
+  fmat<double> uc(isize,jsize),vc(isize,jsize);
+  fmat<double> p(isize+1,jsize+1);
+  fmat<double> phi(isize+1,jsize+1);
+  fmat<double> heavi(isize+1,jsize+1);
+  fmat<double> rho(isize+1,jsize+1);
+  fmat<double> kappa(isize+1,jsize+1);
+  fmat<double> nu(isize+1,jsize+1);
+  fmat<double> ustar(isize+1,jsize+1);
+  fmat<double> vstar(isize+1,jsize+1);
+  fmat<double> u(isize+1,jsize+1);
+  fmat<double> v(isize+1,jsize+1);
+  fmat<double> u_old(isize+1,jsize+1);
+  fmat<double> v_old(isize+1,jsize+1);
+  fmat<double> u2(isize+1,jsize+1);
+  fmat<double> v2(isize+1,jsize+1);
+  fmat<double> Fx(isize+1,jsize+1);
+  fmat<double> Fy(isize+1,jsize+1);
   heavi.set_values(0.0);
   phi.set_values(0.0);
   
@@ -160,15 +161,8 @@ int main(int argc, char* argv[]){
   }
   levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
   IO::vtk_output_2D("00000",config.fv.dir,config.fv.ghost,
-      xn,yn,u,v,
-      "p",p,
-      "rho",rho,
-      "nu",nu,
-      "phi",phi,
-      "kappa",kappa,
-      "Fx",Fx,
-      "Fy",Fy,
-      "heavi",heavi);
+                    xn,yn,u,v,"p",p,"rho",rho,"nu",nu,"phi",phi,
+                    "kappa",kappa,"Fx",Fx,"Fy",Fy,"heavi",heavi);
   
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
@@ -246,6 +240,7 @@ int main(int argc, char* argv[]){
     BC::update_BCs_phi(bcTags,rho);
     BC::update_BCs_phi(bcTags,nu);
     BC::update_BCs(bcTags,u2,v2,p);
+
     // ... solve advection eq for phi
     double Vn = 0.0;
     if (config.drop.enabled==true) {
@@ -274,27 +269,13 @@ int main(int argc, char* argv[]){
         string caseName = foutss.str();
         if (config.fv.mode=="center") {
           IO::getCellCenter(u,v,uc,vc);
-          IO::vtk_output_2D(caseName,config.fv.dir,false,
-                            xc,yc,uc,vc,
-                            "p",p,
-                            "rho",rho,
-                            "nu",nu,
-                            "phi",phi,
-                            "kappa",kappa,
-                            "Fx",Fx,
-                            "Fy",Fy,
-                            "heavi",heavi);
+          IO::vtk_output_2D(caseName,config.fv.dir,false,xc,yc,uc,vc,
+                            "p",p,"rho",rho,"nu",nu,"phi",phi,"kappa",kappa,
+                            "Fx",Fx,"Fy",Fy,"heavi",heavi);
         } else {
-          IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,
-                            xn,yn,u,v,
-                            "p",p,
-                            "rho",rho,
-                            "nu",nu,
-                            "phi",phi,
-                            "kappa",kappa,
-                            "Fx",Fx,
-                            "Fy",Fy,
-                            "heavi",heavi);
+          IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,xn,yn,u,v,
+                            "p",p,"rho",rho,"nu",nu,"phi",phi,"kappa",kappa,
+                            "Fx",Fx,"Fy",Fy,"heavi",heavi);
         }
       }
     } 
@@ -353,13 +334,8 @@ int main(int argc, char* argv[]){
    */
   if (config.fv.enabled) {
     IO::logger->info("Outputting final flow solution");
-    IO::vtk_output_2D("final",config.fv.dir,false,
-                      xc,yc,u,v,
-                      "p",p,
-                      "rho",rho,
-                      "nu",nu,
-                      "phi",phi,
-                      "heavi",heavi);
+    IO::vtk_output_2D("final",config.fv.dir,false,xc,yc,u,v,
+                      "p",p,"rho",rho,"nu",nu,"phi",phi,"heavi",heavi);
   } else {
     IO::logger->warn("Output was disabled.");
   }

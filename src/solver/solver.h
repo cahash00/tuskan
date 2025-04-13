@@ -1,6 +1,7 @@
 #ifndef SOLVER_H
 #define SOLVER_H
 
+#include <types.h>
 #include <input.h>
 #include <matar.h>
 
@@ -13,14 +14,14 @@ double getAdvecU(const int& i,
                  const int& j,
                  const double rdx,
                  const double rdy,
-                 const mtr::FMatrix<double>& u,
-                 const mtr::FMatrix<double>& v);
+                 const fmat<double>& u,
+                 const fmat<double>& v);
 double getAdvecV(const int& i,
                  const int& j,
                  const double rdx,
                  const double rdy,
-                 const mtr::FMatrix<double>& u,
-                 const mtr::FMatrix<double>& v);
+                 const fmat<double>& u,
+                 const fmat<double>& v);
 
 /*******************************************************************************
  * @brief get the diffusion contribution
@@ -29,22 +30,22 @@ double getDiffU(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
-                const mtr::FMatrix<double>& nu,
-                const mtr::FMatrix<double>& u,
-                const mtr::FMatrix<double>& v);
+                const fmat<double>& nu,
+                const fmat<double>& u,
+                const fmat<double>& v);
 double getDiffV(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
-                const mtr::FMatrix<double>& nu,
-                const mtr::FMatrix<double>& u,
-                const mtr::FMatrix<double>& v);
+                const fmat<double>& nu,
+                const fmat<double>& u,
+                const fmat<double>& v);
 
 /*******************************************************************************
  * @brief get the L2NORM between two arrays
  ******************************************************************************/
-double L2NORM(const mtr::FMatrix<double>& m1, 
-              const mtr::FMatrix<double>& m2);
+double L2NORM(const fmat<double>& m1, 
+              const fmat<double>& m2);
 
 /*******************************************************************************
  * @brief get the global minimum timestep
@@ -52,23 +53,23 @@ double L2NORM(const mtr::FMatrix<double>& m1,
 double get_min_dt(const double& cfl, 
                   const double& dx,
                   const double& dy,
-                  const mtr::FMatrix<double>& u,
-                  const mtr::FMatrix<double>& v,
+                  const fmat<double>& u,
+                  const fmat<double>& v,
                   const double& nu);
 
 /*******************************************************************************
  * @brief initialize the domain and arrays
  ******************************************************************************/
 void initialize_solution(IO::ConfigData& config,
-                         mtr::FMatrix<double>& u, 
-                         mtr::FMatrix<double>& v,
-                         mtr::FMatrix<double>& u2,
-                         mtr::FMatrix<double>& v2,
-                         mtr::FMatrix<double>& u_old,
-                         mtr::FMatrix<double>& v_old,
-                         mtr::FMatrix<double>& ustar,
-                         mtr::FMatrix<double>& vstar,
-                         mtr::FMatrix<double>& p);
+                         fmat<double>& u, 
+                         fmat<double>& v,
+                         fmat<double>& u2,
+                         fmat<double>& v2,
+                         fmat<double>& u_old,
+                         fmat<double>& v_old,
+                         fmat<double>& ustar,
+                         fmat<double>& vstar,
+                         fmat<double>& p);
 double dynamic_cfl(const int ii,
                    double cfl,
                    double ires,

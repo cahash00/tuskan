@@ -7,6 +7,7 @@
 #include <string>
 #include <logger.h>
 #include <params.h>
+#include <types.h>
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -18,12 +19,12 @@ void check_directories(const string& foutDir);
 /******************************************************************************/
 // save an array to a restart file
 void save_restart(const std::string& filename, 
-    const mtr::FMatrix<double>& u);
+    const fmat<double>& u);
 
 /******************************************************************************/
 // load an array from a restart file
 void load_restart(const std::string& filename,
-    const mtr::FMatrix<double>& u);
+    const fmat<double>& u);
 
 /******************************************************************************/
 inline void add_array(FILE* out,const bool ghost) {};
@@ -58,10 +59,10 @@ template <typename... Args>
   void vtk_output_2D(const string& caseName,
       const string& foutDir,
       const bool ghost,
-      const mtr::FMatrix<double>& xc,
-      const mtr::FMatrix<double>& yc,
-      const mtr::FMatrix<double>& u,
-      const mtr::FMatrix<double>& v,
+      const fmat<double>& xc,
+      const fmat<double>& yc,
+      const fmat<double>& u,
+      const fmat<double>& v,
       Args&&... args) {
     /**
      * get cell-centered solution variables
@@ -114,10 +115,10 @@ template <typename... Args>
     fclose(out);
 };
 
-void getCellCenter(mtr::FMatrix<double>& u,
-                   mtr::FMatrix<double>& v,
-                   mtr::FMatrix<double>& uc,
-                   mtr::FMatrix<double>& vc);
+void getCellCenter(fmat<double>& u,
+                   fmat<double>& v,
+                   fmat<double>& uc,
+                   fmat<double>& vc);
 
 /******************************************************************************/
 } // end namespace IO

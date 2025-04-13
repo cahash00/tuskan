@@ -3,13 +3,14 @@
 
 #include <matar.h>
 #include <BCs.h>
+#include <types.h>
 
 namespace levset {
 
 
-void get_phi(mtr::FMatrix<double>& phi,
-             const mtr::FMatrix<double>& xc,
-             const mtr::FMatrix<double>& yc,
+void get_phi(fmat<double>& phi,
+             const fmat<double>& xc,
+             const fmat<double>& yc,
              const double& xd,
              const double& yd,
              const double& r_drop);
@@ -17,17 +18,17 @@ void get_phi(mtr::FMatrix<double>& phi,
 /******************************************************************************/
 void heaviside(const double& M,
                const double& h,
-               const mtr::FMatrix<double>& phi,
-               mtr::FMatrix<double>& heavi);
+               const fmat<double>& phi,
+               fmat<double>& heavi);
 
 /******************************************************************************/
 void advecPhi(BC::bcTags bcTags,
               const double dx,
               const double dy,
               const double dt,
-              const mtr::FMatrix<double>& u,
-              const mtr::FMatrix<double>& v,
-              mtr::FMatrix<double>& phi);
+              const fmat<double>& u,
+              const fmat<double>& v,
+              fmat<double>& phi);
 
 /******************************************************************************/
 void reinitialize(BC::bcTags bcTags,
@@ -35,33 +36,33 @@ void reinitialize(BC::bcTags bcTags,
                   const double& dy,
                   const double& dtau,
                   const int isteps,
-                  mtr::FMatrix<double>& phi);
+                  fmat<double>& phi);
 
 /******************************************************************************/
-void surfaceTension(mtr::FMatrix<double>& Fx,
-                    mtr::FMatrix<double>& Fy,
-                    mtr::FMatrix<double>& phi,
-                    mtr::FMatrix<double>& kappa,
+void surfaceTension(fmat<double>& Fx,
+                    fmat<double>& Fy,
+                    fmat<double>& phi,
+                    fmat<double>& kappa,
                     const double Mh,
                     const double sigma,
                     const double dx,
                     const double dy);
 
 /******************************************************************************/
-double getLength(mtr::FMatrix<double>& phi,
+double getLength(fmat<double>& phi,
                  const double dx,
                  const double dy,
                  const double Mh);
 
 /******************************************************************************/
-void volumeCorrection(mtr::FMatrix<double>& phi,
+void volumeCorrection(fmat<double>& phi,
                       const double Mh,
                       const double V0,
                       const double Vn,
                       const double Ln);
 
 /******************************************************************************/
-double getVolume(mtr::FMatrix<double>& heavi,
+double getVolume(fmat<double>& heavi,
                  const double dx,
                  const double dy);
 

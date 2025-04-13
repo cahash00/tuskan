@@ -5,12 +5,13 @@
 #include <params.h>
 #include <vector>
 #include <BCs.h>
+#include <types.h>
 
 namespace levset {
 
-void get_phi(mtr::FMatrix<double>& phi,
-             const mtr::FMatrix<double>& xc,
-             const mtr::FMatrix<double>& yc,
+void get_phi(fmat<double>& phi,
+             const fmat<double>& xc,
+             const fmat<double>& yc,
              const double& xd,
              const double& yd,
              const double& r_drop) {
@@ -24,8 +25,8 @@ void get_phi(mtr::FMatrix<double>& phi,
 
 void heaviside(const double& M,
                const double& h,
-               const mtr::FMatrix<double>& phi,
-               mtr::FMatrix<double>& heavi) {
+               const fmat<double>& phi,
+               fmat<double>& heavi) {
   const double Mh = M*h;
   for (int j = jstr-1; j <= jend; j++) {
     for (int i = istr-1; i <= iend; i++) {
@@ -43,9 +44,9 @@ void heaviside(const double& M,
 /******************************************************************************/
 std::vector<double> get_phiHalf(const int i,
                                 const int j,
-                                const mtr::FMatrix<double>& u,
-                                const mtr::FMatrix<double>& v,
-                                const mtr::FMatrix<double>& phi) {
+                                const fmat<double>& u,
+                                const fmat<double>& v,
+                                const fmat<double>& phi) {
   std::vector<double> phiHalf(2,0.0);
   
   /**
@@ -82,11 +83,11 @@ std::vector<double> get_phiHalf(const int i,
 /******************************************************************************/
 // double get_Lphi(const int i,
 //                 const int j,
-//                 const mtr::FMatrix<double>& u, 
-//                 const mtr::FMatrix<double>& v, 
+//                 const fmat<double>& u, 
+//                 const fmat<double>& v, 
 //                 const double dx,
 //                 const double dy,
-//                 mtr::FMatrix<double>& phi) {
+//                 fmat<double>& phi) {
 //   // ... get the cell-centered velocities
 //   const double ucell = 0.5*(u(i-1,j)+u(i,j));
 //   const double vcell = 0.5*(v(i,j-1)+v(i,j));
@@ -103,10 +104,10 @@ std::vector<double> get_phiHalf(const int i,
 //   return Lphi;
 // }
 double get_Lphi(const int i, const int j,
-                const mtr::FMatrix<double>& u,
-                const mtr::FMatrix<double>& v,
+                const fmat<double>& u,
+                const fmat<double>& v,
                 const double dx, const double dy,
-                const mtr::FMatrix<double>& phi) {
+                const fmat<double>& phi) {
   // u at i+1/2,j and i-1/2,j
   double u_right = u(i,j); // u_{i+1/2,j}
   double u_left  = u(i-1,j);   // u_{i-1/2,j}
@@ -133,12 +134,12 @@ void advecPhi(const BC::bcTags bcTags,
           const double dx,
           const double dy,
           const double dt,
-          const mtr::FMatrix<double>& u,
-          const mtr::FMatrix<double>& v,
-          mtr::FMatrix<double>& phi) {
+          const fmat<double>& u,
+          const fmat<double>& v,
+          fmat<double>& phi) {
   // ... initialize phi arrays
-  mtr::FMatrix<double> phiStar(phi.dims(1),phi.dims(2));
-  mtr::FMatrix<double> phi2(phi.dims(1),phi.dims(2));
+  fmat<double> phiStar(phi.dims(1),phi.dims(2));
+  fmat<double> phi2(phi.dims(1),phi.dims(2));
 
   BC::update_BCs_phi(bcTags,phi);
   // // ... calculate phi*
@@ -196,10 +197,10 @@ void advecPhi(const BC::bcTags bcTags,
 } // end advecPhi
 
 /******************************************************************************/
-void surfaceTension(mtr::FMatrix<double>& Fx,
-                    mtr::FMatrix<double>& Fy,
-                    mtr::FMatrix<double>& phi,
-                    mtr::FMatrix<double>& kappa,
+void surfaceTension(fmat<double>& Fx,
+                    fmat<double>& Fy,
+                    fmat<double>& phi,
+                    fmat<double>& kappa,
                     const double Mh,
                     const double sigma,
                     const double dx,
@@ -247,11 +248,11 @@ void reinitialize(BC::bcTags bcTags,
                   const double& dy,
                   const double& dtau,
                   const int isteps,
-                  mtr::FMatrix<double>& phi) {
+                  fmat<double>& phi) {
   const double eps=1.0e-12;
-  mtr::FMatrix<double> sign0(phi.dims(1),phi.dims(2));
-  mtr::FMatrix<double> phi0(phi.dims(1),phi.dims(2));
-  mtr::FMatrix<double> phi2(phi.dims(1),phi.dims(2));
+  fmat<double> sign0(phi.dims(1),phi.dims(2));
+  fmat<double> phi0(phi.dims(1),phi.dims(2));
+  fmat<double> phi2(phi.dims(1),phi.dims(2));
   for (int j = jstr; j <= jend-1; j++) {
     for (int i = istr; i <= iend-1; i++) {
       phi2(i,j) = phi(i,j);
@@ -308,7 +309,7 @@ void reinitialize(BC::bcTags bcTags,
   }
 } // end reinitialize
 
-double getVolume(mtr::FMatrix<double>& heavi,
+double getVolume(fmat<double>& heavi,
                  const double dx,
                  const double dy) {
   double vol = 0.0;
@@ -320,7 +321,7 @@ double getVolume(mtr::FMatrix<double>& heavi,
   return vol;
 }
 
-double getLength(mtr::FMatrix<double>& phi,
+double getLength(fmat<double>& phi,
                  const double dx,
                  const double dy,
                  const double Mh) {
@@ -340,7 +341,7 @@ double getLength(mtr::FMatrix<double>& phi,
   
   
 
-void volumeCorrection(mtr::FMatrix<double>& phi,
+void volumeCorrection(fmat<double>& phi,
                       const double Mh,
                       const double V0,
                       const double Vn,

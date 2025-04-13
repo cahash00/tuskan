@@ -4,6 +4,7 @@
  * @author Caleb Hash
  * @date 2025-02-25
  */
+#include <types.h>
 #include <cmath>
 #include <matar.h>
 #include <params.h>
@@ -14,8 +15,8 @@ using namespace std;
 /******************************************************************************/
 // double getAdvecU(const int& i,const int& j,
 //                  const double rdx,const double rdy,
-//                  const mtr::FMatrix<double>& u,
-//                  const mtr::FMatrix<double>& v) {
+//                  const fmat<double>& u,
+//                  const fmat<double>& v) {
 //   double advec;
 //   advec = rdx*pow((u(i+1,j)+u(i,j))*0.5,2)
 //         - rdx*pow((u(i,j)+u(i-1,j))*0.5,2)
@@ -26,8 +27,8 @@ using namespace std;
 // /******************************************************************************/
 // double getAdvecV(const int& i,const int& j,
 //                  const double rdx,const double rdy,
-//                  const mtr::FMatrix<double>& u,
-//                  const mtr::FMatrix<double>& v) {
+//                  const fmat<double>& u,
+//                  const fmat<double>& v) {
 //   double advec;
 //   advec = rdy*pow((v(i,j)+v(i,j+1))*0.5,2)
 //         - rdy*pow((v(i,j)+v(i,j-1))*0.5,2)
@@ -40,8 +41,8 @@ double getAdvecU(const int& i,
                  const int& j,
                  const double rdx,
                  const double rdy,
-                 const mtr::FMatrix<double>& u,
-                 const mtr::FMatrix<double>& v) {
+                 const fmat<double>& u,
+                 const fmat<double>& v) {
   double advec = 0.0;
   double ue2   = 0.0;
   double uw2   = 0.0;
@@ -82,8 +83,8 @@ double getAdvecU(const int& i,
 /******************************************************************************/
 double getAdvecV(const int& i,const int& j,
                  const double rdx,const double rdy,
-                 const mtr::FMatrix<double>& u,
-                 const mtr::FMatrix<double>& v) {
+                 const fmat<double>& u,
+                 const fmat<double>& v) {
   double advec = 0.0;
   double vn2   = 0.0;
   double vs2   = 0.0;
@@ -126,9 +127,9 @@ double getDiffU(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
-                const mtr::FMatrix<double>& nu,
-                const mtr::FMatrix<double>& u,
-                const mtr::FMatrix<double>& v) {
+                const fmat<double>& nu,
+                const fmat<double>& u,
+                const fmat<double>& v) {
   double diffu;
   // diffu = ( u(i+1,j) - 2.0*u(i,j) + u(i-1,j))*rdx*rdx + 
   //         ( u(i,j+1) - 2.0*u(i,j) + u(i,j-1))*rdy*rdy;
@@ -152,9 +153,9 @@ double getDiffV(const int& i,
                 const int& j,
                 const double rdx,
                 const double rdy,
-                const mtr::FMatrix<double>& nu,
-                const mtr::FMatrix<double>& u,
-                const mtr::FMatrix<double>& v) {
+                const fmat<double>& nu,
+                const fmat<double>& u,
+                const fmat<double>& v) {
   double diffv;
   // diffv = ( v(i+1,j) - 2.0*v(i,j) + v(i-1,j))*rdx*rdx + 
   //         ( v(i,j+1) - 2.0*v(i,j) + v(i,j-1))*rdy*rdy;
@@ -174,8 +175,8 @@ double getDiffV(const int& i,
   return diffv;
 }
 /******************************************************************************/
-double L2NORM(const mtr::FMatrix<double>& m1, 
-              const mtr::FMatrix<double>& m2) {
+double L2NORM(const fmat<double>& m1, 
+              const fmat<double>& m2) {
   // assert that the matrices must be equal in rank
   assert(m1.order() == m2.order());
   
@@ -195,8 +196,8 @@ double L2NORM(const mtr::FMatrix<double>& m1,
 double get_min_dt(const double& cfl, 
                   const double& dx,
                   const double& dy,
-                  const mtr::FMatrix<double>& u,
-                  const mtr::FMatrix<double>& v,
+                  const fmat<double>& u,
+                  const fmat<double>& v,
                   const double& nu) {
   // double umax,vmax = 0.0;
   double eps = 1.0e-10;
@@ -224,15 +225,15 @@ double get_min_dt(const double& cfl,
 }
 /******************************************************************************/
 void initialize_solution(IO::ConfigData& config,
-                         mtr::FMatrix<double>& u,
-                         mtr::FMatrix<double>& v,
-                         mtr::FMatrix<double>& u2,
-                         mtr::FMatrix<double>& v2,
-                         mtr::FMatrix<double>& u_old,
-                         mtr::FMatrix<double>& v_old,
-                         mtr::FMatrix<double>& ustar,
-                         mtr::FMatrix<double>& vstar,
-                         mtr::FMatrix<double>& p) {
+                         fmat<double>& u,
+                         fmat<double>& v,
+                         fmat<double>& u2,
+                         fmat<double>& v2,
+                         fmat<double>& u_old,
+                         fmat<double>& v_old,
+                         fmat<double>& ustar,
+                         fmat<double>& vstar,
+                         fmat<double>& p) {
   const double uinit = config.igas.u;
   const double vinit = config.igas.v;
   const double pinit = config.igas.p;

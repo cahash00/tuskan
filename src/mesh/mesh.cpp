@@ -8,6 +8,7 @@
 #include <mesh.h>   // mesh library
 #include <matar.h>  // MATAR headers
 #include <params.h>
+#include <types.h>
 
 
 namespace mesh {
@@ -15,8 +16,8 @@ namespace mesh {
  * Domain generation in 2D
  */
 void mesher2D(const double& lx, const double& ly, 
-              mtr::FMatrix<double>& xc, mtr::FMatrix<double>& yc,
-              mtr::FMatrix<double>& xn, mtr::FMatrix<double>& yn,
+              fmat<double>& xc, fmat<double>& yc,
+              fmat<double>& xn, fmat<double>& yn,
               double& dx, double& dy){
   // get dx and dy
   dx = lx/static_cast<double>(nx);

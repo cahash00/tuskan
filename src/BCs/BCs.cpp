@@ -10,11 +10,12 @@
 #include <vector>
 #include <map>
 #include <input.h>
+#include <types.h>
 
 namespace BC {
 
 struct boundarySpecs {
-  mtr::FMatrix<int> bvals;
+  fmat<int> bvals;
   std::vector<double> vel = std::vector<double>(2,0.0);
   double pressure = 0.0;
   // constructor
@@ -70,9 +71,9 @@ bcTags tag_BCs(IO::ConfigData config,
 }
 
 void update_BCs(bcTags tags, 
-                mtr::FMatrix<double>& u,
-                mtr::FMatrix<double>& v,
-                mtr::FMatrix<double>& p) {
+                fmat<double>& u,
+                fmat<double>& v,
+                fmat<double>& p) {
   // update the left + right boundaries
   for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
     /**
@@ -162,7 +163,7 @@ void update_BCs(bcTags tags,
 } // end update_BCs
 
 void update_BCs_phi(bcTags tags, 
-                    mtr::FMatrix<double>& phi) {
+                    fmat<double>& phi) {
   // update the left + right boundaries
   for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
     /**

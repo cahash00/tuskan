@@ -9,6 +9,7 @@
 #define MESH_H
 
 #include <matar.h>
+#include <types.h>
 
 using namespace mtr;
 /**

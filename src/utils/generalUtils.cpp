@@ -5,6 +5,7 @@
  * @brief General utilities library
  */
 
+#include <types.h>
 #include <generalUtils.h>
 #include <chrono>
 #include <iostream>

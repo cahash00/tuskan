@@ -18,6 +18,7 @@
 #include <params.h>
 #include <input.h>
 #include <fstream>
+#include <types.h>
 
 using namespace std;
 
@@ -25,11 +26,11 @@ namespace restart {
 /******************************************************************************/
 // Function to save the matrix to a binary file
 void save(const std::string& filename, 
-          const mtr::FMatrix<double>& u);
+          const fmat<double>& u);
 
 // Function to load the matrix from a binary file
 void load(const std::string& filename,
-          const mtr::FMatrix<double>& u);
+          const fmat<double>& u);
 
 } // end namepsace restart
 

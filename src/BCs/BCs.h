@@ -12,12 +12,13 @@
 #include <params.h>
 #include <vector>
 #include <input.h>
+#include <types.h>
 
 namespace BC {
 
 
 struct boundarySpecs {
-  mtr::FMatrix<int> bvals;
+  fmat<int> bvals;
   std::vector<double> vel;
   double pressure;
   // constructor
@@ -36,11 +37,11 @@ bcTags tag_BCs(IO::ConfigData config,
                const int ny);
 
 void update_BCs(bcTags tags, 
-                mtr::FMatrix<double>& u,
-                mtr::FMatrix<double>& v,
-                mtr::FMatrix<double>& p);
+                fmat<double>& u,
+                fmat<double>& v,
+                fmat<double>& p);
 void update_BCs_phi(bcTags tags, 
-                    mtr::FMatrix<double>& phi);
+                    fmat<double>& phi);
 
 
 } // end namespace BC
