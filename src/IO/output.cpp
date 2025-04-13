@@ -13,6 +13,8 @@
 #include <string>
 #include <format>
 #include <iostream>
+#include <mpi.h>
+#include <communication.h>
 #include <params.h>
 #include <input.h>
 #include <types.h>

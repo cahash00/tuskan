@@ -9,20 +9,16 @@
 #include <matar.h>  // MATAR headers
 #include <params.h>
 #include <types.h>
+#include <communication.h>
 
 
 namespace mesh {
 /**
  * Domain generation in 2D
  */
-void mesher2D(const double& lx, const double& ly, 
-              fmat<double>& xc, fmat<double>& yc,
+void mesher2D(fmat<double>& xc, fmat<double>& yc,
               fmat<double>& xn, fmat<double>& yn,
-              double& dx, double& dy){
-  // get dx and dy
-  dx = lx/static_cast<double>(nx);
-  dy = ly/static_cast<double>(ny);
-  
+              const double& dx, const double& dy){
   // calculate cell center values
   for (int j = jstr-nghosts; j <= jend; j++) {
     for (int i = istr-nghosts; i <= iend; i++) {

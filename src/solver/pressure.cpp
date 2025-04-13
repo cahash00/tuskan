@@ -6,6 +6,8 @@
 #include <BCs.h>
 #include <pprint.hpp>
 #include <types.h>
+#include <mpi.h>
+#include <communication.h>
 
 using namespace std;
 

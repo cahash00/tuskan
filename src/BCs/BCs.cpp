@@ -10,6 +10,8 @@
 #include <map>
 #include <input.h>
 #include <types.h>
+#include <mpi.h>
+#include <communication.h>
 
 namespace BC {
 

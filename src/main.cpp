@@ -54,11 +54,7 @@ int main(int argc, char* argv[]){
   IO::ConfigData config = IO::parseInputDeck(inFile);
   // check to see if the output directory exists
   IO::check_directories(config.fv.dir);
-
   
-  // ... get domain stats
-  getDomainIndices(config.mesh.nx,config.mesh.ny);
-
   // ... initialize and finalize Kokkos with the main scope
   if (rank==0) if(rank==0) IO::logger->info("Initializing Kokkos");
   Kokkos::ScopeGuard kokkos_guard(argc, argv); 
@@ -66,8 +62,10 @@ int main(int argc, char* argv[]){
   if (rank==0) if(rank==0) IO::logger->info("  done");
 
   // ... call decomposer
-  comm::Decomp d = comm::decomposer(nx,ny);
+  comm::Decomp d = comm::decomposer(config.mesh.nx,config.mesh.ny);
   comm::print_decomposer_info(d);
+  // ... get domain stats
+  getDomainIndices(d);
 
   // ... initialize the MATAR matrices for the domain
   // use local number of cells rather than the global ncells
@@ -99,9 +97,9 @@ int main(int argc, char* argv[]){
   Timer timer;
   timer.start();
   if(rank==0) IO::logger->info("Generating 2D mesh");
-  double dx = 0.0;
-  double dy = 0.0;
-  mesh::mesher2D(config.mesh.lx,config.mesh.ly,xc,yc,xn,yn,dx,dy);
+  double dx = config.mesh.lx/static_cast<double>(config.mesh.nx);
+  double dy = config.mesh.ly/static_cast<double>(config.mesh.ny);
+  mesh::mesher2D(xc,yc,xn,yn,dx,dy);
   timer.stop();
   if(rank==0) IO::logger->info("  done ({} seconds)",timer.time());
   if(rank==0) IO::logger->info("Tagging boundaries");
@@ -123,9 +121,9 @@ int main(int argc, char* argv[]){
   // ... initialize domain
   initialize_solution(config,u,v,u2,v2,u_old,v_old,ustar,vstar,p);
   if (config.restart.load) {
-    restart::load("u.200.converged",u);
-    restart::load("v.200.converged",v);
-    restart::load("p.200.converged",p);
+    restart::load("u.rank"+std::to_string(rank)+".converged",u);
+    restart::load("v.rank"+std::to_string(rank)+".converged",v);
+    restart::load("p.rank"+std::to_string(rank)+".converged",p);
   }
   BC::update_BCs(bcTags,u,v,p);
 
@@ -339,9 +337,9 @@ int main(int argc, char* argv[]){
 
   // ... output restart file
   if (config.restart.save) {
-    restart::save("u.restart",u);
-    restart::save("v.restart",v);
-    restart::save("p.restart",p);
+    restart::save("u.rank"+std::to_string(rank)+".restart",u);
+    restart::save("v.rank"+std::to_string(rank)+".restart",v);
+    restart::save("p.rank"+std::to_string(rank)+".restart",p);
   }
 
 

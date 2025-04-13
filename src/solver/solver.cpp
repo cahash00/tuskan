@@ -9,6 +9,8 @@
 #include <matar.h>
 #include <params.h>
 #include <input.h>
+#include <mpi.h>
+#include <communication.h>
 
 using namespace std;
 

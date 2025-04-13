@@ -4,6 +4,8 @@
 #include <vector>
 #include <BCs.h>
 #include <types.h>
+#include <mpi.h>
+#include <communication.h>
 
 namespace levset {
 

@@ -76,15 +76,15 @@ template <typename... Args>
       xend = iend+1;
       ystr = jstr-1;
       yend = jend+1;
-      dnx = nx+3;
-      dny = ny+3;
+      dnx = xend-xstr+1;
+      dny = yend-ystr+1;
     } else {
       xstr = istr;
       xend = iend-1;
       ystr = jstr;
       yend = jend-1;
-      dnx = nx;
-      dny = ny;
+      dnx = xend-ystr+1;
+      dny = yend-ystr+1;
     }
 
 

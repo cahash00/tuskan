@@ -12,6 +12,8 @@
 #include <iomanip>
 #include <spdlog/spdlog.h>
 #include <matar.h>
+#include <mpi.h>
+#include <communication.h>
 #include <params.h>
 
 using namespace mtr;

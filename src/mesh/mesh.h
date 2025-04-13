@@ -8,10 +8,9 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include <matar.h>
 #include <types.h>
+#include <communication.h>
 
-using namespace mtr;
 /**
  * @brief 2D cartesian mesh builder
  * @param[in] lx length in the x-direction
@@ -26,9 +25,8 @@ using namespace mtr;
  * @param[inout] dy cell width in the y-direction
  */
 namespace mesh {
-void mesher2D(const double& lx, const double& ly, 
-              FMatrix<double>& xc, FMatrix<double>& yc,
-              FMatrix<double>& xn, FMatrix<double>& yn,
-              double& dx, double& dy);
+void mesher2D(fmat<double>& xc, fmat<double>& yc,
+              fmat<double>& xn, fmat<double>& yn,
+              const double& dx, const double& dy);
 } // end namespace mesh
 #endif // MESH_H
