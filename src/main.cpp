@@ -26,6 +26,8 @@
 #include <fstream>
 #include <string>
 #include <types.h>
+#include <mpi.h>
+#include <communication.h>
 
 using namespace std;
 
@@ -33,28 +35,21 @@ using namespace std;
  * Main program
  */
 int main(int argc, char* argv[]){
-  // ... Fire up the printer
-  pprint::PrettyPrinter printer;
-
+  int rank=0,size=0;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
   // ... create the logger
   IO::init_logger();
-
+  /***************************************************************************
+   *                           MAIN PROGRAM START                            *
+   **************************************************************************/
   // ... Parse out the user input form command line
   argparse::ArgumentParser program("TUSKAN","0.0.0");
   IO::getUserInput(argc,argv,program);
   // assign the input file that was given
   auto inFile = program.get<string>("-i");
 
-
-  /***************************************************************************
-   *                           MAIN PROGRAM START                            *
-   **************************************************************************/
-
-  // ... initialize and finalize Kokkos with the main scope
-  IO::logger->info("Initializing Kokkos");
-  Kokkos::ScopeGuard kokkos_guard(argc, argv); 
-  IO::logger->info("  done");
-  
   // ... parse the YAML input deck
   IO::ConfigData config = IO::parseInputDeck(inFile);
   // check to see if the output directory exists
@@ -68,6 +63,16 @@ int main(int argc, char* argv[]){
   ndims[1] = ny+nghosts*2;
   const int isize = nx+2;
   const int jsize = nx+2;
+
+  // ... initialize and finalize Kokkos with the main scope
+  if (rank==0) IO::logger->info("Initializing Kokkos");
+  Kokkos::ScopeGuard kokkos_guard(argc, argv); 
+  // Kokkos::initialize(argc,argv);
+  if (rank==0) IO::logger->info("  done");
+
+  // ... call decomposer
+  comm::Decomp d = comm::decomposer(nx,ny);
+  comm::print_decomposer_info(d);
 
   // ... initialize the MATAR matrices for the domain
   fmat<double> xc(isize,jsize),yc(isize,jsize),
@@ -135,7 +140,6 @@ int main(int argc, char* argv[]){
   const double nul = config.iliq.mu / rhol;
   const double nug = config.igas.mu / rhog;
   const double sigma = config.drop.sigma;
-  printer.print(rhol,rhog,nul,nug);
   const double Mh = config.drop.M*min(dx,dy);
   levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
   
@@ -345,6 +349,7 @@ int main(int argc, char* argv[]){
 
   // ... Final run summary output here
   IO::logger->info("Done!");
+  MPI_Finalize();
 
   return 0;
 }

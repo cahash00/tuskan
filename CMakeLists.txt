@@ -59,6 +59,7 @@ add_subdirectory(${src}/IO)
 add_subdirectory(${src}/utils)
 add_subdirectory(${src}/solver)
 add_subdirectory(${src}/BCs)
+add_subdirectory(${src}/communication)
 
 # ... compile and create the executable
 add_executable(tuskan ${cxx_sources})
@@ -73,6 +74,7 @@ target_include_directories(tuskan PRIVATE "${src}/IO")
 target_include_directories(tuskan PRIVATE "${src}/utils")
 target_include_directories(tuskan PRIVATE "${src}/solver")
 target_include_directories(tuskan PRIVATE "${src}/BCs")
+target_include_directories(tuskan PRIVATE "${src}/communication")
 # ... include MATAR headers
 target_include_directories(tuskan PRIVATE ${matar_headers})
 # ... include pprint headers
@@ -86,13 +88,14 @@ target_include_directories(tuskan PRIVATE ${spdlog_headers})
 target_link_libraries(tuskan PRIVATE Kokkos::kokkos 
                                      yaml-cpp::yaml-cpp
                                      ${VTK_LIBRARIES}
-                                     ${MPI_CXX_LIBRARIES}
+                                     MPI::MPI_C
                                      meshLib
                                      IOLib
                                      paramsLib
                                      generalUtils
                                      solvers
                                      BCs
+                                     comm
 )
 
 # ... Install so that you can use anywhere
