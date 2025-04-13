@@ -44,6 +44,18 @@ void add_array(FILE* out,const bool ghost,const string& label,T&& array, Args&&.
     ystr = jstr;
     yend = jend-1;
   }
+  // xstr = istr;
+  // xend = iend;
+  // ystr = jstr;
+  // yend = jend;
+
+  // if (ghost) {
+  //   if (d.nl == MPI_PROC_NULL) xstr = istr - 1;
+  //   if (d.nr == MPI_PROC_NULL) xend = iend + 1;
+  //   if (d.nb == MPI_PROC_NULL) ystr = jstr - 1;
+  //   if (d.nt == MPI_PROC_NULL) yend = jend + 1;
+  // }
+
 
   fprintf(out,"SCALARS %s float 1\n",label.c_str());
   fprintf(out,"LOOKUP_TABLE default\n");
@@ -86,6 +98,21 @@ template <typename... Args>
       dnx = xend-ystr+1;
       dny = yend-ystr+1;
     }
+    // xstr = istr;
+    // xend = iend;
+    // ystr = jstr;
+    // yend = jend;
+    // dnx = d.nxl;
+    // dny = d.nyl;
+
+    // if (ghost) {
+    //   if (d.nl == MPI_PROC_NULL) xstr = istr - 1;
+    //   if (d.nr == MPI_PROC_NULL) xend = iend + 1;
+    //   if (d.nb == MPI_PROC_NULL) ystr = jstr - 1;
+    //   if (d.nt == MPI_PROC_NULL) yend = jend + 1;
+    //   dnx = d.nxl + 1;
+    //   dny = d.nyl + 1;
+    // }
 
 
     // ... file output

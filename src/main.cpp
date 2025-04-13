@@ -178,11 +178,17 @@ int main(int argc, char* argv[]){
   // ... start solver & timer
   timer.start();
   if(rank==0) IO::logger->info("Starting Main Solver");
+  cout << rank << " " << istr << endl;
+  cout << rank << " " << iend << endl;
+  cout << rank << " " << jstr << endl;
+  cout << rank << " " << jend << endl;
 
+  MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
   for (int ii = 1; ii <= config.solver.iter; ii++) {
     // ... update boundary conditions
     BC::update_BCs(bcTags,u,v,p);
     levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
+    MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
 
     // ... get the minimum dt in the domain for current iteration
     double dt = get_min_dt(cfl,dx,dy,u,v,max(nug,nul));
@@ -219,10 +225,12 @@ int main(int argc, char* argv[]){
         vstar(i,j) = v(i,j) + dt*(-ab2[1] + diffu[1]-fy/rhoj);
       }
     }
+    MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
 
     // ... solve for the pressure
     psolve::SOR(config.solver.omega,p,ustar,vstar,dx,dy,dt,rho,bcTags);
     BC::update_BCs(bcTags,ustar,vstar,p);
+    MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
 
     
     // ... apply the pressure correctior
@@ -236,9 +244,11 @@ int main(int argc, char* argv[]){
         v2(i,j) = vstar(i,j) - 1.0/rhoj*dt*dpdy;
       }
     }
+    MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
     BC::update_BCs_phi(bcTags,rho);
     BC::update_BCs_phi(bcTags,nu);
     BC::update_BCs(bcTags,u2,v2,p);
+    MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
 
     // ... solve advection eq for phi
     double Vn = 0.0;
@@ -252,6 +262,7 @@ int main(int argc, char* argv[]){
       double Ln = levset::getLength(phi,dx,dy,Mh);
       levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
     }
+    MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
     
     // ... update density and viscosity values
     for (int j = jstr-1; j <= jend; j++) {
@@ -260,25 +271,31 @@ int main(int argc, char* argv[]){
         nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
       }
     }
+    MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
 
     // ... output intermediate flowviz
     if (config.fv.enabled) {
       if (ii % config.fv.freq == 0) {
         std::ostringstream foutss;
-        foutss << setw(5) << std::setfill('0') << ii;
+        foutss << setw(5) << std::setfill('0') << ii << "." << rank;
         string caseName = foutss.str();
         if (config.fv.mode=="center") {
           IO::getCellCenter(u,v,uc,vc);
+          MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
           IO::vtk_output_2D(caseName,config.fv.dir,false,xc,yc,uc,vc,
                             "p",p,"rho",rho,"nu",nu,"phi",phi,"kappa",kappa,
                             "Fx",Fx,"Fy",Fy,"heavi",heavi);
+          MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
         } else {
+          MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
           IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,xn,yn,u,v,
                             "p",p,"rho",rho,"nu",nu,"phi",phi,"kappa",kappa,
                             "Fx",Fx,"Fy",Fy,"heavi",heavi);
+          MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
         }
       }
     } 
+    MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
 
     // ... Dynamic CFL
     if (ii > 1) 
@@ -297,6 +314,7 @@ int main(int argc, char* argv[]){
     cfl = max(cfl,cflb);
     cfl = min(config.solver.cflf,max(cfl,config.solver.cfli)); 
 
+    MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
     // ... store the previous timestep and update
     for (int j = jstr-1; j <= jend; j++) {
       for (int i = istr-1; i <= iend; i++) {
@@ -306,6 +324,7 @@ int main(int argc, char* argv[]){
         v(i,j) = v2(i,j);
       }
     }
+    MPI_Barrier(MPI_COMM_WORLD);  // ensure all ranks have finished setup/output
     
     // ... calculate residuals
     logFile << ii << " " << ires << "\n";

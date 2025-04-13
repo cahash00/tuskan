@@ -70,8 +70,9 @@ void SOR(const double& omega,
                      + (1.0 / (rho_n * dy2))
                      + (1.0 / (rho_s * dy2));
 
-        p2(i,j) = (1.0-omega)*p1(i,j) 
-                + omega/coeff*(term1 - term2);
+        // p2(i,j) = (1.0-omega)*p1(i,j) 
+        //         + omega/coeff*(term1 - term2);
+        p2(i,j) = (1.0 / coeff) * (term1 - term2);
 
       } // end i-loop
     } // end j-loop
