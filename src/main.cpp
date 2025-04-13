@@ -1,19 +1,19 @@
 /**
  * @file main.cpp
  * @author Caleb Hash
- * @date March 02, 2025
- * @brief Two-Phase Flow Solver - HW4
- * @details first part of the final project - HW4
+ * @date April 13, 2025
+ * @brief Two-Phase Flow Solver
+ * @details First part of the final project
  */
 
 #include <mesh.h>
-#include <output.h>               // output library
+#include <output.h>
 #include <args.h>
-#include <input.h>                // input deck reader
-#include <matar.h>                // MATAR headers
-#include <Kokkos_Core.hpp>        // Kokkos for initialization
-#include <argparse/argparse.hpp>  // argparse
-#include <pprint.hpp>             // pretty printer 
+#include <input.h>
+#include <matar.h>
+#include <Kokkos_Core.hpp>
+#include <argparse/argparse.hpp>
+#include <pprint.hpp>
 #include <params.h>
 #include <generalUtils.h>
 #include <solver.h>
@@ -117,22 +117,19 @@ int main(int argc, char* argv[]){
   double rdy  = 1.0/dy;  // reciprocal of dx
   IO::logger->info("  dx: {},dy: {}",dx,dy);
 
-  // initialize domain
-  initialize_solution(config,
-                      u,v,
-                      u2,v2,
-                      u_old,v_old,
-                      ustar,vstar,
-                      p);
+  // ... initialize domain
+  initialize_solution(config,u,v,u2,v2,u_old,v_old,ustar,vstar,p);
   if (config.restart.load) {
     restart::load("u.200.converged",u);
     restart::load("v.200.converged",v);
     restart::load("p.200.converged",p);
   }
   BC::update_BCs(bcTags,u,v,p);
-  // initialize phi
+
+  // ... initialize phi
   levset::get_phi(phi,xc,yc,config.drop.x,config.drop.y,config.drop.r);
-  // use phi to initialize rho and nu
+
+  // ... use phi to initialize rho and nu
   const double rhol = config.iliq.rho;
   const double rhog = config.igas.rho;
   const double nul = config.iliq.mu / rhol;
@@ -153,8 +150,6 @@ int main(int argc, char* argv[]){
       }
       rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
       nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
-      // u(i,j) = 1.0/(2.0*1e-5)*-0.003*(yn(i,j)*yn(i,j)-0.02*yn(i,j));
-      // p(i,j) = (1.0-0.3*xc(i,j)-heavi(i,j))*sigma/config.drop.r;
       u(i,j) = 0.0;
       p(i,j) = 1.0;
     }
@@ -253,7 +248,8 @@ int main(int argc, char* argv[]){
       double Ln = levset::getLength(phi,dx,dy,Mh);
       levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
     }
-
+    
+    // ... update density and viscosity values
     for (int j = jstr-1; j <= jend; j++) {
       for (int i = istr-1; i <= iend; i++) {
         rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
@@ -291,7 +287,7 @@ int main(int argc, char* argv[]){
       res1 = ires;
     }
     if (ires == resmax) 
-      cfl0 = cfl; // if res is higher, keep
+      cfl0 = cfl;
     if (ires < res1 && ires < res0) 
       cfl = cfl0*resmax/ires;
     cfl = max(cfl,cflb);
@@ -324,14 +320,13 @@ int main(int argc, char* argv[]){
       break;
     }
   } // end of ii-loop
+
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   IO::logger->info("Average time / iteration: {} seconds",
                    timer.time()/static_cast<double>(finalIter));
 
-  /**
-   * output section
-   */
+  // ... output section
   if (config.fv.enabled) {
     IO::logger->info("Outputting final flow solution");
     IO::vtk_output_2D("final",config.fv.dir,false,xc,yc,u,v,
@@ -340,9 +335,7 @@ int main(int argc, char* argv[]){
     IO::logger->warn("Output was disabled.");
   }
 
-  /**
-   * output restart file
-   */
+  // ... output restart file
   if (config.restart.save) {
     restart::save("u.restart",u);
     restart::save("v.restart",v);
@@ -350,9 +343,7 @@ int main(int argc, char* argv[]){
   }
 
 
-  /**
-   * Final run summary output here
-   */
+  // ... Final run summary output here
   IO::logger->info("Done!");
 
   return 0;

@@ -3,7 +3,6 @@
  * @brief input deck reader library. Going to use YAML-cpp to parse the input 
  *        file.
  * @author Caleb Hash
- * @date 2025-02-22
  */
 
 #include <input.h>
@@ -108,7 +107,6 @@ ConfigData parseInputDeck(const string& inFile){
     std::cerr << "Error loading YAML input deck: " << e.what() << std::endl;
     throw;
   }
-
 } // end function parseInputDeck
 
 } // end namespace IO

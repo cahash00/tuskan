@@ -1,5 +1,3 @@
-
-
 #include <matar.h>
 #include <cmath>
 #include <params.h>
@@ -9,6 +7,7 @@
 
 namespace levset {
 
+/******************************************************************************/
 void get_phi(fmat<double>& phi,
              const fmat<double>& xc,
              const fmat<double>& yc,
@@ -23,6 +22,7 @@ void get_phi(fmat<double>& phi,
   
 } // end get_phi
 
+/******************************************************************************/
 void heaviside(const double& M,
                const double& h,
                const fmat<double>& phi,
@@ -42,67 +42,6 @@ void heaviside(const double& M,
 } // end marker
 
 /******************************************************************************/
-std::vector<double> get_phiHalf(const int i,
-                                const int j,
-                                const fmat<double>& u,
-                                const fmat<double>& v,
-                                const fmat<double>& phi) {
-  std::vector<double> phiHalf(2,0.0);
-  
-  /**
-     * i-direction: calculate D+ and D- (x-direction)
-     */
-    double dp1 = phi(i+1,j) - phi(i,j);   // D+ for phi(i,j)
-    double dm1 = phi(i,j) - phi(i-1,j);   // D- for phi(i,j)
-
-    // get interface values using simple 1st order CD
-    if (u(i,j) > 0.0) {
-        phiHalf[0] = phi(i-1,j);  // Backward difference
-    }
-    else {
-        phiHalf[0] = phi(i,j);  // Forward difference
-    }
-
-    /**
-     * j-direction: calculate D+ and D- (y-direction)
-     */
-    double dp1_y = phi(i,j+1) - phi(i,j);   // D+ for phi(i,j)
-    double dm1_y = phi(i,j) - phi(i,j-1);   // D- for phi(i,j)
-
-    // get interface values using simple 1st order CD
-    if (v(i,j) > 0.0) {
-        phiHalf[1] = phi(i-1,j);  // Backward difference
-    }
-    else {
-        phiHalf[1] = phi(i,j);  // Forward difference
-    }
-
-    return phiHalf;
-
-} // end get_phiHalf
-/******************************************************************************/
-// double get_Lphi(const int i,
-//                 const int j,
-//                 const fmat<double>& u, 
-//                 const fmat<double>& v, 
-//                 const double dx,
-//                 const double dy,
-//                 fmat<double>& phi) {
-//   // ... get the cell-centered velocities
-//   const double ucell = 0.5*(u(i-1,j)+u(i,j));
-//   const double vcell = 0.5*(v(i,j-1)+v(i,j));
-
-//   // ... get the cell face phi values based on switch function
-//   std::vector<double> phiHalf = get_phiHalf(i,j,u,v,phi);
-  
-//   // ... Calculate the spatial derivative using phiHalf values
-//   const double dphidx = (phiHalf[0] - phi(i, j)) / dx;
-//   const double dphidy = (phiHalf[1] - phi(i, j)) / dy;
-
-//   // ... Advection term calculation
-//   const double Lphi = - ucell * dphidx - vcell * dphidy;
-//   return Lphi;
-// }
 double get_Lphi(const int i, const int j,
                 const fmat<double>& u,
                 const fmat<double>& v,
@@ -142,23 +81,6 @@ void advecPhi(const BC::bcTags bcTags,
   fmat<double> phi2(phi.dims(1),phi.dims(2));
 
   BC::update_BCs_phi(bcTags,phi);
-  // // ... calculate phi*
-  // for (int j = jstr-1; j <= jend; j++) {
-  //   for (int i = istr-1; i <= iend; i++) {
-  //     double Lphi = get_Lphi(i,j,u,v,dx,dy,phi);
-  //     phiStar(i,j) = phi(i,j) + dt*Lphi;
-  //   }
-  // }
-  // BC::update_BCs_phi(bcTags,phiStar);
-
-  // // ... correct phi*
-  // for (int j = jstr-1; j <= jend; j++) {
-  //   for (int i = istr-1; i <= iend; i++) {
-  //     double LphiN = get_Lphi(i,j,u,v,dx,dy,phi);
-  //     double LphiStar = get_Lphi(i,j,u,v,dx,dy,phiStar);
-  //     phi2(i,j) = phi(i,j) + dt*0.5*(LphiN+LphiStar);
-  //   }
-  // }
   // ... simple first-order Euler time discretization
   for (int j = jstr; j <= jend-1; j++) {
     for (int i = istr; i <= iend-1; i++) {
@@ -243,6 +165,7 @@ void surfaceTension(fmat<double>& Fx,
   }
 }
 
+/******************************************************************************/
 void reinitialize(BC::bcTags bcTags,
                   const double& dx,
                   const double& dy,
@@ -309,6 +232,7 @@ void reinitialize(BC::bcTags bcTags,
   }
 } // end reinitialize
 
+/******************************************************************************/
 double getVolume(fmat<double>& heavi,
                  const double dx,
                  const double dy) {
@@ -321,6 +245,7 @@ double getVolume(fmat<double>& heavi,
   return vol;
 }
 
+/******************************************************************************/
 double getLength(fmat<double>& phi,
                  const double dx,
                  const double dy,
@@ -339,8 +264,7 @@ double getLength(fmat<double>& phi,
   return len;
 }
   
-  
-
+/******************************************************************************/
 void volumeCorrection(fmat<double>& phi,
                       const double Mh,
                       const double V0,

@@ -2,7 +2,6 @@
  * @file solver.cpp
  * @brief Solver code file
  * @author Caleb Hash
- * @date 2025-02-25
  */
 #include <cmath>
 #include <matar.h>
@@ -224,8 +223,6 @@ void update_BCs_phi(bcTags tags,
       phi(i,jend) = phi(i,jstr);
     }
   }
-
-
 } // end update_BCs
 
 

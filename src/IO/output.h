@@ -10,6 +10,7 @@
 #include <types.h>
 
 using namespace std;
+
 namespace fs = std::filesystem;
 
 namespace IO {
@@ -120,6 +121,6 @@ void getCellCenter(fmat<double>& u,
                    fmat<double>& uc,
                    fmat<double>& vc);
 
-/******************************************************************************/
 } // end namespace IO
+
 #endif // OUTPUT_H

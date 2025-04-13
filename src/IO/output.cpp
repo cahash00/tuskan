@@ -4,7 +4,6 @@
  *        structured grids
  * @todo add support for solution array eventually.
  * @author Caleb Hash
- * @date 2025-02-22
  */
 
 #include <input.h>

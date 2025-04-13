@@ -2,7 +2,6 @@
  * @file BCs.h
  * @brief Boundary Condiitions file
  * @author Caleb Hash
- * @date 2025-02-25
  */
 #ifndef BCS_H
 #define BCS_H
