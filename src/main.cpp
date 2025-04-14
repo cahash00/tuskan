@@ -243,8 +243,8 @@ int main(int argc, char* argv[]){
         v2(i,j) = vstar(i,j) - 1.0/rhoj*dt*dpdy;
       }
     }
-    BC::update_BCs_phi(bcTags,rho);
-    BC::update_BCs_phi(bcTags,nu);
+    BC::update_BCs_rho(bcTags,rho);
+    BC::update_BCs_nu(bcTags,nu);
     BC::update_BCs(bcTags,u2,v2,p);
     // ... solve advection eq for phi
     double Vn = 0.0;
@@ -256,7 +256,7 @@ int main(int argc, char* argv[]){
       levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
       Vn = levset::getVolume(heavi,dx,dy);
       double Ln = levset::getLength(phi,dx,dy,Mh);
-      levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
+      // levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
     }
 
     for (int j = jstr-1; j <= jend; j++) {

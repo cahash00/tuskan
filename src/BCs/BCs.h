@@ -41,6 +41,10 @@ void update_BCs(bcTags tags,
                 mtr::FMatrix<double>& p);
 void update_BCs_phi(bcTags tags, 
                     mtr::FMatrix<double>& phi);
+void update_BCs_rho(bcTags tags, 
+    mtr::FMatrix<double>& phi);
+void update_BCs_nu(bcTags tags, 
+    mtr::FMatrix<double>& phi);
 
 
 } // end namespace BC
