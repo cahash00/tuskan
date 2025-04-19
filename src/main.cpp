@@ -101,7 +101,7 @@ int main(int argc, char* argv[]){
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   IO::logger->info("Tagging boundaries");
-  BC::bcTags bcTags = BC::tag_BCs(config,u.dims(1),u.dims(2));
+  BC::bcTags bcTags = BC::tag_BCs(config,xn,u.dims(1),u.dims(2));
   IO::logger->info("  done");
 
   // ... initialization
@@ -152,7 +152,7 @@ int main(int argc, char* argv[]){
       }
       rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
       nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
-      if (heavi(i,j)==0) u(i,j) = 2.0;
+      if (heavi(i,j)==0) u(i,j) = config.jet.u;
       // u(i,j) = 1.0/(2.0*1e-5)*-0.003*(yn(i,j)*yn(i,j)-0.02*yn(i,j));
       // p(i,j) = (1.0-0.3*xc(i,j)-heavi(i,j))*sigma/config.drop.r;
       // u(i,j) = 0.0;
@@ -177,6 +177,7 @@ int main(int argc, char* argv[]){
   /********************
    * main solver loop *
    *******************/
+  double ttime = 0.0;
   // ... initialize doubles
   double ires,res0,res1,cfl0,resmax = 0.0;
   double cfl = config.solver.cfli;
@@ -190,10 +191,33 @@ int main(int argc, char* argv[]){
   for (int ii = 1; ii <= config.solver.iter; ii++) {
     // ... update boundary conditions
     BC::update_BCs(bcTags,u,v,p);
-    levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
 
     // ... get the minimum dt in the domain for current iteration
     double dt = get_min_dt(cfl,dx,dy,u,v,max(nug,nul));
+    ttime+=dt;
+    // ... shut jet off, calculate the volume of the fluid and maintain it.
+    if (ttime > 5e10 && config.jet.enabled==true) {
+      config.jet.enabled=false;
+      for (int i = istr; i <= iend; i++) {
+        rho(i,jstr) = rhog;
+        nu(i,jstr) = nug;
+        rho(i,jstr-1) = rhog;
+        nu(i,jstr-1) = nug;
+        phi(i,jstr) = 0.0000+dy;
+        phi(i,jstr-1) = dy*2.0;
+        heavi(i,jstr) = 1.0;
+        heavi(i,jstr-1) = 1.0;
+        levset::reinitialize(bcTags,dx,dy,dtau,config.levset.ireinit,phi);
+        levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
+      }
+      BC::bcTags bcTags = BC::tag_BCs(config,xn,u.dims(1),u.dims(2));
+      BC::update_BCs(bcTags,u,v,p);
+      BC::update_BCs_rho(bcTags,rho);
+      BC::update_BCs_nu(bcTags,nu);
+      V0 = levset::getVolume(heavi,dx,dy);
+      cout << "jet is turned off." << endl;
+    }
+    levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
 
 
     // ... loop over domain for predictor step
@@ -257,7 +281,9 @@ int main(int argc, char* argv[]){
       levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
       Vn = levset::getVolume(heavi,dx,dy);
       double Ln = levset::getLength(phi,dx,dy,Mh);
-      // levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
+      if (config.jet.enabled==false) {
+        levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
+      }
     }
 
     for (int j = jstr-1; j <= jend; j++) {
@@ -331,7 +357,7 @@ int main(int argc, char* argv[]){
     logFile << ii << " " << ires << "\n";
     if (config.res.enabled) {
       if (ii % config.res.freq == 0) {
-        IO::logger->info("  iter {:04}, cfl: {:4e},dt: {:4e}, res: {:4e}, dV: {:4e}",ii,cfl,dt,ires/res0,V0-Vn);
+        IO::logger->info("  iter {:04}, cfl: {:4e},ttime: {:4e}, res: {:4e}, dV: {:4e}",ii,cfl,ttime,ires/res0,V0-Vn);
         logFile.flush();
       }
     }

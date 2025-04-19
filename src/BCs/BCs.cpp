@@ -37,6 +37,7 @@ struct bcTags {
  * @detail goes over the domain and tags the edges for boundary conditions
  */
 bcTags tag_BCs(IO::ConfigData config,
+               mtr::FMatrix<double>& xn,
                const int nx,
                const int ny) {
   std::map<std::string,int> bcTypes = {
@@ -66,7 +67,7 @@ bcTags tag_BCs(IO::ConfigData config,
   // custom BC for jet
   if (config.jet.enabled==true) {
     for (int i = istr; i <= iend; i++) {
-      if (i <= nx*0.5+3 && i >= nx*0.5-4) {
+      if (xn(i,1) >= 0.0075-0.001 && xn(i,1) <= 0.0075+0.001) {
         tags.Bottom.bvals(i) = 4;
         tags.Bottom.vel[1] = config.jet.v;
         tags.Bottom.pressure = config.jet.p;
@@ -163,8 +164,10 @@ void update_BCs(bcTags tags,
     if (tags.Bottom.bvals(i) == 2) {
       v(i,jstr-1) = tags.Bottom.vel[1];
     } else if (tags.Bottom.bvals(i) == 4) {
-      v(i,jstr-1) = tags.Bottom.vel[1];
-      p(i,jstr-1) = tags.Bottom.pressure;
+      v(i,jstr) = tags.Bottom.vel[1];
+      u(i,jstr-1) = -u(i,jstr);
+      p(i,jstr-1) = p(i,jstr);
+      // p(i,jstr-1) = tags.Bottom.pressure;
     }
     /**
      * TOP BOUNDARY
@@ -199,7 +202,8 @@ void update_BCs_phi(bcTags tags,
      */
     if (tags.Left.bvals(j)==0) {
       // noslip 
-      phi(istr-1,j) = phi(istr,j);
+      // phi(istr-1,j) = phi(istr,j);
+      phi(istr-1,j) = 0.01;
     } else if (tags.Left.bvals(j)==1) {
       // moving wall
       phi(istr-1,j) = phi(istr,j);
@@ -212,7 +216,8 @@ void update_BCs_phi(bcTags tags,
      */
     if (tags.Right.bvals(j)==0) {
       // noslip 
-      phi(iend,j) = phi(iend-1,j);
+      // phi(iend,j) = phi(iend-1,j);
+      phi(iend,j) = 0.01;
     } else if (tags.Right.bvals(j)==1) {
       // moving wall
       phi(iend,j) = phi(iend-1,j);
@@ -230,7 +235,8 @@ void update_BCs_phi(bcTags tags,
      */
     if (tags.Bottom.bvals(i)==0) {
       // noslip wall 
-      phi(i,jstr-1) = phi(i,jstr);
+      // phi(i,jstr-1) = phi(i,jstr);
+      phi(i,jstr-1) = 0.01;
     } else if (tags.Bottom.bvals(i)==1) {
       // moving wall
       phi(i,jstr-1) = phi(i,jstr);
@@ -246,7 +252,8 @@ void update_BCs_phi(bcTags tags,
       phi(i,jend) = phi(i,jend-1);
     } else if (tags.Top.bvals(i)==1) {
       // moving wall
-      phi(i,jend) = phi(i,jend-1);
+      // phi(i,jend) = phi(i,jend-1);
+      phi(i,jend) = 0.01;
     } else if (tags.Top.bvals(i)==7) {
       // periodic
       phi(i,jend) = phi(i,jstr);

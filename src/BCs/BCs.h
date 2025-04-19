@@ -34,6 +34,7 @@ struct bcTags {
 };
 
 bcTags tag_BCs(IO::ConfigData config,
+               mtr::FMatrix<double>& xn,
                const int nx,
                const int ny);
 
