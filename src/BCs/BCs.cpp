@@ -17,6 +17,8 @@ struct boundarySpecs {
   mtr::FMatrix<int> bvals;
   std::vector<double> vel = std::vector<double>(2,0.0);
   double pressure = 0.0;
+  double nu = 0.0;
+  double rho = 0.0;
   // constructor
   explicit boundarySpecs(int dim) : bvals(dim) {}
 };
@@ -60,13 +62,18 @@ bcTags tag_BCs(IO::ConfigData config,
   tags.Bottom.pressure = config.bcBottom.pressure;
   tags.Right.pressure = config.bcRight.pressure;
   tags.Left.pressure = config.bcLeft.pressure;
-
+  
   // custom BC for jet
-  for (int i = istr; i <= iend; i++) {
-   if (i <= nx*0.5+2 && i >= nx*0.5-3) {
-     tags.Top.bvals(i) = 4;
-     tags.Top.vel[1] = -0.2;
-   }
+  if (config.jet.enabled==true) {
+    for (int i = istr; i <= iend; i++) {
+      if (i <= nx*0.5+3 && i >= nx*0.5-4) {
+        tags.Bottom.bvals(i) = 4;
+        tags.Bottom.vel[1] = config.jet.v;
+        tags.Bottom.pressure = config.jet.p;
+        tags.Bottom.nu = config.iliq.mu/config.iliq.rho;
+        tags.Bottom.rho = config.iliq.rho;
+      }
+    }
   }
   
 
@@ -152,6 +159,13 @@ void update_BCs(bcTags tags,
       v(i,jstr-1) = v(i,jstr);
       p(i,jstr-1) = p(i,jstr);
     }
+    // BOTTOM JET
+    if (tags.Bottom.bvals(i) == 2) {
+      v(i,jstr-1) = tags.Bottom.vel[1];
+    } else if (tags.Bottom.bvals(i) == 4) {
+      v(i,jstr-1) = tags.Bottom.vel[1];
+      p(i,jstr-1) = tags.Bottom.pressure;
+    }
     /**
      * TOP BOUNDARY
      */
@@ -162,7 +176,7 @@ void update_BCs(bcTags tags,
       p(i,jend) = p(i,jend-1);
     } else if (tags.Top.bvals(i)==1) {
       // moving wall
-      u(i,jend) = 2.0*tags.Top.vel[0]-u(i,jend);
+      u(i,jend) = 2.0*tags.Top.vel[0]-u(i,jend-1);
       v(i,jend-1) = tags.Top.vel[1];
       p(i,jend) = p(i,jend-1);
     } else if (tags.Top.bvals(i)==7) {
@@ -170,13 +184,7 @@ void update_BCs(bcTags tags,
       u(i,jend+1) = u(i,jstr);
       v(i,jend) = v(i,jstr);
       p(i,jend) = tags.Top.pressure;
-    } else if (tags.Top.bvals(i) == 2) {
-      v(i,jend) = tags.Top.vel[1];
-    } else if (tags.Top.bvals(i) == 4) {
-      v(i,jend) = tags.Top.vel[1];
-      p(i,jend) = 1.5;
-    }
-
+    } 
   }
 
   
@@ -305,8 +313,9 @@ void update_BCs_rho(bcTags tags,
     } else if (tags.Top.bvals(i)==7) {
       // periodic
       phi(i,jend) = phi(i,jstr);
-    } else if (tags.Top.bvals(i)==4) {
-      phi(i,jend) = 1.5;
+    } 
+    if (tags.Bottom.bvals(i)==4) {
+      phi(i,jstr-1) = tags.Bottom.rho;
     }
   }
 
@@ -372,8 +381,9 @@ void update_BCs_nu(bcTags tags,
     } else if (tags.Top.bvals(i)==7) {
       // periodic
       phi(i,jend) = phi(i,jstr);
-    } else if (tags.Top.bvals(i)==4) {
-      phi(i,jend) = 4.0e-5/1.5;
+    } 
+    if (tags.Bottom.bvals(i)==4) {
+      phi(i,jstr-1) = tags.Bottom.nu;
     }
   }
 

@@ -36,6 +36,9 @@ struct boundary {
 struct Restart {
   bool save;
   bool load;
+  string ifnu;
+  string ifnv;
+  string ifnp;
 };
 struct Solver {
   int iter;
@@ -50,6 +53,12 @@ struct Fv {
   string dir;
   bool ghost;
   string mode;
+};
+struct Jet {
+  bool enabled;
+  double u;
+  double v;
+  double p;
 };
 struct Mesh {
   double lx;
@@ -84,6 +93,8 @@ struct ConfigData {
 
   // level-set settings
   levelset levset;
+
+  Jet jet;
 
   static ConfigData fromYAMLConfig(const YAML::Node& config);
 };

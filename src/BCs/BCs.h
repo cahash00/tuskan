@@ -20,6 +20,8 @@ struct boundarySpecs {
   mtr::FMatrix<int> bvals;
   std::vector<double> vel;
   double pressure;
+  double rho;
+  double nu;
   // constructor
   boundarySpecs(int dim);
 };

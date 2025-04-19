@@ -124,10 +124,11 @@ int main(int argc, char* argv[]){
                       ustar,vstar,
                       p);
   if (config.restart.load) {
-    restart::load("u.200.converged",u);
-    restart::load("v.200.converged",v);
-    restart::load("p.200.converged",p);
+    restart::load(config.restart.ifnu,u);
+    restart::load(config.restart.ifnv,v);
+    restart::load(config.restart.ifnp,p);
   }
+  cout << ":test" << endl;
   BC::update_BCs(bcTags,u,v,p);
   // initialize phi
   levset::get_phi(phi,xc,yc,config.drop.x,config.drop.y,config.drop.r);
@@ -137,7 +138,6 @@ int main(int argc, char* argv[]){
   const double nul = config.iliq.mu / rhol;
   const double nug = config.igas.mu / rhog;
   const double sigma = config.drop.sigma;
-  printer.print(rhol,rhog,nul,nug);
   const double Mh = config.drop.M*min(dx,dy);
   levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
   
@@ -152,10 +152,11 @@ int main(int argc, char* argv[]){
       }
       rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
       nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
+      if (heavi(i,j)==0) u(i,j) = 2.0;
       // u(i,j) = 1.0/(2.0*1e-5)*-0.003*(yn(i,j)*yn(i,j)-0.02*yn(i,j));
       // p(i,j) = (1.0-0.3*xc(i,j)-heavi(i,j))*sigma/config.drop.r;
-      u(i,j) = 0.0;
-      p(i,j) = 1.0;
+      // u(i,j) = 0.0;
+      // p(i,j) = 1.0;
     }
   }
   levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
