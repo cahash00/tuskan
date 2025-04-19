@@ -120,6 +120,7 @@ void update_BCs(bcTags tags,
       u(iend,j) = 0.0;
       v(iend+1,j) = -v(iend,j);
       p(iend,j) = p(iend-1,j);
+      p(iend+1,j) = p(iend,j);
     } else if (tags.Right.bvals(j)==1) {
       // moving wall
       u(iend,j) = tags.Right.vel[0];
@@ -177,6 +178,7 @@ void update_BCs(bcTags tags,
       u(i,jend+1) = -u(i,jend);
       v(i,jend) = 0.0;
       p(i,jend) = p(i,jend-1);
+      p(i,jend+1) = p(i,jend);
     } else if (tags.Top.bvals(i)==1) {
       // moving wall
       u(i,jend) = 2.0*tags.Top.vel[0]-u(i,jend-1);
@@ -202,8 +204,8 @@ void update_BCs_phi(bcTags tags,
      */
     if (tags.Left.bvals(j)==0) {
       // noslip 
-      // phi(istr-1,j) = phi(istr,j);
-      phi(istr-1,j) = 0.01;
+      phi(istr-1,j) = phi(istr,j);
+      // phi(istr-1,j) = 0.01;
     } else if (tags.Left.bvals(j)==1) {
       // moving wall
       phi(istr-1,j) = phi(istr,j);
@@ -216,8 +218,9 @@ void update_BCs_phi(bcTags tags,
      */
     if (tags.Right.bvals(j)==0) {
       // noslip 
-      // phi(iend,j) = phi(iend-1,j);
-      phi(iend,j) = 0.01;
+      phi(iend,j) = phi(iend-1,j);
+      phi(iend+1,j) = phi(iend,j);
+      // phi(iend,j) = 0.01;
     } else if (tags.Right.bvals(j)==1) {
       // moving wall
       phi(iend,j) = phi(iend-1,j);
@@ -235,8 +238,8 @@ void update_BCs_phi(bcTags tags,
      */
     if (tags.Bottom.bvals(i)==0) {
       // noslip wall 
-      // phi(i,jstr-1) = phi(i,jstr);
-      phi(i,jstr-1) = 0.01;
+      phi(i,jstr-1) = phi(i,jstr);
+      // phi(i,jstr-1) = 0.01;
     } else if (tags.Bottom.bvals(i)==1) {
       // moving wall
       phi(i,jstr-1) = phi(i,jstr);
@@ -250,10 +253,11 @@ void update_BCs_phi(bcTags tags,
     if (tags.Top.bvals(i)==0) {
       // noslip 
       phi(i,jend) = phi(i,jend-1);
+      phi(i,jend+1) = phi(i,jend);
     } else if (tags.Top.bvals(i)==1) {
       // moving wall
-      // phi(i,jend) = phi(i,jend-1);
-      phi(i,jend) = 0.01;
+      phi(i,jend) = phi(i,jend-1);
+      // phi(i,jend) = 0.01;
     } else if (tags.Top.bvals(i)==7) {
       // periodic
       phi(i,jend) = phi(i,jstr);
@@ -282,7 +286,7 @@ void update_BCs_rho(bcTags tags,
      */
     if (tags.Right.bvals(j)==0) {
       // noslip 
-      phi(iend,j) = phi(iend-1,j);
+      phi(iend+1,j) = phi(iend,j);
     } else if (tags.Right.bvals(j)==1) {
       // moving wall
       phi(iend,j) = phi(iend-1,j);
@@ -313,7 +317,7 @@ void update_BCs_rho(bcTags tags,
      */
     if (tags.Top.bvals(i)==0) {
       // noslip 
-      phi(i,jend) = phi(i,jend-1);
+      phi(i,jend+1) = phi(i,jend);
     } else if (tags.Top.bvals(i)==1) {
       // moving wall
       phi(i,jend) = phi(i,jend-1);
@@ -350,7 +354,7 @@ void update_BCs_nu(bcTags tags,
      */
     if (tags.Right.bvals(j)==0) {
       // noslip 
-      phi(iend,j) = phi(iend-1,j);
+      phi(iend+1,j) = phi(iend,j);
     } else if (tags.Right.bvals(j)==1) {
       // moving wall
       phi(iend,j) = phi(iend-1,j);
@@ -381,7 +385,7 @@ void update_BCs_nu(bcTags tags,
      */
     if (tags.Top.bvals(i)==0) {
       // noslip 
-      phi(i,jend) = phi(i,jend-1);
+      phi(i,jend+1) = phi(i,jend);
     } else if (tags.Top.bvals(i)==1) {
       // moving wall
       phi(i,jend) = phi(i,jend-1);

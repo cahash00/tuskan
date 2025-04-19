@@ -145,18 +145,23 @@ int main(int argc, char* argv[]){
   double V0 = levset::getVolume(heavi,dx,dy);
 
   // initialize density and nu fields
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
       if (config.drop.enabled==false) {
         heavi(i,j) = 1.0;
       }
       rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
       nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
-      if (heavi(i,j)==0) u(i,j) = config.jet.u;
+      // if (heavi(i,j)==0) u(i,j) = config.jet.u;
       // u(i,j) = 1.0/(2.0*1e-5)*-0.003*(yn(i,j)*yn(i,j)-0.02*yn(i,j));
       // p(i,j) = (1.0-0.3*xc(i,j)-heavi(i,j))*sigma/config.drop.r;
       // u(i,j) = 0.0;
       // p(i,j) = 1.0;
+      // if (yn(i,j) <= 2.5) {
+      //   // initialize to liquid
+      //   rho(i,j) = rhol;
+      //   nu(i,j) = nul;
+      // }
     }
   }
   levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
@@ -188,6 +193,7 @@ int main(int argc, char* argv[]){
   timer.start();
   IO::logger->info("Starting Main Solver");
 
+    
   for (int ii = 1; ii <= config.solver.iter; ii++) {
     // ... update boundary conditions
     BC::update_BCs(bcTags,u,v,p);
@@ -196,27 +202,27 @@ int main(int argc, char* argv[]){
     double dt = get_min_dt(cfl,dx,dy,u,v,max(nug,nul));
     ttime+=dt;
     // ... shut jet off, calculate the volume of the fluid and maintain it.
-    if (ttime > 5e10 && config.jet.enabled==true) {
-      config.jet.enabled=false;
-      for (int i = istr; i <= iend; i++) {
-        rho(i,jstr) = rhog;
-        nu(i,jstr) = nug;
-        rho(i,jstr-1) = rhog;
-        nu(i,jstr-1) = nug;
-        phi(i,jstr) = 0.0000+dy;
-        phi(i,jstr-1) = dy*2.0;
-        heavi(i,jstr) = 1.0;
-        heavi(i,jstr-1) = 1.0;
-        levset::reinitialize(bcTags,dx,dy,dtau,config.levset.ireinit,phi);
-        levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
-      }
-      BC::bcTags bcTags = BC::tag_BCs(config,xn,u.dims(1),u.dims(2));
-      BC::update_BCs(bcTags,u,v,p);
-      BC::update_BCs_rho(bcTags,rho);
-      BC::update_BCs_nu(bcTags,nu);
-      V0 = levset::getVolume(heavi,dx,dy);
-      cout << "jet is turned off." << endl;
-    }
+    // if (ttime > 5e10 && config.jet.enabled==true) {
+    //   config.jet.enabled=false;
+    //   for (int i = istr; i <= iend; i++) {
+    //     rho(i,jstr) = rhog;
+    //     nu(i,jstr) = nug;
+    //     rho(i,jstr-1) = rhog;
+    //     nu(i,jstr-1) = nug;
+    //     phi(i,jstr) = 0.0000+dy;
+    //     phi(i,jstr-1) = dy*2.0;
+    //     heavi(i,jstr) = 1.0;
+    //     heavi(i,jstr-1) = 1.0;
+    //     levset::reinitialize(bcTags,dx,dy,dtau,config.levset.ireinit,phi);
+    //     levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
+    //   }
+    //   BC::bcTags bcTags = BC::tag_BCs(config,xn,u.dims(1),u.dims(2));
+    //   BC::update_BCs(bcTags,u,v,p);
+    //   BC::update_BCs_rho(bcTags,rho);
+    //   BC::update_BCs_nu(bcTags,nu);
+    //   V0 = levset::getVolume(heavi,dx,dy);
+    //   cout << "jet is turned off." << endl;
+    // }
     levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
 
 
@@ -248,7 +254,7 @@ int main(int argc, char* argv[]){
         double fx = (Fx(i,j)+Fx(i-1,j))*0.5;
         double fy = (Fy(i,j)+Fy(i,j-1))*0.5;
         ustar(i,j) = u(i,j) + dt*(-ab2[0] + diffu[0]-fx/rhoi);
-        vstar(i,j) = v(i,j) + dt*(-ab2[1] + diffu[1]-fy/rhoj);
+        vstar(i,j) = v(i,j) + dt*(-ab2[1] + diffu[1]-fy/rhoj-9.81);
       }
     }
 
@@ -258,8 +264,8 @@ int main(int argc, char* argv[]){
 
     
     // ... apply the pressure correctior
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    for (int j = jstr-1; j <= jend; j++) {
+      for (int i = istr-1; i <= iend; i++) {
         double rhoi = (rho(i,j)+rho(i-1,j))*0.5;
         double rhoj = (rho(i,j)+rho(i,j-1))*0.5;
         double dpdx = (p(i,j) - p(i-1,j)) / (dx);
@@ -282,7 +288,7 @@ int main(int argc, char* argv[]){
       Vn = levset::getVolume(heavi,dx,dy);
       double Ln = levset::getLength(phi,dx,dy,Mh);
       if (config.jet.enabled==false) {
-        levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
+        // levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
       }
     }
 

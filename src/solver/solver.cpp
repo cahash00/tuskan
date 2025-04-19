@@ -219,6 +219,8 @@ double get_min_dt(const double& cfl,
   }
   double dt2 = 0.5*dx*dx*dy*dy/(nu*(dx*dx+dy*dy));
   double dt = min(dt1,dt2);
+  if (dt>1.0) dt=1e-4;
+  // dt=1.0e-4;
   
   return dt;
 }

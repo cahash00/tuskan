@@ -14,9 +14,13 @@ void get_phi(mtr::FMatrix<double>& phi,
              const double& xd,
              const double& yd,
              const double& r_drop) {
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
-      phi(i,j) = sqrt(pow((xc(i,j)-xd),2) + pow((yc(i,j)-yd),2))-r_drop;
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
+      double phi_bub = -sqrt(pow((xc(i,j)-xd),2) + pow((yc(i,j)-yd),2))+r_drop;
+      double phi_water = xc(i,j) - 1.0;
+      phi(i,j) = max(phi_bub,phi_water);
+      // phi(i,j) = phi_bub;
+      phi(i,j) = phi_water;
     }
   }
   
@@ -27,8 +31,8 @@ void heaviside(const double& M,
                const mtr::FMatrix<double>& phi,
                mtr::FMatrix<double>& heavi) {
   const double Mh = M*h;
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
       if (phi(i,j) < -Mh) {
         heavi(i,j) = 0.0;
       } else if (phi(i,j) > Mh) {
@@ -159,8 +163,8 @@ void advecPhi(const BC::bcTags bcTags,
   //   }
   // }
   // ... simple first-order Euler time discretization
-  for (int j = jstr; j <= jend-1; j++) {
-    for (int i = istr; i <= iend-1; i++) {
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
       double ucell=0.0,vcell=0.0;
       ucell = (u(i,j)+u(i-1,j))*0.5;
       vcell = (v(i,j)+v(i,j-1))*0.5;
@@ -188,8 +192,8 @@ void advecPhi(const BC::bcTags bcTags,
   BC::update_BCs_phi(bcTags,phi2);
 
   // ... update the phi solution
-  for (int j = jstr; j <= jend-1; j++) {
-    for (int i = istr; i <= iend-1; i++) {
+  for (int j = jstr; j <= jend; j++) {
+    for (int i = istr; i <= iend; i++) {
       phi(i,j) = phi2(i,j);
     }
   }
