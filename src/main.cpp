@@ -152,16 +152,6 @@ int main(int argc, char* argv[]){
       }
       rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
       nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
-      // if (heavi(i,j)==0) u(i,j) = config.jet.u;
-      // u(i,j) = 1.0/(2.0*1e-5)*-0.003*(yn(i,j)*yn(i,j)-0.02*yn(i,j));
-      // p(i,j) = (1.0-0.3*xc(i,j)-heavi(i,j))*sigma/config.drop.r;
-      // u(i,j) = 0.0;
-      // p(i,j) = 1.0;
-      // if (yn(i,j) <= 2.5) {
-      //   // initialize to liquid
-      //   rho(i,j) = rhol;
-      //   nu(i,j) = nul;
-      // }
     }
   }
   levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
@@ -200,6 +190,7 @@ int main(int argc, char* argv[]){
 
     // ... get the minimum dt in the domain for current iteration
     double dt = get_min_dt(cfl,dx,dy,u,v,max(nug,nul));
+    if (ii<100) dt=1e-5;
     ttime+=dt;
     // ... shut jet off, calculate the volume of the fluid and maintain it.
     // if (ttime > 5e10 && config.jet.enabled==true) {
@@ -274,8 +265,6 @@ int main(int argc, char* argv[]){
         v2(i,j) = vstar(i,j) - 1.0/rhoj*dt*dpdy;
       }
     }
-    BC::update_BCs_rho(bcTags,rho);
-    BC::update_BCs_nu(bcTags,nu);
     BC::update_BCs(bcTags,u2,v2,p);
     // ... solve advection eq for phi
     double Vn = 0.0;
@@ -287,9 +276,7 @@ int main(int argc, char* argv[]){
       levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
       Vn = levset::getVolume(heavi,dx,dy);
       double Ln = levset::getLength(phi,dx,dy,Mh);
-      if (config.jet.enabled==false) {
-        // levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
-      }
+      levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
     }
 
     for (int j = jstr-1; j <= jend; j++) {

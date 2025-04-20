@@ -42,6 +42,7 @@ bcTags tag_BCs(IO::ConfigData config,
                const int ny) {
   std::map<std::string,int> bcTypes = {
     {"noslip wall",0},
+    {"slip wall",5},
     {"moving wall",1},
     {"inlet",2},
     {"jet",4},
@@ -101,6 +102,11 @@ void update_BCs(bcTags tags,
       u(istr,j) = 0.0;
       v(istr-1,j) = -v(istr,j);
       p(istr-1,j) = p(istr,j);
+    } else if (tags.Left.bvals(j)==5) {
+        // noslip 
+        u(istr,j) = 0.0;
+        v(istr-1,j) = v(istr,j);
+        p(istr-1,j) = p(istr,j);
     } else if (tags.Left.bvals(j)==1) {
       // moving wall
       u(istr-1,j) = tags.Left.vel[0];
@@ -118,9 +124,15 @@ void update_BCs(bcTags tags,
     if (tags.Right.bvals(j)==0) {
       // noslip 
       u(iend,j) = 0.0;
+      u(iend+1,j) = 0.0;
       v(iend+1,j) = -v(iend,j);
       p(iend,j) = p(iend-1,j);
-      p(iend+1,j) = p(iend,j);
+    } else if (tags.Right.bvals(j)==5) {
+        // noslip 
+        u(iend,j) = 0.0;
+        u(iend+1,j) = 0.0;
+        v(iend+1,j) = v(iend,j);
+        p(iend,j) = p(iend-1,j);
     } else if (tags.Right.bvals(j)==1) {
       // moving wall
       u(iend,j) = tags.Right.vel[0];
@@ -145,6 +157,11 @@ void update_BCs(bcTags tags,
       u(i,jstr-1) = -u(i,jstr);
       v(i,jstr) = 0.0;
       p(i,jstr-1) = p(i,jstr);
+    } else if (tags.Bottom.bvals(i)==5) {
+        // slip wall 
+        u(i,jstr-1) = u(i,jstr);
+        v(i,jstr) = 0.0;
+        p(i,jstr-1) = p(i,jstr);
     } else if (tags.Bottom.bvals(i)==1) {
       // moving wall
       u(i,jstr-1) = 2.0*tags.Bottom.vel[0]-u(i,jstr);
@@ -178,7 +195,11 @@ void update_BCs(bcTags tags,
       u(i,jend+1) = -u(i,jend);
       v(i,jend) = 0.0;
       p(i,jend) = p(i,jend-1);
-      p(i,jend+1) = p(i,jend);
+    } else if (tags.Top.bvals(i)==5) {
+        // slip 
+        u(i,jend+1) = u(i,jend);
+        v(i,jend) = 0.0;
+        p(i,jend) = p(i,jend-1);
     } else if (tags.Top.bvals(i)==1) {
       // moving wall
       u(i,jend) = 2.0*tags.Top.vel[0]-u(i,jend-1);
@@ -196,6 +217,8 @@ void update_BCs(bcTags tags,
 } // end update_BCs
 
 void update_BCs_phi(bcTags tags, 
+                    const double dx,
+                    const double dy,
                     mtr::FMatrix<double>& phi) {
   // update the left + right boundaries
   for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
@@ -204,8 +227,7 @@ void update_BCs_phi(bcTags tags,
      */
     if (tags.Left.bvals(j)==0) {
       // noslip 
-      phi(istr-1,j) = phi(istr,j);
-      // phi(istr-1,j) = 0.01;
+      phi(istr-1,j) = phi(istr,j)+copysign(dx,phi(istr,j));
     } else if (tags.Left.bvals(j)==1) {
       // moving wall
       phi(istr-1,j) = phi(istr,j);
@@ -218,9 +240,7 @@ void update_BCs_phi(bcTags tags,
      */
     if (tags.Right.bvals(j)==0) {
       // noslip 
-      phi(iend,j) = phi(iend-1,j);
-      phi(iend+1,j) = phi(iend,j);
-      // phi(iend,j) = 0.01;
+      phi(iend,j) = phi(iend-1,j)+copysign(dx,phi(iend-1,j));
     } else if (tags.Right.bvals(j)==1) {
       // moving wall
       phi(iend,j) = phi(iend-1,j);
@@ -238,8 +258,7 @@ void update_BCs_phi(bcTags tags,
      */
     if (tags.Bottom.bvals(i)==0) {
       // noslip wall 
-      phi(i,jstr-1) = phi(i,jstr);
-      // phi(i,jstr-1) = 0.01;
+      phi(i,jstr-1) = phi(i,jstr)+copysign(dy,phi(i,jstr));
     } else if (tags.Bottom.bvals(i)==1) {
       // moving wall
       phi(i,jstr-1) = phi(i,jstr);
@@ -252,15 +271,14 @@ void update_BCs_phi(bcTags tags,
      */
     if (tags.Top.bvals(i)==0) {
       // noslip 
-      phi(i,jend) = phi(i,jend-1);
-      phi(i,jend+1) = phi(i,jend);
+      phi(i,jend) = phi(i,jend-1)+copysign(dy,phi(i,jend-1));
     } else if (tags.Top.bvals(i)==1) {
       // moving wall
       phi(i,jend) = phi(i,jend-1);
       // phi(i,jend) = 0.01;
     } else if (tags.Top.bvals(i)==7) {
       // periodic
-      phi(i,jend) = phi(i,jstr);
+      phi(i,jend+1) = phi(i,jstr);
     }
   }
 } // end update_BCs

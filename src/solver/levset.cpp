@@ -14,13 +14,12 @@ void get_phi(mtr::FMatrix<double>& phi,
              const double& xd,
              const double& yd,
              const double& r_drop) {
-  for (int j = jstr-1; j <= jend+1; j++) {
-    for (int i = istr-1; i <= iend+1; i++) {
-      double phi_bub = -sqrt(pow((xc(i,j)-xd),2) + pow((yc(i,j)-yd),2))+r_drop;
-      double phi_water = xc(i,j) - 1.0;
-      phi(i,j) = max(phi_bub,phi_water);
-      // phi(i,j) = phi_bub;
-      phi(i,j) = phi_water;
+  for (int j = jstr-1; j <= jend; j++) {
+    for (int i = istr-1; i <= iend; i++) {
+      phi(i,j) = sqrt(pow((xc(i,j)-xd),2) + pow((yc(i,j)-yd),2))-r_drop;
+      double phi_water = xc(i,j)-1.0;
+      double phi_air = yc(i,j)-1.0;
+      phi(i,j) = max(phi_water,phi_air);
     }
   }
   
@@ -45,94 +44,6 @@ void heaviside(const double& M,
 } // end marker
 
 /******************************************************************************/
-std::vector<double> get_phiHalf(const int i,
-                                const int j,
-                                const mtr::FMatrix<double>& u,
-                                const mtr::FMatrix<double>& v,
-                                const mtr::FMatrix<double>& phi) {
-  std::vector<double> phiHalf(2,0.0);
-  
-  /**
-     * i-direction: calculate D+ and D- (x-direction)
-     */
-    double dp1 = phi(i+1,j) - phi(i,j);   // D+ for phi(i,j)
-    double dm1 = phi(i,j) - phi(i-1,j);   // D- for phi(i,j)
-
-    // get interface values using simple 1st order CD
-    if (u(i,j) > 0.0) {
-        phiHalf[0] = phi(i-1,j);  // Backward difference
-    }
-    else {
-        phiHalf[0] = phi(i,j);  // Forward difference
-    }
-
-    /**
-     * j-direction: calculate D+ and D- (y-direction)
-     */
-    double dp1_y = phi(i,j+1) - phi(i,j);   // D+ for phi(i,j)
-    double dm1_y = phi(i,j) - phi(i,j-1);   // D- for phi(i,j)
-
-    // get interface values using simple 1st order CD
-    if (v(i,j) > 0.0) {
-        phiHalf[1] = phi(i-1,j);  // Backward difference
-    }
-    else {
-        phiHalf[1] = phi(i,j);  // Forward difference
-    }
-
-    return phiHalf;
-
-} // end get_phiHalf
-/******************************************************************************/
-// double get_Lphi(const int i,
-//                 const int j,
-//                 const mtr::FMatrix<double>& u, 
-//                 const mtr::FMatrix<double>& v, 
-//                 const double dx,
-//                 const double dy,
-//                 mtr::FMatrix<double>& phi) {
-//   // ... get the cell-centered velocities
-//   const double ucell = 0.5*(u(i-1,j)+u(i,j));
-//   const double vcell = 0.5*(v(i,j-1)+v(i,j));
-
-//   // ... get the cell face phi values based on switch function
-//   std::vector<double> phiHalf = get_phiHalf(i,j,u,v,phi);
-  
-//   // ... Calculate the spatial derivative using phiHalf values
-//   const double dphidx = (phiHalf[0] - phi(i, j)) / dx;
-//   const double dphidy = (phiHalf[1] - phi(i, j)) / dy;
-
-//   // ... Advection term calculation
-//   const double Lphi = - ucell * dphidx - vcell * dphidy;
-//   return Lphi;
-// }
-double get_Lphi(const int i, const int j,
-                const mtr::FMatrix<double>& u,
-                const mtr::FMatrix<double>& v,
-                const double dx, const double dy,
-                const mtr::FMatrix<double>& phi) {
-  // u at i+1/2,j and i-1/2,j
-  double u_right = u(i,j); // u_{i+1/2,j}
-  double u_left  = u(i-1,j);   // u_{i-1/2,j}
-
-  double phi_right = (u_right > 0.0) ? phi(i,j)   : phi(i+1,j);
-  double phi_left  = (u_left  > 0.0) ? phi(i-1,j) : phi(i,j);
-
-  double flux_x = (u_right * phi_right - u_left * phi_left) / dx;
-
-  // v at i,j+1/2 and i,j-1/2
-  double v_top    = v(i,j); // v_{i,j+1/2}
-  double v_bottom = v(i,j-1);   // v_{i,j-1/2}
-
-  double phi_top    = (v_top    > 0.0) ? phi(i,j)   : phi(i,j+1);
-  double phi_bottom = (v_bottom > 0.0) ? phi(i,j-1) : phi(i,j);
-
-  double flux_y = (v_top * phi_top - v_bottom * phi_bottom) / dy;
-
-  return -(flux_x + flux_y);
-}
-
-/******************************************************************************/
 void advecPhi(const BC::bcTags bcTags,
           const double dx,
           const double dy,
@@ -144,24 +55,7 @@ void advecPhi(const BC::bcTags bcTags,
   mtr::FMatrix<double> phiStar(phi.dims(1),phi.dims(2));
   mtr::FMatrix<double> phi2(phi.dims(1),phi.dims(2));
 
-  BC::update_BCs_phi(bcTags,phi);
-  // // ... calculate phi*
-  // for (int j = jstr-1; j <= jend; j++) {
-  //   for (int i = istr-1; i <= iend; i++) {
-  //     double Lphi = get_Lphi(i,j,u,v,dx,dy,phi);
-  //     phiStar(i,j) = phi(i,j) + dt*Lphi;
-  //   }
-  // }
-  // BC::update_BCs_phi(bcTags,phiStar);
-
-  // // ... correct phi*
-  // for (int j = jstr-1; j <= jend; j++) {
-  //   for (int i = istr-1; i <= iend; i++) {
-  //     double LphiN = get_Lphi(i,j,u,v,dx,dy,phi);
-  //     double LphiStar = get_Lphi(i,j,u,v,dx,dy,phiStar);
-  //     phi2(i,j) = phi(i,j) + dt*0.5*(LphiN+LphiStar);
-  //   }
-  // }
+  BC::update_BCs_phi(bcTags,dx,dy,phi);
   // ... simple first-order Euler time discretization
   for (int j = jstr; j <= jend; j++) {
     for (int i = istr; i <= iend; i++) {
@@ -189,7 +83,7 @@ void advecPhi(const BC::bcTags bcTags,
     }
   }
   
-  BC::update_BCs_phi(bcTags,phi2);
+  BC::update_BCs_phi(bcTags,dx,dy,phi2);
 
   // ... update the phi solution
   for (int j = jstr; j <= jend; j++) {
@@ -256,6 +150,7 @@ void reinitialize(BC::bcTags bcTags,
   mtr::FMatrix<double> sign0(phi.dims(1),phi.dims(2));
   mtr::FMatrix<double> phi0(phi.dims(1),phi.dims(2));
   mtr::FMatrix<double> phi2(phi.dims(1),phi.dims(2));
+  BC::update_BCs_phi(bcTags,dx,dy,phi0);
   for (int j = jstr; j <= jend-1; j++) {
     for (int i = istr; i <= iend-1; i++) {
       phi2(i,j) = phi(i,j);
@@ -265,6 +160,8 @@ void reinitialize(BC::bcTags bcTags,
       sign0(i,j) = phi(i,j) / sqrt(phi(i,j)*phi(i,j)+gphi0*gphi0*dx*dx+eps*eps);
     }
   }
+  BC::update_BCs_phi(bcTags,dx,dy,phi0);
+  BC::update_BCs_phi(bcTags,dx,dy,phi2);
   
 
   // ... update the phi matrix
@@ -303,7 +200,7 @@ void reinitialize(BC::bcTags bcTags,
       }
     }
     
-    // BC::update_BCs_phi(bcTags,phi2);
+    BC::update_BCs_phi(bcTags,dx,dy,phi2);
     for (int j = jstr; j <= jend-1; j++) {
       for (int i = istr; i <= iend-1; i++) {
         phi(i,j) = phi2(i,j);

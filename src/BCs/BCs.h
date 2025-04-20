@@ -43,6 +43,8 @@ void update_BCs(bcTags tags,
                 mtr::FMatrix<double>& v,
                 mtr::FMatrix<double>& p);
 void update_BCs_phi(bcTags tags, 
+                    const double dx,
+                    const double dy,
                     mtr::FMatrix<double>& phi);
 void update_BCs_rho(bcTags tags, 
     mtr::FMatrix<double>& phi);
