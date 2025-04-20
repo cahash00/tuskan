@@ -166,6 +166,7 @@ void reinitialize(BC::bcTags bcTags,
 
   // ... update the phi matrix
   for (int n = 0; n < isteps; n++) {
+    BC::update_BCs_phi(bcTags,dx,dy,phi);
     for (int j = jstr; j <= jend-1; j++) {
       for (int i = istr; i <= iend-1; i++) {
         double a = (phi(i,j)-phi(i-1,j))/dx;
@@ -200,11 +201,11 @@ void reinitialize(BC::bcTags bcTags,
       }
     }
     
-    BC::update_BCs_phi(bcTags,dx,dy,phi2);
-    for (int j = jstr; j <= jend-1; j++) {
-      for (int i = istr; i <= iend-1; i++) {
-        phi(i,j) = phi2(i,j);
-      }
+  }
+  BC::update_BCs_phi(bcTags,dx,dy,phi2);
+  for (int j = jstr; j <= jend-1; j++) {
+    for (int i = istr; i <= iend-1; i++) {
+      phi(i,j) = phi2(i,j);
     }
   }
 } // end reinitialize
@@ -213,8 +214,8 @@ double getVolume(mtr::FMatrix<double>& heavi,
                  const double dx,
                  const double dy) {
   double vol = 0.0;
-  for (int j = jstr; j <= jend; j++) {
-    for (int i = istr; i <= iend; i++) {
+  for (int j = jstr; j <= jend-1; j++) {
+    for (int i = istr; i <= iend-1; i++) {
       vol = vol + (1.0-heavi(i,j))*dx*dy;
     }
   }
@@ -226,8 +227,8 @@ double getLength(mtr::FMatrix<double>& phi,
                  const double dy,
                  const double Mh) {
   double len=0.0,delta=0.0;
-  for (int j = jstr; j <= jend; j++) {
-    for (int i = istr; i <= iend; i++) {
+  for (int j = jstr; j <= jend-1; j++) {
+    for (int i = istr; i <= iend-1; i++) {
       if (abs(phi(i,j)) < Mh) {
         delta = 1.0/(2.0*Mh)*(1+cos(M_PI*phi(i,j)/Mh));
       } else {
@@ -248,8 +249,8 @@ void volumeCorrection(mtr::FMatrix<double>& phi,
                       const double Ln) {
   double dV = (V0-Vn)/Ln;
   double delta = 0.0;
-  for (int j = jstr; j <= jend; j++) {
-    for (int i = istr; i <= iend; i++) {
+  for (int j = jstr; j <= jend-1; j++) {
+    for (int i = istr; i <= iend-1; i++) {
       if (abs(phi(i,j)) < Mh) {
         phi(i,j) = phi(i,j) - dV;
       }

@@ -177,7 +177,7 @@ int main(int argc, char* argv[]){
   double ires,res0,res1,cfl0,resmax = 0.0;
   double cfl = config.solver.cfli;
   int finalIter = 0;
-  const double dtau = 0.5*min(dx,dy);
+  const double dtau = 0.2*min(dx,dy);
 
   // ... start solver & timer
   timer.start();
