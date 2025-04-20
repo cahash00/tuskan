@@ -33,8 +33,8 @@ void SOR(const double& omega,
   BC::update_BCs(bcTags,ustar,vstar,p);
   // ... start the jacobi iterations
   int jiter = 5000;
-  for (int j = jstr-1; j <= jend; j++) {
-    for (int i = istr-1; i <= iend; i++) {
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
       p1(i,j) = p(i,j);
       p2(i,j) = p(i,j);
     }
@@ -45,8 +45,8 @@ void SOR(const double& omega,
     BC::update_BCs(bcTags,ustar,vstar,p1);
     
     // ... loop over the domain
-    for (int j = jstr; j <= jend-1; j++) {
-      for (int i = istr; i <= iend-1; i++) {
+    for (int j = jstr; j <= jend; j++) {
+      for (int i = istr; i <= iend; i++) {
         // Compute average densities at cell faces
         // - this is using harmonic averaging
         double rho_e = 2.0 * rho(i,j) * rho(i+1,j) / (rho(i,j) + rho(i+1,j));
@@ -55,8 +55,8 @@ void SOR(const double& omega,
         double rho_s = 2.0 * rho(i,j) * rho(i,j-1) / (rho(i,j) + rho(i,j-1));
         
         // ... variable dx and dy
-        double term2 = 1.0 / dt * ((ustar(i+1,j)-ustar(i,j))/dx
-                                 + (vstar(i,j+1)-vstar(i,j))/dy);
+        double term2 = 1.0 / dt * ((ustar(i,j)-ustar(i-1,j))/dx
+                                 + (vstar(i,j)-vstar(i,j-1))/dy);
 
         double term1 = (1.0 / (rho_e * dx2)) * p1(i+1, j)
                      + (1.0 / (rho_w * dx2)) * p2(i-1, j)
@@ -67,15 +67,15 @@ void SOR(const double& omega,
                      + (1.0 / (rho_n * dy2))
                      + (1.0 / (rho_s * dy2));
 
-        p2(i,j) = (1.0-omega)*p2(i,j) 
+        p2(i,j) = (1.0-omega)*p1(i,j) 
                 + omega/coeff*(term1 - term2);
 
       } // end i-loop
     } // end j-loop
     BC::update_BCs(bcTags,ustar,vstar,p2);
 
-    for (int j = jstr; j <= jend-1; j++) {
-      for (int i = istr; i <= iend-1; i++) {
+    for (int j = jstr-1; j <= jend+1; j++) {
+      for (int i = istr-1; i <= iend+1; i++) {
         p1(i,j) = p2(i,j);
       }
     }
@@ -90,8 +90,8 @@ void SOR(const double& omega,
       // throw runtime_error("ERROR: SOR solver did not converge.");
     }
   } // end Jacobi loop
-  for (int j = jstr; j <= jend-1; j++) {
-    for (int i = istr; i <= iend-1; i++) {
+  for (int j = jstr-1; j <= jend+1; j++) {
+    for (int i = istr-1; i <= iend+1; i++) {
       p(i,j) = p2(i,j);
     }
   }

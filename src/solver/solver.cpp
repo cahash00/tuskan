@@ -221,6 +221,7 @@ double get_min_dt(const double& cfl,
   double dt = min(dt1,dt2);
   if (dt>1.0) dt=1e-4;
   // dt=1.0e-4;
+  if (dt>1e-2) dt=1e-4;
   
   return dt;
 }

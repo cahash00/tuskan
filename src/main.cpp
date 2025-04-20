@@ -240,16 +240,17 @@ int main(int argc, char* argv[]){
         ab2[1] = 1.5*advec[1]-0.5*advec_old[1];
 
         // predictor step - explicit
-        double rhoi = (rho(i,j)+rho(i-1,j))*0.5;
-        double rhoj = (rho(i,j)+rho(i,j-1))*0.5;
-        double fx = (Fx(i,j)+Fx(i-1,j))*0.5;
-        double fy = (Fy(i,j)+Fy(i,j-1))*0.5;
+        double rhoi = (rho(i+1,j)+rho(i,j))*0.5;
+        double rhoj = (rho(i,j+1)+rho(i,j))*0.5;
+        double fx = (Fx(i+1,j)+Fx(i,j))*0.5;
+        double fy = (Fy(i,j+1)+Fy(i,j))*0.5;
         ustar(i,j) = u(i,j) + dt*(-ab2[0] + diffu[0]-fx/rhoi);
         vstar(i,j) = v(i,j) + dt*(-ab2[1] + diffu[1]-fy/rhoj-9.81);
       }
     }
 
     // ... solve for the pressure
+    BC::update_BCs(bcTags,ustar,vstar,p);
     psolve::SOR(config.solver.omega,p,ustar,vstar,dx,dy,dt,rho,bcTags);
     BC::update_BCs(bcTags,ustar,vstar,p);
 
@@ -257,10 +258,10 @@ int main(int argc, char* argv[]){
     // ... apply the pressure correctior
     for (int j = jstr-1; j <= jend; j++) {
       for (int i = istr-1; i <= iend; i++) {
-        double rhoi = (rho(i,j)+rho(i-1,j))*0.5;
-        double rhoj = (rho(i,j)+rho(i,j-1))*0.5;
-        double dpdx = (p(i,j) - p(i-1,j)) / (dx);
-        double dpdy = (p(i,j) - p(i,j-1)) / (dy);
+        double rhoi = (rho(i+1,j)+rho(i,j))*0.5;
+        double rhoj = (rho(i,j+1)+rho(i,j))*0.5;
+        double dpdx = (p(i+1,j) - p(i,j)) / (dx);
+        double dpdy = (p(i,j+1) - p(i,j)) / (dy);
         u2(i,j) = ustar(i,j) - 1.0/rhoi*dt*dpdx;
         v2(i,j) = vstar(i,j) - 1.0/rhoj*dt*dpdy;
       }
@@ -314,7 +315,9 @@ int main(int argc, char* argv[]){
                             "kappa",kappa,
                             "Fx",Fx,
                             "Fy",Fy,
-                            "heavi",heavi);
+                            "heavi",heavi,
+                            "ustar",ustar,
+                            "vstar",vstar);
         }
       }
     } 

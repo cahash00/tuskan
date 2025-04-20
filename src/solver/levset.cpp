@@ -17,9 +17,10 @@ void get_phi(mtr::FMatrix<double>& phi,
   for (int j = jstr-1; j <= jend; j++) {
     for (int i = istr-1; i <= iend; i++) {
       phi(i,j) = sqrt(pow((xc(i,j)-xd),2) + pow((yc(i,j)-yd),2))-r_drop;
-      double phi_water = xc(i,j)-1.0;
-      double phi_air = yc(i,j)-1.0;
+      double phi_water = xc(i,j)-3.5;
+      double phi_air = -yc(i,j)+1.0+0.1*0.5*cos(2*M_PI*xc(i,j)/0.5);
       phi(i,j) = max(phi_water,phi_air);
+      phi(i,j) = phi_air;
     }
   }
   
@@ -57,8 +58,8 @@ void advecPhi(const BC::bcTags bcTags,
 
   BC::update_BCs_phi(bcTags,dx,dy,phi);
   // ... simple first-order Euler time discretization
-  for (int j = jstr; j <= jend; j++) {
-    for (int i = istr; i <= iend; i++) {
+  for (int j = jstr; j <= jend-1; j++) {
+    for (int i = istr; i <= iend-1; i++) {
       double ucell=0.0,vcell=0.0;
       ucell = (u(i,j)+u(i-1,j))*0.5;
       vcell = (v(i,j)+v(i,j-1))*0.5;
