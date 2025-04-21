@@ -177,7 +177,7 @@ int main(int argc, char* argv[]){
   double ires,res0,res1,cfl0,resmax = 0.0;
   double cfl = config.solver.cfli;
   int finalIter = 0;
-  const double dtau = 0.2*min(dx,dy);
+  const double dtau = 0.1*min(dx,dy);
 
   // ... start solver & timer
   timer.start();
@@ -240,10 +240,10 @@ int main(int argc, char* argv[]){
         ab2[1] = 1.5*advec[1]-0.5*advec_old[1];
 
         // predictor step - explicit
-        double rhoi = (rho(i,j)+rho(i-1,j))*0.5;
-        double rhoj = (rho(i,j)+rho(i,j-1))*0.5;
-        double fx = (Fx(i,j)+Fx(i-1,j))*0.5;
-        double fy = (Fy(i,j)+Fy(i,j-1))*0.5;
+        double rhoi = (rho(i+1,j)+rho(i,j))*0.5;
+        double rhoj = (rho(i,j+1)+rho(i,j))*0.5;
+        double fx = (Fx(i+1,j)+Fx(i,j))*0.5;
+        double fy = (Fy(i,j+1)+Fy(i,j))*0.5;
         ustar(i,j) = u(i,j) + dt*(-ab2[0] + diffu[0]-fx/rhoi);
         vstar(i,j) = v(i,j) + dt*(-ab2[1] + diffu[1]-fy/rhoj-9.81);
       }
@@ -258,8 +258,8 @@ int main(int argc, char* argv[]){
     // ... apply the pressure correctior
     for (int j = jstr; j <= jend; j++) {
       for (int i = istr; i <= iend; i++) {
-        double rhoi = (rho(i,j)+rho(i-1,j))*0.5;
-        double rhoj = (rho(i,j)+rho(i,j-1))*0.5;
+        double rhoi = (rho(i+1,j)+rho(i,j))*0.5;
+        double rhoj = (rho(i,j+1)+rho(i,j))*0.5;
         double dpdx = (p(i,j) - p(i-1,j)) / (dx);
         double dpdy = (p(i,j) - p(i,j-1)) / (dy);
         u2(i,j) = ustar(i,j) - 1.0/rhoi*dt*dpdx;
