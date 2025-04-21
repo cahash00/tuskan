@@ -45,8 +45,8 @@ void SOR(const double& omega,
     BC::update_BCs(bcTags,ustar,vstar,p1);
     
     // ... loop over the domain
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    for (int j = jstr; j <= jend-1; j++) {
+      for (int i = istr; i <= iend-1; i++) {
         // Compute average densities at cell faces
         // - this is using harmonic averaging
         double rho_e = 2.0 * rho(i,j) * rho(i+1,j) / (rho(i,j) + rho(i+1,j));
@@ -55,12 +55,12 @@ void SOR(const double& omega,
         double rho_s = 2.0 * rho(i,j) * rho(i,j-1) / (rho(i,j) + rho(i,j-1));
         
         // ... variable dx and dy
-        double term2 = 1.0 / dt * ((ustar(i,j)-ustar(i-1,j))/dx
-                                 + (vstar(i,j)-vstar(i,j-1))/dy);
+        double term2 = 1.0 / dt * ((ustar(i+1,j)-ustar(i,j))/dx
+                                 + (vstar(i,j+1)-vstar(i,j))/dy);
 
-        double term1 = (1.0 / (rho_e * dx2)) * p1(i+1, j)
+        double term1 = (1.0 / (rho_e * dx2)) * p2(i+1, j)
                      + (1.0 / (rho_w * dx2)) * p2(i-1, j)
-                     + (1.0 / (rho_n * dy2)) * p1(i, j+1)
+                     + (1.0 / (rho_n * dy2)) * p2(i, j+1)
                      + (1.0 / (rho_s * dy2)) * p2(i, j-1);
         double coeff = (1.0 / (rho_e * dx2))
                      + (1.0 / (rho_w * dx2))
@@ -73,6 +73,7 @@ void SOR(const double& omega,
       } // end i-loop
     } // end j-loop
     BC::update_BCs(bcTags,ustar,vstar,p2);
+    double res = L2NORM(p1,p2);
 
     for (int j = jstr-1; j <= jend+1; j++) {
       for (int i = istr-1; i <= iend+1; i++) {
@@ -81,9 +82,7 @@ void SOR(const double& omega,
     }
 
 
-    double res = L2NORM(p1,p2);
-
-    if (res < 2.0e-6 && n > 20) {
+    if (res < 2.0e-2 && n > 20) {
       break;
     } else if (n == jiter) {
       cout << res << endl;

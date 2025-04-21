@@ -260,8 +260,8 @@ int main(int argc, char* argv[]){
       for (int i = istr-1; i <= iend; i++) {
         double rhoi = (rho(i+1,j)+rho(i,j))*0.5;
         double rhoj = (rho(i,j+1)+rho(i,j))*0.5;
-        double dpdx = (p(i+1,j) - p(i,j)) / (dx);
-        double dpdy = (p(i,j+1) - p(i,j)) / (dy);
+        double dpdx = (p(i,j) - p(i-1,j)) / (dx);
+        double dpdy = (p(i,j) - p(i,j-1)) / (dy);
         u2(i,j) = ustar(i,j) - 1.0/rhoi*dt*dpdx;
         v2(i,j) = vstar(i,j) - 1.0/rhoj*dt*dpdy;
       }
