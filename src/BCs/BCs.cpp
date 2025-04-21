@@ -115,8 +115,8 @@ void update_BCs(bcTags tags,
     } else if (tags.Left.bvals(j)==7) {
       // periodic
       u(istr-1,j) = u(iend-1,j);
-      v(istr-1,j) = v(iend,j);
-      p(istr-1,j) = tags.Left.pressure;
+      v(istr-1,j) = v(iend-1,j);
+      p(istr-1,j) = p(iend-1,j);
     }
     /**
      * RIGHT BOUNDARY
@@ -142,8 +142,8 @@ void update_BCs(bcTags tags,
     if (tags.Right.bvals(j)==7) {
       // periodic
       u(iend,j) = u(istr,j);
-      v(iend+1,j) = v(istr,j);
-      p(iend,j) = tags.Right.pressure;
+      v(iend,j) = v(istr,j);
+      p(iend,j) = p(istr,j);
     }
   }
 
