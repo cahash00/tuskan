@@ -8,6 +8,7 @@
 
 namespace levset {
 
+/******************************************************************************/
 void get_phi(mtr::FMatrix<double>& phi,
              const mtr::FMatrix<double>& xc,
              const mtr::FMatrix<double>& yc,
@@ -26,6 +27,7 @@ void get_phi(mtr::FMatrix<double>& phi,
   
 } // end get_phi
 
+/******************************************************************************/
 void heaviside(const double& M,
                const double& h,
                const mtr::FMatrix<double>& phi,
@@ -140,6 +142,8 @@ void surfaceTension(mtr::FMatrix<double>& Fx,
     }
   }
 }
+
+/******************************************************************************/
 void reinitialize(BC::bcTags bcTags,
                   const double& dx,
                   const double& dy,
@@ -175,12 +179,6 @@ void reinitialize(BC::bcTags bcTags,
 
     for (int j = jstr; j <= jend-1; ++j) {
       for (int i = istr; i <= iend-1; ++i) {
-
-        if (std::abs(phi0(i,j)) > Mh) {
-          phi2(i,j) = phi(i,j);
-          continue;
-        }
-
         // ... Compute Godunov upwind gradients
         double a = (phi(i,j) - phi(i-1,j)) / dx;
         double b = (phi(i+1,j) - phi(i,j)) / dx;
@@ -226,76 +224,7 @@ void reinitialize(BC::bcTags bcTags,
   BC::update_BCs_phi(bcTags, dx, dy, phi);
 }
 
-//void reinitialize(BC::bcTags bcTags,
-//                  const double& dx,
-//                  const double& dy,
-//                  const double& dtau,
-//                  const int isteps,
-//                  mtr::FMatrix<double>& phi) {
-//  const double eps=1.0e-12;
-//  mtr::FMatrix<double> sign0(phi.dims(1),phi.dims(2));
-//  mtr::FMatrix<double> phi0(phi.dims(1),phi.dims(2));
-//  mtr::FMatrix<double> phi2(phi.dims(1),phi.dims(2));
-//  BC::update_BCs_phi(bcTags,dx,dy,phi0);
-//  for (int j = jstr; j <= jend-1; j++) {
-//    for (int i = istr; i <= iend-1; i++) {
-//      phi2(i,j) = phi(i,j);
-//      phi0(i,j) = phi(i,j);
-//      double gphi0 = sqrt(pow((phi(i+1,j) - phi(i-1,j)) / (2.0 * dx),2)
-//                        + pow((phi(i,j+1) - phi(i,j-1)) / (2.0 * dy),2));
-//      sign0(i,j) = phi(i,j) / sqrt(phi(i,j)*phi(i,j)+gphi0*gphi0*dx*dx+eps*eps);
-//    }
-//  }
-//  BC::update_BCs_phi(bcTags,dx,dy,phi0);
-//  BC::update_BCs_phi(bcTags,dx,dy,phi2);
-  
-
-//  // ... update the phi matrix
-//  for (int n = 0; n < isteps; n++) {
-//    BC::update_BCs_phi(bcTags,dx,dy,phi);
-//    for (int j = jstr; j <= jend-1; j++) {
-//      for (int i = istr; i <= iend-1; i++) {
-//        double a = (phi(i,j)-phi(i-1,j))/dx;
-//        double b = (phi(i+1,j)-phi(i,j))/dx;
-//        double c = (phi(i,j)-phi(i,j-1))/dy;
-//        double d = (phi(i,j+1)-phi(i,j))/dy;
-//        double ap = max(a,0.0);
-//        double am = min(a,0.0);
-//        double bp = max(b,0.0);
-//        double bm = min(b,0.0);
-//        double cp = max(c,0.0);
-//        double cm = min(c,0.0);
-//        double dp = max(d,0.0);
-//        double dm = min(d,0.0);
-//        double sp = max(sign0(i,j),0.0);
-//        double sm = min(sign0(i,j),0.0);
-//        double H = sp*(sqrt(max(ap*ap,bm*bm) + max(cp*cp,dm*dm))-1.0)
-//                 + sm*(sqrt(max(am*am,bp*bp) + max(cm*cm,dp*dp))-1.0);
-//        //> subcell fix
-//        //  Russo and Smereka (2000)
-//        //  Vastly improves the ability to reduce the amount of volume lost
-//        if (phi0(i+1,j)*phi0(i,j) < 0.0 ||
-//            phi0(i-1,j)*phi0(i,j) < 0.0 ||
-//            phi0(i,j+1)*phi0(i,j) < 0.0 || 
-//            phi0(i,j-1)*phi0(i,j) < 0.0) {
-//          double D = 2.0*dx*phi0(i,j) / sqrt( pow(phi0(i+1,j)-phi0(i-1,j),2) 
-//                                            + pow(phi0(i,j+1)-phi0(i,j-1),2) );
-//          phi2(i,j) = phi(i,j) - dtau*(sign0(i,j)*abs(phi(i,j))-D);
-//        } else {
-//          phi2(i,j) = phi(i,j) - dtau*H;
-//        }
-//      }
-//    }
-//    BC::update_BCs_phi(bcTags,dx,dy,phi2);
-    
-//  }
-//  for (int j = jstr; j <= jend-1; j++) {
-//    for (int i = istr; i <= iend-1; i++) {
-//      phi(i,j) = phi2(i,j);
-//    }
-//  }
-//} // end reinitialize
-
+/******************************************************************************/
 double getVolume(mtr::FMatrix<double>& heavi,
                  const double dx,
                  const double dy) {
@@ -308,6 +237,7 @@ double getVolume(mtr::FMatrix<double>& heavi,
   return vol;
 }
 
+/******************************************************************************/
 double getLength(mtr::FMatrix<double>& phi,
                  const double dx,
                  const double dy,
@@ -326,8 +256,7 @@ double getLength(mtr::FMatrix<double>& phi,
   return len;
 }
   
-  
-
+/******************************************************************************/
 void volumeCorrection(mtr::FMatrix<double>& phi,
                       const double Mh,
                       const double V0,

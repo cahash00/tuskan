@@ -190,30 +190,8 @@ int main(int argc, char* argv[]){
 
     // ... get the minimum dt in the domain for current iteration
     double dt = get_min_dt(cfl,dx,dy,u,v,max(nug,nul));
-    if (ii<100) dt=1e-5;
+    if (ii<100) dt=1e-5;  // start up iterations
     ttime+=dt;
-    // ... shut jet off, calculate the volume of the fluid and maintain it.
-    // if (ttime > 5e10 && config.jet.enabled==true) {
-    //   config.jet.enabled=false;
-    //   for (int i = istr; i <= iend; i++) {
-    //     rho(i,jstr) = rhog;
-    //     nu(i,jstr) = nug;
-    //     rho(i,jstr-1) = rhog;
-    //     nu(i,jstr-1) = nug;
-    //     phi(i,jstr) = 0.0000+dy;
-    //     phi(i,jstr-1) = dy*2.0;
-    //     heavi(i,jstr) = 1.0;
-    //     heavi(i,jstr-1) = 1.0;
-    //     levset::reinitialize(bcTags,dx,dy,dtau,config.levset.ireinit,phi);
-    //     levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
-    //   }
-    //   BC::bcTags bcTags = BC::tag_BCs(config,xn,u.dims(1),u.dims(2));
-    //   BC::update_BCs(bcTags,u,v,p);
-    //   BC::update_BCs_rho(bcTags,rho);
-    //   BC::update_BCs_nu(bcTags,nu);
-    //   V0 = levset::getVolume(heavi,dx,dy);
-    //   cout << "jet is turned off." << endl;
-    // }
     levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
 
 
@@ -277,11 +255,11 @@ int main(int argc, char* argv[]){
       levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
       Vn = levset::getVolume(heavi,dx,dy);
       double Ln = levset::getLength(phi,dx,dy,Mh);
-      levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
+      // levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
     }
 
-    for (int j = jstr-1; j <= jend; j++) {
-      for (int i = istr-1; i <= iend; i++) {
+    for (int j = jstr-1; j <= jend+1; j++) {
+      for (int i = istr-1; i <= iend+1; i++) {
         rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
         nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
       }
