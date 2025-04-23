@@ -13,4 +13,8 @@ MATAR should give me the opportunity to use GPU at some point.
   - [x] 2D rectilinear mesh generation given a $\Delta x$ and $\Delta y$
   - [x] 3D rectilinear mesh generation, given $\Delta x$, $\Delta y$, and $\Delta z$
   - [ ] Multiblock Mesh support - GridPro
-- [ ] Pressure solver
+- [x] Pressure solver
+- [x] Levelset implementation
+- [x] Phi redistancing
+- [x] Volume Correction
+- [x] Surface tension
