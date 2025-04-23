@@ -20,6 +20,8 @@ struct boundarySpecs {
   mtr::FMatrix<int> bvals;
   std::vector<double> vel;
   double pressure;
+  double rho;
+  double nu;
   // constructor
   boundarySpecs(int dim);
 };
@@ -32,6 +34,7 @@ struct bcTags {
 };
 
 bcTags tag_BCs(IO::ConfigData config,
+               mtr::FMatrix<double>& xn,
                const int nx,
                const int ny);
 
@@ -41,6 +44,10 @@ void update_BCs(bcTags tags,
                 mtr::FMatrix<double>& p);
 void update_BCs_phi(bcTags tags, 
                     mtr::FMatrix<double>& phi);
+void update_BCs_rho(bcTags tags, 
+    mtr::FMatrix<double>& phi);
+void update_BCs_nu(bcTags tags, 
+    mtr::FMatrix<double>& phi);
 
 
 } // end namespace BC

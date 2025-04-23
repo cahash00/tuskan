@@ -101,7 +101,7 @@ int main(int argc, char* argv[]){
   timer.stop();
   IO::logger->info("  done ({} seconds)",timer.time());
   IO::logger->info("Tagging boundaries");
-  BC::bcTags bcTags = BC::tag_BCs(config,u.dims(1),u.dims(2));
+  BC::bcTags bcTags = BC::tag_BCs(config,xn,u.dims(1),u.dims(2));
   IO::logger->info("  done");
 
   // ... initialization
@@ -124,10 +124,11 @@ int main(int argc, char* argv[]){
                       ustar,vstar,
                       p);
   if (config.restart.load) {
-    restart::load("u.200.converged",u);
-    restart::load("v.200.converged",v);
-    restart::load("p.200.converged",p);
+    restart::load(config.restart.ifnu,u);
+    restart::load(config.restart.ifnv,v);
+    restart::load(config.restart.ifnp,p);
   }
+  cout << ":test" << endl;
   BC::update_BCs(bcTags,u,v,p);
   // initialize phi
   levset::get_phi(phi,xc,yc,config.drop.x,config.drop.y,config.drop.r);
@@ -137,7 +138,6 @@ int main(int argc, char* argv[]){
   const double nul = config.iliq.mu / rhol;
   const double nug = config.igas.mu / rhog;
   const double sigma = config.drop.sigma;
-  printer.print(rhol,rhog,nul,nug);
   const double Mh = config.drop.M*min(dx,dy);
   levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
   
@@ -152,10 +152,11 @@ int main(int argc, char* argv[]){
       }
       rho(i,j) = rhog*heavi(i,j) + rhol*(1.0-heavi(i,j));
       nu(i,j)  = nug*heavi(i,j) + nul*(1.0-heavi(i,j));
+      if (heavi(i,j)==0) u(i,j) = config.jet.u;
       // u(i,j) = 1.0/(2.0*1e-5)*-0.003*(yn(i,j)*yn(i,j)-0.02*yn(i,j));
       // p(i,j) = (1.0-0.3*xc(i,j)-heavi(i,j))*sigma/config.drop.r;
-      u(i,j) = 0.0;
-      p(i,j) = 1.0;
+      // u(i,j) = 0.0;
+      // p(i,j) = 1.0;
     }
   }
   levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
@@ -176,6 +177,7 @@ int main(int argc, char* argv[]){
   /********************
    * main solver loop *
    *******************/
+  double ttime = 0.0;
   // ... initialize doubles
   double ires,res0,res1,cfl0,resmax = 0.0;
   double cfl = config.solver.cfli;
@@ -189,15 +191,39 @@ int main(int argc, char* argv[]){
   for (int ii = 1; ii <= config.solver.iter; ii++) {
     // ... update boundary conditions
     BC::update_BCs(bcTags,u,v,p);
-    levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
 
     // ... get the minimum dt in the domain for current iteration
     double dt = get_min_dt(cfl,dx,dy,u,v,max(nug,nul));
+    // dt = 1e-4;
+    ttime+=dt;
+    // ... shut jet off, calculate the volume of the fluid and maintain it.
+    if (ttime > 2e-3 && config.jet.enabled==true) {
+      config.jet.enabled=false;
+      for (int i = istr; i <= iend; i++) {
+        rho(i,jstr) = rhog;
+        nu(i,jstr) = nug;
+        rho(i,jstr-1) = rhog;
+        nu(i,jstr-1) = nug;
+        phi(i,jstr) = 0.0000+dy;
+        phi(i,jstr-1) = dy*2.0;
+        heavi(i,jstr) = 1.0;
+        heavi(i,jstr-1) = 1.0;
+        levset::reinitialize(bcTags,dx,dy,dtau,config.levset.ireinit,phi);
+        levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
+      }
+      BC::bcTags bcTags = BC::tag_BCs(config,xn,u.dims(1),u.dims(2));
+      BC::update_BCs(bcTags,u,v,p);
+      BC::update_BCs_rho(bcTags,rho);
+      BC::update_BCs_nu(bcTags,nu);
+      V0 = levset::getVolume(heavi,dx,dy);
+      cout << "jet is turned off." << endl;
+    }
+    levset::surfaceTension(Fx,Fy,phi,kappa,Mh,sigma,dx,dy);
 
 
     // ... loop over domain for predictor step
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    for (int j = jstr; j <= jend-1; j++) {
+      for (int i = istr; i <= iend-1; i++) {
         std::vector<double> advec(2,0.0);
         std::vector<double> advec_old(2,0.0);
         std::vector<double> diffu(2,0.0);
@@ -233,8 +259,8 @@ int main(int argc, char* argv[]){
 
     
     // ... apply the pressure correctior
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    for (int j = jstr; j <= jend-1; j++) {
+      for (int i = istr; i <= iend-1; i++) {
         double rhoi = (rho(i,j)+rho(i-1,j))*0.5;
         double rhoj = (rho(i,j)+rho(i,j-1))*0.5;
         double dpdx = (p(i,j) - p(i-1,j)) / (dx);
@@ -243,8 +269,8 @@ int main(int argc, char* argv[]){
         v2(i,j) = vstar(i,j) - 1.0/rhoj*dt*dpdy;
       }
     }
-    BC::update_BCs_phi(bcTags,rho);
-    BC::update_BCs_phi(bcTags,nu);
+    BC::update_BCs_rho(bcTags,rho);
+    BC::update_BCs_nu(bcTags,nu);
     BC::update_BCs(bcTags,u2,v2,p);
     // ... solve advection eq for phi
     double Vn = 0.0;
@@ -256,7 +282,9 @@ int main(int argc, char* argv[]){
       levset::heaviside(config.drop.M,min(dx,dy),phi,heavi);
       Vn = levset::getVolume(heavi,dx,dy);
       double Ln = levset::getLength(phi,dx,dy,Mh);
-      levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
+      if (config.jet.enabled==false) {
+        levset::volumeCorrection(phi,Mh,V0,Vn,Ln);
+      }
     }
 
     for (int j = jstr-1; j <= jend; j++) {
@@ -268,33 +296,89 @@ int main(int argc, char* argv[]){
 
     // ... output intermediate flowviz
     if (config.fv.enabled) {
-      if (ii % config.fv.freq == 0) {
+      //if (ii % config.fv.freq == 0) {
+      //  std::ostringstream foutss;
+      //  foutss << setw(5) << std::setfill('0') << ii;
+      //  string caseName = foutss.str();
+      //  if (config.fv.mode=="center") {
+      //    IO::getCellCenter(u,v,uc,vc);
+      //    IO::vtk_output_2D(caseName,config.fv.dir,false,
+      //                      xc,yc,uc,vc,
+      //                      "p",p,
+      //                      "rho",rho,
+      //                      "nu",nu,
+      //                      "phi",phi,
+      //                      "kappa",kappa,
+      //                      "Fx",Fx,
+      //                      "Fy",Fy,
+      //                      "heavi",heavi);
+      //  } else {
+      //    IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,
+      //                      xn,yn,u,v,
+      //                      "p",p,
+      //                      "rho",rho,
+      //                      "nu",nu,
+      //                      "phi",phi,
+      //                      "kappa",kappa,
+      //                      "Fx",Fx,
+      //                      "Fy",Fy,
+      //                      "heavi",heavi);
+      //  }
+      //} 
+      if (std::fmod(ttime,5.0e-4) < dt) {
+        mtr::FMatrix<int> countx(rho.dims(2));
+        mtr::FMatrix<int> county(rho.dims(1));
+        county.set_values(0);
+        countx.set_values(0);
         std::ostringstream foutss;
-        foutss << setw(5) << std::setfill('0') << ii;
+        foutss << "data."<< setw(5) <<std::setfill('0') << ii;
         string caseName = foutss.str();
+        std::ofstream outx(config.fv.dir +"/"+ caseName+".xcount.csv");
+        std::ofstream outy(config.fv.dir +"/"+ caseName+".ycount.csv");
+        outx << "y,n_fuel" << endl;
+        outy << "x,n_fuel" << endl;
+        for (int j = jstr; j <= jend; j++) {
+          int dcx = 0;
+          for (int i = istr; i <= iend; i++) {
+            if (rho(i,j) > 5.0) {
+              dcx += 1;
+            }
+          }
+          outx << yc(1,j) << "," << dcx << endl;
+        }
+        for (int i = istr; i <= iend; i++) {
+          int dcy = 0;
+          for (int j = jstr; j <= jend; j++) {
+            if (rho(i,j) > 5.0) {
+              dcy += 1;
+            }
+          }
+          outy << xc(i,1) << "," << dcy << endl;
+        }
+        
         if (config.fv.mode=="center") {
           IO::getCellCenter(u,v,uc,vc);
           IO::vtk_output_2D(caseName,config.fv.dir,false,
-                            xc,yc,uc,vc,
-                            "p",p,
-                            "rho",rho,
-                            "nu",nu,
-                            "phi",phi,
-                            "kappa",kappa,
-                            "Fx",Fx,
-                            "Fy",Fy,
-                            "heavi",heavi);
+              xc,yc,uc,vc,
+              "p",p,
+              "rho",rho,
+              "nu",nu,
+              "phi",phi,
+              "kappa",kappa,
+              "Fx",Fx,
+              "Fy",Fy,
+              "heavi",heavi);
         } else {
           IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,
-                            xn,yn,u,v,
-                            "p",p,
-                            "rho",rho,
-                            "nu",nu,
-                            "phi",phi,
-                            "kappa",kappa,
-                            "Fx",Fx,
-                            "Fy",Fy,
-                            "heavi",heavi);
+              xn,yn,u,v,
+              "p",p,
+              "rho",rho,
+              "nu",nu,
+              "phi",phi,
+              "kappa",kappa,
+              "Fx",Fx,
+              "Fy",Fy,
+              "heavi",heavi);
         }
       }
     } 
@@ -330,7 +414,7 @@ int main(int argc, char* argv[]){
     logFile << ii << " " << ires << "\n";
     if (config.res.enabled) {
       if (ii % config.res.freq == 0) {
-        IO::logger->info("  iter {:04}, cfl: {:4e},dt: {:4e}, res: {:4e}, dV: {:4e}",ii,cfl,dt,ires/res0,V0-Vn);
+        IO::logger->info("  iter {:04}, cfl: {:4e},ttime: {:4e}, res: {:4e}, dV: {:4e}",ii,cfl,ttime,ires/res0,V0-Vn);
         logFile.flush();
       }
     }

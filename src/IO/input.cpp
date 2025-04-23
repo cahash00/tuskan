@@ -23,8 +23,17 @@ ConfigData ConfigData::fromYAMLConfig(const YAML::Node& iconfig) {
   ideck.mesh.nx = iconfig["domain"]["dimensions"]["x"].as<int>();
   ideck.mesh.ny = iconfig["domain"]["dimensions"]["y"].as<int>();
 
+  // jet settings
+  ideck.jet.enabled = iconfig["jet"]["enabled"].as<bool>();
+  ideck.jet.u = iconfig["jet"]["u"].as<double>();
+  ideck.jet.v = iconfig["jet"]["v"].as<double>();
+  ideck.jet.p = iconfig["jet"]["p"].as<double>();
+
   // ... solver settings
   ideck.restart.load = iconfig["solver"]["restart"]["load"].as<bool>();
+  ideck.restart.ifnu = iconfig["solver"]["restart"]["ifnu"].as<string>();
+  ideck.restart.ifnv = iconfig["solver"]["restart"]["ifnv"].as<string>();
+  ideck.restart.ifnp = iconfig["solver"]["restart"]["ifnp"].as<string>();
   ideck.restart.save = iconfig["solver"]["restart"]["save"].as<bool>();
   ideck.solver.iter    = iconfig["solver"]["iterations"].as<int>();
   ideck.solver.omega = iconfig["solver"]["pressure solver"]["omega"].as<double>(); 

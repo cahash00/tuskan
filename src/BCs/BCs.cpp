@@ -17,6 +17,8 @@ struct boundarySpecs {
   mtr::FMatrix<int> bvals;
   std::vector<double> vel = std::vector<double>(2,0.0);
   double pressure = 0.0;
+  double nu = 0.0;
+  double rho = 0.0;
   // constructor
   explicit boundarySpecs(int dim) : bvals(dim) {}
 };
@@ -35,12 +37,14 @@ struct bcTags {
  * @detail goes over the domain and tags the edges for boundary conditions
  */
 bcTags tag_BCs(IO::ConfigData config,
+               mtr::FMatrix<double>& xn,
                const int nx,
                const int ny) {
   std::map<std::string,int> bcTypes = {
     {"noslip wall",0},
     {"moving wall",1},
     {"inlet",2},
+    {"jet",4},
     {"outlet",3},
     {"periodic",7}
   };
@@ -59,6 +63,20 @@ bcTags tag_BCs(IO::ConfigData config,
   tags.Bottom.pressure = config.bcBottom.pressure;
   tags.Right.pressure = config.bcRight.pressure;
   tags.Left.pressure = config.bcLeft.pressure;
+  
+  // custom BC for jet
+  if (config.jet.enabled==true) {
+    for (int i = istr; i <= iend; i++) {
+      if (xn(i,1) >= 0.0075-0.001 && xn(i,1) <= 0.0075+0.001) {
+        tags.Bottom.bvals(i) = 4;
+        tags.Bottom.vel[1] = config.jet.v;
+        tags.Bottom.pressure = config.jet.p;
+        tags.Bottom.nu = config.iliq.mu/config.iliq.rho;
+        tags.Bottom.rho = config.iliq.rho;
+      }
+    }
+  }
+  
 
   // check to make sure periodics align
   if (config.bcLeft.type=="periodic") {
@@ -136,6 +154,20 @@ void update_BCs(bcTags tags,
       u(i,jstr-1) = u(i,jend);
       v(i,jstr-1) = v(i,jend-1);
       p(i,jstr-1) = tags.Bottom.pressure;
+    } else if (tags.Bottom.bvals(i)==3) {
+      // outlet
+      u(i,jstr-1) = u(i,jstr);
+      v(i,jstr-1) = v(i,jstr);
+      p(i,jstr-1) = p(i,jstr);
+    }
+    // BOTTOM JET
+    if (tags.Bottom.bvals(i) == 2) {
+      v(i,jstr-1) = tags.Bottom.vel[1];
+    } else if (tags.Bottom.bvals(i) == 4) {
+      v(i,jstr) = tags.Bottom.vel[1];
+      u(i,jstr-1) = -u(i,jstr);
+      p(i,jstr-1) = p(i,jstr);
+      // p(i,jstr-1) = tags.Bottom.pressure;
     }
     /**
      * TOP BOUNDARY
@@ -147,7 +179,7 @@ void update_BCs(bcTags tags,
       p(i,jend) = p(i,jend-1);
     } else if (tags.Top.bvals(i)==1) {
       // moving wall
-      u(i,jend) = 2.0*tags.Top.vel[0]-u(i,jend);
+      u(i,jend) = 2.0*tags.Top.vel[0]-u(i,jend-1);
       v(i,jend-1) = tags.Top.vel[1];
       p(i,jend) = p(i,jend-1);
     } else if (tags.Top.bvals(i)==7) {
@@ -155,7 +187,7 @@ void update_BCs(bcTags tags,
       u(i,jend+1) = u(i,jstr);
       v(i,jend) = v(i,jstr);
       p(i,jend) = tags.Top.pressure;
-    }
+    } 
   }
 
   
@@ -163,6 +195,73 @@ void update_BCs(bcTags tags,
 
 void update_BCs_phi(bcTags tags, 
                     mtr::FMatrix<double>& phi) {
+  // update the left + right boundaries
+  for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
+    /**
+     * LEFT BOUNDARY
+     */
+    if (tags.Left.bvals(j)==0) {
+      // noslip 
+      // phi(istr-1,j) = phi(istr,j);
+      phi(istr-1,j) = 0.01;
+    } else if (tags.Left.bvals(j)==1) {
+      // moving wall
+      phi(istr-1,j) = phi(istr,j);
+    } else if (tags.Left.bvals(j)==7) {
+      // periodic
+      phi(istr-1,j) = phi(iend-1,j);
+    }
+    /**
+     * RIGHT BOUNDARY
+     */
+    if (tags.Right.bvals(j)==0) {
+      // noslip 
+      // phi(iend,j) = phi(iend-1,j);
+      phi(iend,j) = 0.01;
+    } else if (tags.Right.bvals(j)==1) {
+      // moving wall
+      phi(iend,j) = phi(iend-1,j);
+    } else 
+      if (tags.Right.bvals(j)==7) {
+        // periodic
+        phi(iend,j) = phi(istr,j);
+      }
+  }
+
+  // update top and bottom boundaries
+  for (int i = istr-nghosts; i <= iend+nghosts; i++) {
+    /**
+     * BOTTOM BOUNDARY
+     */
+    if (tags.Bottom.bvals(i)==0) {
+      // noslip wall 
+      // phi(i,jstr-1) = phi(i,jstr);
+      phi(i,jstr-1) = 0.01;
+    } else if (tags.Bottom.bvals(i)==1) {
+      // moving wall
+      phi(i,jstr-1) = phi(i,jstr);
+    } else if (tags.Bottom.bvals(i)==7) {
+      // periodic
+      phi(i,jstr-1) = phi(i,jend-1);
+    }
+    /**
+     * TOP BOUNDARY
+     */
+    if (tags.Top.bvals(i)==0) {
+      // noslip 
+      phi(i,jend) = phi(i,jend-1);
+    } else if (tags.Top.bvals(i)==1) {
+      // moving wall
+      // phi(i,jend) = phi(i,jend-1);
+      phi(i,jend) = 0.01;
+    } else if (tags.Top.bvals(i)==7) {
+      // periodic
+      phi(i,jend) = phi(i,jstr);
+    }
+  }
+} // end update_BCs
+void update_BCs_rho(bcTags tags, 
+    mtr::FMatrix<double>& phi) {
   // update the left + right boundaries
   for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
     /**
@@ -221,6 +320,77 @@ void update_BCs_phi(bcTags tags,
     } else if (tags.Top.bvals(i)==7) {
       // periodic
       phi(i,jend) = phi(i,jstr);
+    } 
+    if (tags.Bottom.bvals(i)==4) {
+      phi(i,jstr-1) = tags.Bottom.rho;
+    }
+  }
+
+
+} // end update_BCs
+void update_BCs_nu(bcTags tags, 
+    mtr::FMatrix<double>& phi) {
+  // update the left + right boundaries
+  for (int j = jstr-nghosts; j <= jend+nghosts; j++) {
+    /**
+     * LEFT BOUNDARY
+     */
+    if (tags.Left.bvals(j)==0) {
+      // noslip 
+      phi(istr-1,j) = phi(istr,j);
+    } else if (tags.Left.bvals(j)==1) {
+      // moving wall
+      phi(istr-1,j) = phi(istr,j);
+    } else if (tags.Left.bvals(j)==7) {
+      // periodic
+      phi(istr-1,j) = phi(iend-1,j);
+    }
+    /**
+     * RIGHT BOUNDARY
+     */
+    if (tags.Right.bvals(j)==0) {
+      // noslip 
+      phi(iend,j) = phi(iend-1,j);
+    } else if (tags.Right.bvals(j)==1) {
+      // moving wall
+      phi(iend,j) = phi(iend-1,j);
+    } else 
+      if (tags.Right.bvals(j)==7) {
+        // periodic
+        phi(iend,j) = phi(istr,j);
+      }
+  }
+
+  // update top and bottom boundaries
+  for (int i = istr-nghosts; i <= iend+nghosts; i++) {
+    /**
+     * BOTTOM BOUNDARY
+     */
+    if (tags.Bottom.bvals(i)==0) {
+      // noslip wall 
+      phi(i,jstr-1) = phi(i,jstr);
+    } else if (tags.Bottom.bvals(i)==1) {
+      // moving wall
+      phi(i,jstr-1) = phi(i,jstr);
+    } else if (tags.Bottom.bvals(i)==7) {
+      // periodic
+      phi(i,jstr-1) = phi(i,jend-1);
+    }
+    /**
+     * TOP BOUNDARY
+     */
+    if (tags.Top.bvals(i)==0) {
+      // noslip 
+      phi(i,jend) = phi(i,jend-1);
+    } else if (tags.Top.bvals(i)==1) {
+      // moving wall
+      phi(i,jend) = phi(i,jend-1);
+    } else if (tags.Top.bvals(i)==7) {
+      // periodic
+      phi(i,jend) = phi(i,jstr);
+    } 
+    if (tags.Bottom.bvals(i)==4) {
+      phi(i,jstr-1) = tags.Bottom.nu;
     }
   }
 
