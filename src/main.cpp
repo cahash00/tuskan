@@ -194,9 +194,10 @@ int main(int argc, char* argv[]){
 
     // ... get the minimum dt in the domain for current iteration
     double dt = get_min_dt(cfl,dx,dy,u,v,max(nug,nul));
+    // dt = 1e-4;
     ttime+=dt;
     // ... shut jet off, calculate the volume of the fluid and maintain it.
-    if (ttime > 5e10 && config.jet.enabled==true) {
+    if (ttime > 2e-3 && config.jet.enabled==true) {
       config.jet.enabled=false;
       for (int i = istr; i <= iend; i++) {
         rho(i,jstr) = rhog;
@@ -221,8 +222,8 @@ int main(int argc, char* argv[]){
 
 
     // ... loop over domain for predictor step
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    for (int j = jstr; j <= jend-1; j++) {
+      for (int i = istr; i <= iend-1; i++) {
         std::vector<double> advec(2,0.0);
         std::vector<double> advec_old(2,0.0);
         std::vector<double> diffu(2,0.0);
@@ -258,8 +259,8 @@ int main(int argc, char* argv[]){
 
     
     // ... apply the pressure correctior
-    for (int j = jstr; j <= jend; j++) {
-      for (int i = istr; i <= iend; i++) {
+    for (int j = jstr; j <= jend-1; j++) {
+      for (int i = istr; i <= iend-1; i++) {
         double rhoi = (rho(i,j)+rho(i-1,j))*0.5;
         double rhoj = (rho(i,j)+rho(i,j-1))*0.5;
         double dpdx = (p(i,j) - p(i-1,j)) / (dx);
@@ -295,33 +296,89 @@ int main(int argc, char* argv[]){
 
     // ... output intermediate flowviz
     if (config.fv.enabled) {
-      if (ii % config.fv.freq == 0) {
+      //if (ii % config.fv.freq == 0) {
+      //  std::ostringstream foutss;
+      //  foutss << setw(5) << std::setfill('0') << ii;
+      //  string caseName = foutss.str();
+      //  if (config.fv.mode=="center") {
+      //    IO::getCellCenter(u,v,uc,vc);
+      //    IO::vtk_output_2D(caseName,config.fv.dir,false,
+      //                      xc,yc,uc,vc,
+      //                      "p",p,
+      //                      "rho",rho,
+      //                      "nu",nu,
+      //                      "phi",phi,
+      //                      "kappa",kappa,
+      //                      "Fx",Fx,
+      //                      "Fy",Fy,
+      //                      "heavi",heavi);
+      //  } else {
+      //    IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,
+      //                      xn,yn,u,v,
+      //                      "p",p,
+      //                      "rho",rho,
+      //                      "nu",nu,
+      //                      "phi",phi,
+      //                      "kappa",kappa,
+      //                      "Fx",Fx,
+      //                      "Fy",Fy,
+      //                      "heavi",heavi);
+      //  }
+      //} 
+      if (std::fmod(ttime,5.0e-4) < dt) {
+        mtr::FMatrix<int> countx(rho.dims(2));
+        mtr::FMatrix<int> county(rho.dims(1));
+        county.set_values(0);
+        countx.set_values(0);
         std::ostringstream foutss;
-        foutss << setw(5) << std::setfill('0') << ii;
+        foutss << "data."<< setw(5) <<std::setfill('0') << ii;
         string caseName = foutss.str();
+        std::ofstream outx(config.fv.dir +"/"+ caseName+".xcount.csv");
+        std::ofstream outy(config.fv.dir +"/"+ caseName+".ycount.csv");
+        outx << "y,n_fuel" << endl;
+        outy << "x,n_fuel" << endl;
+        for (int j = jstr; j <= jend; j++) {
+          int dcx = 0;
+          for (int i = istr; i <= iend; i++) {
+            if (rho(i,j) > 5.0) {
+              dcx += 1;
+            }
+          }
+          outx << yc(1,j) << "," << dcx << endl;
+        }
+        for (int i = istr; i <= iend; i++) {
+          int dcy = 0;
+          for (int j = jstr; j <= jend; j++) {
+            if (rho(i,j) > 5.0) {
+              dcy += 1;
+            }
+          }
+          outy << xc(i,1) << "," << dcy << endl;
+        }
+        
         if (config.fv.mode=="center") {
           IO::getCellCenter(u,v,uc,vc);
           IO::vtk_output_2D(caseName,config.fv.dir,false,
-                            xc,yc,uc,vc,
-                            "p",p,
-                            "rho",rho,
-                            "nu",nu,
-                            "phi",phi,
-                            "kappa",kappa,
-                            "Fx",Fx,
-                            "Fy",Fy,
-                            "heavi",heavi);
+              xc,yc,uc,vc,
+              "p",p,
+              "rho",rho,
+              "nu",nu,
+              "phi",phi,
+              "kappa",kappa,
+              "Fx",Fx,
+              "Fy",Fy,
+              "heavi",heavi);
         } else {
           IO::vtk_output_2D(caseName,config.fv.dir,config.fv.ghost,
-                            xn,yn,u,v,
-                            "p",p,
-                            "rho",rho,
-                            "nu",nu,
-                            "phi",phi,
-                            "kappa",kappa,
-                            "Fx",Fx,
-                            "Fy",Fy,
-                            "heavi",heavi);
+              xn,yn,u,v,
+              "p",p,
+              "rho",rho,
+              "nu",nu,
+              "phi",phi,
+              "kappa",kappa,
+              "Fx",Fx,
+              "Fy",Fy,
+              "heavi",heavi);
         }
       }
     } 
